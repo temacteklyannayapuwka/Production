@@ -1,0 +1,576 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>СевКавПортал — Новости Северного Кавказа</title>
+    <link rel="stylesheet" href="{% static 'style-new.css' %}">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <div class="header-top">
+                <a href="{% url 'index' %}" class="logo">
+                    <h1>СевКавПортал</h1>
+                    <span class="tagline">Новости Северного Кавказа</span>
+                </a>
+                <div class="header-right">
+                    <div class="date" id="currentDate"></div>
+                    <div class="search">
+                        <input type="text" placeholder="Поиск по сайту...">
+                        <button>🔍</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <nav class="main-nav">
+        <a href="{% url 'index' %}" class="active">Главная</a>
+        <a href="{% url 'politika' %}">Политика</a>
+        <a href="{% url 'ekonomika' %}">Экономика</a>
+        <a href="{% url 'obshchestvo' %}">Общество</a>
+        <a href="{% url 'mir' %}">Происшествия</a>
+        <a href="{% url 'tehnologii' %}">Технологии</a>
+        <a href="{% url 'sport' %}">Спорт</a>
+        <a href="{% url 'kultura' %}">Культура</a>
+    </nav>
+
+    <main class="container">
+        <!-- Рекламный баннер -->
+        <div class="ad-banner ad-horizontal">
+            <span class="ad-label">Реклама</span>
+            <div class="ad-content">728 × 90 px - Горизонтальный баннер</div>
+        </div>
+
+        <div class="breaking-news">
+            <span class="breaking-label">⚡ СРОЧНО</span>
+            <div class="breaking-text">Важная новость: здесь появляются самые актуальные события дня</div>
+        </div>
+
+        <div class="content-grid-extended">
+            <!-- Левая колонка - Компактная лента новостей -->
+            <aside class="left-feed">
+                <div class="widget">
+                    <h3 class="widget-title">📋 Лента</h3>
+                    <div class="compact-feed">
+                        <article class="compact-feed-item">
+                            <span class="compact-time">16:45</span>
+                            <a href="#" class="compact-title">Представители власти провели встречу с журналистами</a>
+                        </article>
+                        <article class="compact-feed-item">
+                            <span class="compact-time">16:20</span>
+                            <a href="#" class="compact-title">Экономические показатели региона демонстрируют рост</a>
+                        </article>
+                        <article class="compact-feed-item">
+                            <span class="compact-time">15:55</span>
+                            <a href="#" class="compact-title">В городе открылся новый культурный центр</a>
+                        </article>
+                        <article class="compact-feed-item">
+                            <span class="compact-time">15:30</span>
+                            <a href="#" class="compact-title">Спортивная команда одержала важную победу</a>
+                        </article>
+                        <article class="compact-feed-item">
+                            <span class="compact-time">15:10</span>
+                            <a href="#" class="compact-title">Технологическая выставка привлекла тысячи посетителей</a>
+                        </article>
+                        <article class="compact-feed-item">
+                            <span class="compact-time">14:45</span>
+                            <a href="#" class="compact-title">Международная делегация посетила столицу</a>
+                        </article>
+                        <article class="compact-feed-item">
+                            <span class="compact-time">14:20</span>
+                            <a href="#" class="compact-title">Образовательная программа стартовала в школах</a>
+                        </article>
+                        <article class="compact-feed-item">
+                            <span class="compact-time">13:55</span>
+                            <a href="#" class="compact-title">Медицинский центр получил новое оборудование</a>
+                        </article>
+                        <article class="compact-feed-item">
+                            <span class="compact-time">13:30</span>
+                            <a href="#" class="compact-title">Дорожная инфраструктура будет модернизирована</a>
+                        </article>
+                        <article class="compact-feed-item">
+                            <span class="compact-time">13:10</span>
+                            <a href="#" class="compact-title">Благотворительный фонд помог нуждающимся семьям</a>
+                        </article>
+                        <article class="compact-feed-item">
+                            <span class="compact-time">12:45</span>
+                            <a href="#" class="compact-title">Строительство нового жилого комплекса началось</a>
+                        </article>
+                        <article class="compact-feed-item">
+                            <span class="compact-time">12:20</span>
+                            <a href="#" class="compact-title">Фестиваль народного творчества собрал участников</a>
+                        </article>
+                        <article class="compact-feed-item">
+                            <span class="compact-time">11:55</span>
+                            <a href="#" class="compact-title">Бизнес-форум обсудил перспективы развития</a>
+                        </article>
+                        <article class="compact-feed-item">
+                            <span class="compact-time">11:30</span>
+                            <a href="#" class="compact-title">Экологическая акция прошла в парке</a>
+                        </article>
+                        <article class="compact-feed-item">
+                            <span class="compact-time">11:10</span>
+                            <a href="#" class="compact-title">Молодые ученые представили свои разработки</a>
+                        </article>
+                        <article class="compact-feed-item">
+                            <span class="compact-time">10:45</span>
+                            <a href="#" class="compact-title">Туристический сезон открылся рекордными цифрами</a>
+                        </article>
+                        <article class="compact-feed-item">
+                            <span class="compact-time">10:20</span>
+                            <a href="#" class="compact-title">Транспортная система получит обновления</a>
+                        </article>
+                        <article class="compact-feed-item">
+                            <span class="compact-time">09:55</span>
+                            <a href="#" class="compact-title">Сельское хозяйство показывает хорошие результаты</a>
+                        </article>
+                        <article class="compact-feed-item">
+                            <span class="compact-time">09:30</span>
+                            <a href="#" class="compact-title">Музей открыл новую экспозицию для посетителей</a>
+                        </article>
+                        <article class="compact-feed-item">
+                            <span class="compact-time">09:10</span>
+                            <a href="#" class="compact-title">Цифровизация государственных услуг продолжается</a>
+                        </article>
+                    </div>
+                    <a href="#" class="feed-all-link">Все новости →</a>
+                </div>
+
+                <!-- Рекламный блок в левой колонке -->
+                <div class="ad-banner ad-sidebar">
+                    <span class="ad-label">Реклама</span>
+                    <div class="ad-content">300 × 250 px</div>
+                </div>
+
+                <div class="widget">
+                    <h3 class="widget-title">⚡ Важное</h3>
+                    <div class="important-news">
+                        <article class="important-item">
+                            <h4>Ключевое событие дня, требующее особого внимания</h4>
+                            <span class="time">1 час назад</span>
+                        </article>
+                        <article class="important-item">
+                            <h4>Срочная информация для всех жителей региона</h4>
+                            <span class="time">2 часа назад</span>
+                        </article>
+                        <article class="important-item">
+                            <h4>Официальное заявление представителей власти</h4>
+                            <span class="time">3 часа назад</span>
+                        </article>
+                    </div>
+                </div>
+            </aside>
+
+            <section class="main-content">
+                <article class="featured-news">
+                    <div class="news-image">
+                        <img src="https://via.placeholder.com/800x450/0066cc/ffffff?text=Главная+новость" alt="Главная новость">
+                        <span class="category-badge">Политика</span>
+                    </div>
+                    <div class="news-content">
+                        <h2>Заголовок главной новости дня</h2>
+                        <p class="news-excerpt">Краткое описание главной новости. Здесь можно разместить лид или первый абзац статьи, который привлечет внимание читателей и заинтересует их прочитать материал полностью.</p>
+                        <div class="news-meta">
+                            <span class="time">⏱ 2 часа назад</span>
+                            <span class="views">👁 1.2K</span>
+                            <span class="comments">💬 45</span>
+                        </div>
+                    </div>
+                </article>
+
+                <div class="news-list">
+                    <article class="news-item">
+                        <img src="https://via.placeholder.com/250x150/cc0000/ffffff?text=Новость" alt="Новость">
+                        <div class="news-item-content">
+                            <span class="category">Экономика</span>
+                            <h3>Заголовок новости в две или три строки максимум</h3>
+                            <p>Краткое описание новости для предварительного ознакомления читателя.</p>
+                            <span class="time">3 часа назад</span>
+                        </div>
+                    </article>
+
+                    <article class="news-item">
+                        <img src="https://via.placeholder.com/250x150/009900/ffffff?text=Новость" alt="Новость">
+                        <div class="news-item-content">
+                            <span class="category">Общество</span>
+                            <h3>Еще одна важная новость с интересным заголовком</h3>
+                            <p>Описание событий, которые произошли и заслуживают внимания.</p>
+                            <span class="time">5 часов назад</span>
+                        </div>
+                    </article>
+
+                    <article class="news-item">
+                        <img src="https://via.placeholder.com/250x150/ff6600/ffffff?text=Новость" alt="Новость">
+                        <div class="news-item-content">
+                            <span class="category">Технологии</span>
+                            <h3>Технологическая новость о последних разработках</h3>
+                            <p>Информация о новых технологиях и инновациях в мире.</p>
+                            <span class="time">7 часов назад</span>
+                        </div>
+                    </article>
+
+                    <article class="news-item">
+                        <img src="https://via.placeholder.com/250x150/9900cc/ffffff?text=Новость" alt="Новость">
+                        <div class="news-item-content">
+                            <span class="category">Спорт</span>
+                            <h3>Спортивные достижения и результаты матчей</h3>
+                            <p>Последние новости из мира спорта и спортивных событий.</p>
+                            <span class="time">9 часов назад</span>
+                        </div>
+                    </article>
+                </div>
+
+                <!-- Рекламный блок в контенте -->
+                <div class="ad-banner ad-content-banner">
+                    <span class="ad-label">Реклама</span>
+                    <div class="ad-content">468 × 60 px - Баннер в контенте</div>
+                </div>
+            </section>
+
+            <aside class="sidebar">
+                <!-- Рекламный блок в сайдбаре -->
+                <div class="ad-banner ad-sidebar">
+                    <span class="ad-label">Реклама</span>
+                    <div class="ad-content">300 × 250 px - Средний прямоугольник</div>
+                </div>
+                <div class="widget">
+                    <h3 class="widget-title">🔥 Популярное</h3>
+                    <div class="popular-news">
+                        <article class="popular-item">
+                            <span class="popular-number">1</span>
+                            <div>
+                                <h4>Самая читаемая новость дня с интересным заголовком</h4>
+                                <span class="views">2.5K просмотров</span>
+                            </div>
+                        </article>
+                        <article class="popular-item">
+                            <span class="popular-number">2</span>
+                            <div>
+                                <h4>Вторая по популярности новость недели</h4>
+                                <span class="views">1.8K просмотров</span>
+                            </div>
+                        </article>
+                        <article class="popular-item">
+                            <span class="popular-number">3</span>
+                            <div>
+                                <h4>Третья новость в топе читаемых материалов</h4>
+                                <span class="views">1.5K просмотров</span>
+                            </div>
+                        </article>
+                    </div>
+                </div>
+
+                <div class="widget">
+                    <h3 class="widget-title">🎯 Темы дня</h3>
+                    <div class="tags">
+                        <a href="#" class="tag">#политика</a>
+                        <a href="#" class="tag">#экономика</a>
+                        <a href="#" class="tag">#технологии</a>
+                        <a href="#" class="tag">#общество</a>
+                        <a href="#" class="tag">#спорт</a>
+                        <a href="#" class="tag">#культура</a>
+                        <a href="#" class="tag">#наука</a>
+                        <a href="#" class="tag">#образование</a>
+                    </div>
+                </div>
+
+                <div class="widget">
+                    <h3 class="widget-title">📊 Опрос дня</h3>
+                    <div class="poll">
+                        <p class="poll-question">Как вы оцениваете текущую ситуацию?</p>
+                        <label class="poll-option">
+                            <input type="radio" name="poll">
+                            <span>Положительно</span>
+                        </label>
+                        <label class="poll-option">
+                            <input type="radio" name="poll">
+                            <span>Нейтрально</span>
+                        </label>
+                        <label class="poll-option">
+                            <input type="radio" name="poll">
+                            <span>Отрицательно</span>
+                        </label>
+                        <button class="poll-button">Проголосовать</button>
+                    </div>
+                </div>
+
+                <div class="widget weather">
+                    <h3 class="widget-title">🌤 Погода</h3>
+                    <div class="weather-info">
+                        <div class="weather-temp">+24°C</div>
+                        <div class="weather-desc">Облачно</div>
+                        <div class="weather-details">
+                            <span>💨 5 м/с</span>
+                            <span>💧 60%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Рекламный блок в сайдбаре -->
+                <div class="ad-banner ad-sidebar">
+                    <span class="ad-label">Реклама</span>
+                    <div class="ad-content">300 × 600 px - Широкий небоскреб</div>
+                </div>
+            </aside>
+        </div>
+
+        <!-- Видео дня на всю ширину -->
+        <section class="full-width-section video-section">
+            <h2 class="section-title">📺 Видео дня</h2>
+            <div class="video-container">
+                <div class="video-main">
+                    <div class="video-player">
+                        <span class="play-button">▶️</span>
+                        <p>Главное видео: самые важные события дня</p>
+                    </div>
+                    <div class="video-info">
+                        <h3>Заголовок главного видео о важных событиях дня</h3>
+                        <div class="video-meta">
+                            <span>👁 15.3K просмотров</span>
+                            <span>⏱ 5:47</span>
+                            <span>📅 Сегодня, 12:30</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="video-grid">
+                    <article class="video-card">
+                        <div class="video-thumb">
+                            <span class="video-duration">3:20</span>
+                            <div class="thumb-placeholder">▶️</div>
+                        </div>
+                        <h4>Политические новости: основные события недели</h4>
+                        <span class="video-views">8.2K просмотров</span>
+                    </article>
+                    <article class="video-card">
+                        <div class="video-thumb">
+                            <span class="video-duration">4:15</span>
+                            <div class="thumb-placeholder">▶️</div>
+                        </div>
+                        <h4>Экономический обзор: тенденции и прогнозы</h4>
+                        <span class="video-views">6.7K просмотров</span>
+                    </article>
+                    <article class="video-card">
+                        <div class="video-thumb">
+                            <span class="video-duration">2:45</span>
+                            <div class="thumb-placeholder">▶️</div>
+                        </div>
+                        <h4>Спортивные достижения российских атлетов</h4>
+                        <span class="video-views">12.1K просмотров</span>
+                    </article>
+                    <article class="video-card">
+                        <div class="video-thumb">
+                            <span class="video-duration">6:30</span>
+                            <div class="thumb-placeholder">▶️</div>
+                        </div>
+                        <h4>Технологии будущего: что нас ждет</h4>
+                        <span class="video-views">9.4K просмотров</span>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <!-- Рекламный блок -->
+        <div class="ad-banner ad-horizontal">
+            <span class="ad-label">Реклама</span>
+            <div class="ad-content">970 × 90 px - Горизонтальный баннер</div>
+        </div>
+
+        <!-- Лента новостей на всю ширину -->
+        <section class="full-width-section news-tape-section">
+            <h2 class="section-title">📰 Лента новостей</h2>
+            <div class="news-tape-grid">
+                <div class="news-tape-main">
+                    <article class="tape-item">
+                        <span class="tape-time">16:45</span>
+                        <span class="tape-category">Политика</span>
+                        <h3>Правительство одобрило новый пакет мер поддержки малого бизнеса</h3>
+                        <p>Премьер-министр объявил о выделении дополнительных средств на развитие предпринимательства в регионах.</p>
+                    </article>
+                    <article class="tape-item">
+                        <span class="tape-time">16:20</span>
+                        <span class="tape-category">Экономика</span>
+                        <h3>Центробанк сохранил ключевую ставку на прежнем уровне</h3>
+                        <p>Решение соответствует прогнозам аналитиков и направлено на поддержание стабильности финансовой системы.</p>
+                    </article>
+                    <article class="tape-item">
+                        <span class="tape-time">15:55</span>
+                        <span class="tape-category">Общество</span>
+                        <h3>В столице открылся крупнейший медицинский центр</h3>
+                        <p>Новая клиника оснащена современным оборудованием и будет принимать до 500 пациентов ежедневно.</p>
+                    </article>
+                    <article class="tape-item">
+                        <span class="tape-time">15:30</span>
+                        <span class="tape-category">Спорт</span>
+                        <h3>Сборная России вышла в финал международного турнира</h3>
+                        <p>Команда одержала уверенную победу в полуфинале со счетом 3:1 и продолжает борьбу за золото.</p>
+                    </article>
+                    <article class="tape-item">
+                        <span class="tape-time">15:10</span>
+                        <span class="tape-category">Технологии</span>
+                        <h3>Российская IT-компания представила инновационную платформу</h3>
+                        <p>Разработка позволит автоматизировать процессы в производстве и снизить затраты на 30%.</p>
+                    </article>
+                    <article class="tape-item">
+                        <span class="tape-time">14:45</span>
+                        <span class="tape-category">Мир</span>
+                        <h3>Международный саммит завершился подписанием соглашений</h3>
+                        <p>Главы государств достигли договоренностей по ключевым вопросам торговли и безопасности.</p>
+                    </article>
+                    <article class="tape-item">
+                        <span class="tape-time">14:20</span>
+                        <span class="tape-category">Культура</span>
+                        <h3>Третьяковская галерея открыла выставку современного искусства</h3>
+                        <p>Экспозиция представляет работы более 50 художников из разных стран мира.</p>
+                    </article>
+                    <article class="tape-item">
+                        <span class="tape-time">13:55</span>
+                        <span class="tape-category">Наука</span>
+                        <h3>Ученые совершили прорыв в лечении онкологических заболеваний</h3>
+                        <p>Новый метод терапии показал высокую эффективность на ранних стадиях болезни.</p>
+                    </article>
+                    <article class="tape-item">
+                        <span class="tape-time">13:30</span>
+                        <span class="tape-category">Происшествия</span>
+                        <h3>МЧС успешно завершило спасательную операцию в горах</h3>
+                        <p>Все участники туристической группы найдены живыми и доставлены в безопасное место.</p>
+                    </article>
+                    <article class="tape-item">
+                        <span class="tape-time">13:10</span>
+                        <span class="tape-category">Бизнес</span>
+                        <h3>Крупнейший ритейлер объявил о запуске новой сети магазинов</h3>
+                        <p>План развития предусматривает открытие 100 торговых точек в течение следующего года.</p>
+                    </article>
+                    <article class="tape-item">
+                        <span class="tape-time">12:45</span>
+                        <span class="tape-category">Образование</span>
+                        <h3>Министерство просвещения утвердило новые образовательные стандарты</h3>
+                        <p>Изменения вступят в силу с начала нового учебного года и коснутся всех школ страны.</p>
+                    </article>
+                    <article class="tape-item">
+                        <span class="tape-time">12:20</span>
+                        <span class="tape-category">Транспорт</span>
+                        <h3>Запущена новая линия метро, соединяющая центр и аэропорт</h3>
+                        <p>Время в пути сократилось вдвое, что значительно улучшит транспортную доступность.</p>
+                    </article>
+                    <article class="tape-item">
+                        <span class="tape-time">11:55</span>
+                        <span class="tape-category">Экология</span>
+                        <h3>Стартовала масштабная программа по озеленению городов</h3>
+                        <p>В рамках проекта будет высажено более миллиона деревьев по всей стране.</p>
+                    </article>
+                    <article class="tape-item">
+                        <span class="tape-time">11:30</span>
+                        <span class="tape-category">Туризм</span>
+                        <h3>Число туристов в стране выросло на 40% за последний квартал</h3>
+                        <p>Эксперты связывают рост с улучшением инфраструктуры и развитием внутреннего туризма.</p>
+                    </article>
+                    <article class="tape-item">
+                        <span class="tape-time">11:10</span>
+                        <span class="tape-category">Здоровье</span>
+                        <h3>Минздрав запустил программу бесплатной диспансеризации</h3>
+                        <p>Всем гражданам старше 18 лет доступны комплексные медицинские обследования.</p>
+                    </article>
+                    <button class="load-more">Загрузить еще новости</button>
+                </div>
+
+                <!-- Правая колонка с рекламой -->
+                <aside class="news-tape-sidebar">
+                    <div class="ad-banner ad-sidebar">
+                        <span class="ad-label">Реклама</span>
+                        <div class="ad-content">300 × 600 px</div>
+                    </div>
+
+                    <div class="widget">
+                        <h3 class="widget-title">🔥 Сейчас читают</h3>
+                        <div class="reading-now">
+                            <article class="reading-item">
+                                <span class="reading-number">1</span>
+                                <h4>Самая обсуждаемая новость этого часа</h4>
+                            </article>
+                            <article class="reading-item">
+                                <span class="reading-number">2</span>
+                                <h4>Горячая тема в социальных сетях</h4>
+                            </article>
+                            <article class="reading-item">
+                                <span class="reading-number">3</span>
+                                <h4>Событие, которое обсуждают все</h4>
+                            </article>
+                            <article class="reading-item">
+                                <span class="reading-number">4</span>
+                                <h4>Неожиданный поворот в важном деле</h4>
+                            </article>
+                            <article class="reading-item">
+                                <span class="reading-number">5</span>
+                                <h4>Эксклюзивная информация от редакции</h4>
+                            </article>
+                        </div>
+                    </div>
+                </aside>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-col">
+                    <h4>О портале</h4>
+                    <ul>
+                        <li><a href="#">О нас</a></li>
+                        <li><a href="#">Редакция</a></li>
+                        <li><a href="#">Контакты</a></li>
+                        <li><a href="#">Реклама</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4>Разделы</h4>
+                    <ul>
+                        <li><a href="{% url 'politika' %}">Политика</a></li>
+                        <li><a href="{% url 'ekonomika' %}">Экономика</a></li>
+                        <li><a href="{% url 'obshchestvo' %}">Общество</a></li>
+                        <li><a href="{% url 'mir' %}">Мир</a></li>
+                        <li><a href="{% url 'tehnologii' %}">Технологии</a></li>
+                        <li><a href="{% url 'sport' %}">Спорт</a></li>
+                        <li><a href="{% url 'kultura' %}">Культура</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4>Сервисы</h4>
+                    <ul>
+                        <li><a href="#">RSS</a></li>
+                        <li><a href="#">Мобильная версия</a></li>
+                        <li><a href="#">Подписка</a></li>
+                        <li><a href="#">Архив</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4>Социальные сети</h4>
+                    <div class="social-links">
+                        <a href="#">ВКонтакте</a>
+                        <a href="#">Telegram</a>
+                        <a href="#">Одноклассники</a>
+                        <a href="#">Дзен</a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 Новостной Портал. Все права защищены.</p>
+                <p class="footer-legal">
+                    <a href="#">Пользовательское соглашение</a> |
+                    <a href="#">Политика конфиденциальности</a>
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Вывод текущей даты
+        const dateElement = document.getElementById('currentDate');
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        dateElement.textContent = new Date().toLocaleDateString('ru-RU', options);
+    </script>
+</body>
+</html>

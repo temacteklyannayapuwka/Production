@@ -1,0 +1,62 @@
+{% load static %}
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ставрополь+ — Новости Северного Кавказа</title>
+  <link rel="stylesheet" href="{% static 'home.css' %}">
+</head>
+<body>
+  <header class="topbar">
+    <div class="shell topbar__inner">
+      <a class="logo" href="{% url 'index' %}"><b>СК</b><span><strong>Ставрополь+</strong><small>Новости Северного Кавказа</small></span></a>
+      <div class="topbar__tools">
+        <div class="social" aria-label="Социальные сети"><a href="#" aria-label="ВКонтакте">ВК</a><a href="#" aria-label="Telegram">TG</a><a href="#" aria-label="Одноклассники">ОК</a><a href="#" aria-label="MAX">MAX</a></div>
+        <form class="search" action="#" role="search"><input name="q" aria-label="Поиск" placeholder="Поиск по сайту..."><button aria-label="Искать" type="submit">⌕</button></form>
+      </div>
+    </div>
+  </header>
+
+  <nav class="menu"><div class="shell menu__inner">
+    <a class="is-active" href="{% url 'index' %}">Главная</a>
+    {% for category in categories %}<a href="#">{{ category.name }}</a>{% endfor %}
+  </div></nav>
+
+  <main>
+    <div class="shell"><div class="advert advert--top">РЕКЛАМА <small>728 × 90</small></div></div>
+    <div class="shell first-grid">
+      <aside class="short-news">
+        {% for news in short_news %}
+          <article><em class="tag">{{ news.category.name|default:'НОВОСТИ' }}</em><h3>{{ news.title }}</h3><p>◷ {{ news.date_start|date:'H:i' }} · ◉ {{ news.views }}</p></article>
+        {% empty %}<p class="empty">Новости появятся здесь после публикации в админке.</p>{% endfor %}
+      </aside>
+
+      {% if lead_news %}
+      <article class="lead-card">
+        <div class="lead-card__visual">
+          {% if lead_news.main_photo %}<img src="{{ lead_news.main_photo.url }}" alt="{{ lead_news.title }}">{% endif %}
+          <em class="tag">{{ lead_news.category.name|default:'НОВОСТИ' }}</em><h1>{{ lead_news.title }}</h1>
+        </div>
+        <div class="lead-card__body"><p>{{ lead_news.excerpt|default:lead_news.content|striptags|truncatechars:280 }}</p><div class="metrics">◷ {{ lead_news.date_start|date:'H:i' }}　 ◉ {{ lead_news.views }}</div></div>
+      </article>
+      {% else %}
+      <section class="lead-card lead-card--empty"><h1>Главная новость появится после публикации</h1><p>Создайте и опубликуйте новость в админ-панели.</p></section>
+      {% endif %}
+
+      <aside class="right-rail"><div class="advert advert--rail">РЕКЛАМА <small>240 × 400</small></div><section class="weather"><small>ПОГОДА · ПЯТИГОРСК</small><strong>+28°</strong><span>Ясно, солнечно</span><p>Влажность: <b>42%</b>　 Ветер: <b>5 м/с СЗ</b><br>Давление: <b>748 мм</b></p></section></aside>
+      <div class="advert advert--wide advert--mid">РЕКЛАМА <small>Контентный баннер</small></div>
+    </div>
+
+    <div class="shell lower-grid">
+      <section class="latest"><h2>Последние новости</h2><div class="latest__grid">
+        <div class="story-cards">{% for news in card_news %}<article><div>{% if news.main_photo %}<img src="{{ news.main_photo.url }}" alt="{{ news.title }}">{% endif %}<em class="tag">{{ news.category.name|default:'НОВОСТИ' }}</em></div><h3>{{ news.title }}</h3><p>◷ {{ news.date_start|date:'H:i' }}　◉ {{ news.views }}</p></article>{% empty %}<p class="empty">Здесь будут последние новости.</p>{% endfor %}</div>
+        <div class="headline-list">{% for news in headline_news %}<article><h3>{{ news.title }}</h3><p>◷ {{ news.date_start|date:'H:i' }}　◉ {{ news.views }}</p></article>{% empty %}<p class="empty">Больше новостей скоро появится.</p>{% endfor %}</div>
+      </div><div class="advert advert--wide advert--bottom">РЕКЛАМА <small>Нижний баннер</small></div></section>
+      <aside class="reading"><section><h2>Читают сейчас</h2><ol>{% for news in popular_news %}<li>{{ news.title }}<small>◉ {{ news.views }}</small></li>{% empty %}<li>Популярные новости появятся после публикации<small>◉ 0</small></li>{% endfor %}</ol></section><div class="advert advert--vertical">РЕКЛАМА <small>160 × 600</small></div></aside>
+    </div>
+  </main>
+
+  <footer><div class="shell footer__inner"><section><div class="logo"><b>СК</b><strong>Ставрополь+</strong></div><p>Ведущий информационный портал Северного Кавказа.</p></section><section><b>РАЗДЕЛЫ</b>{% for category in categories %}<a href="#">{{ category.name }}</a>{% endfor %}</section><section><b>КОНТАКТЫ</b><p>г. Пятигорск</p><p>news@stavplus.ru</p></section></div><div class="shell copyright">© {% now 'Y' %} Ставрополь+. Все права защищены. 16+</div></footer>
+</body>
+</html>

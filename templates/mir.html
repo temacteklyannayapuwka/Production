@@ -1,0 +1,212 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Мир - Новостной Портал</title>
+    <link rel="stylesheet" href="{% static 'style.css' %}">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <div class="header-top">
+                <div class="logo">
+                    <a href="{% url 'index' %}" style="text-decoration: none; color: inherit;">
+                        <h1>НОВОСТИ</h1>
+                        <span class="tagline">Актуальные события</span>
+                    </a>
+                </div>
+                <div class="header-right">
+                    <div class="date" id="currentDate"></div>
+                    <div class="search">
+                        <input type="text" placeholder="Поиск новостей...">
+                        <button>🔍</button>
+                    </div>
+                </div>
+            </div>
+            <nav class="main-nav">
+                <a href="{% url 'index' %}">Главная</a>
+                <a href="{% url 'politika' %}">Политика</a>
+                <a href="{% url 'ekonomika' %}">Экономика</a>
+                <a href="{% url 'obshchestvo' %}">Общество</a>
+                <a href="{% url 'mir' %}" class="active">Мир</a>
+                <a href="{% url 'tehnologii' %}">Технологии</a>
+                <a href="{% url 'sport' %}">Спорт</a>
+                <a href="{% url 'kultura' %}">Культура</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="breaking-news">
+            <span class="breaking-label">⚡ СРОЧНО</span>
+            <div class="breaking-text">Лидеры стран БРИКС подписали соглашение о расширении экономического сотрудничества</div>
+        </div>
+
+        <section class="category-page">
+            <h1 class="page-title">🌍 Мир</h1>
+
+            <article class="featured-news">
+                <div class="news-image">
+                    <img src="https://via.placeholder.com/800x450/00897b/ffffff?text=Главная+мировая+новость" alt="Мир">
+                    <span class="category-badge">Мир</span>
+                </div>
+                <div class="news-content">
+                    <h2>Международный саммит принял декларацию по борьбе с изменением климата</h2>
+                    <p class="news-excerpt">Участники встречи из 150 стран договорились о конкретных мерах по сокращению выбросов парниковых газов и переходу на возобновляемые источники энергии. Россия представила свою программу углеродной нейтральности.</p>
+                    <div class="news-meta">
+                        <span class="time">⏱ 20 минут назад</span>
+                        <span class="views">👁 12.5K</span>
+                        <span class="comments">💬 356</span>
+                    </div>
+                </div>
+            </article>
+
+            <div class="news-grid">
+                <article class="news-card">
+                    <img src="https://via.placeholder.com/400x250/00897b/ffffff?text=Мир" alt="Мир">
+                    <div class="card-content">
+                        <span class="time">1 час назад</span>
+                        <h3>Европейский союз принял новый пакет санкций</h3>
+                        <p>Ограничительные меры коснулись технологического сектора.</p>
+                    </div>
+                </article>
+
+                <article class="news-card">
+                    <img src="https://via.placeholder.com/400x250/00897b/ffffff?text=Мир" alt="Мир">
+                    <div class="card-content">
+                        <span class="time">2 часа назад</span>
+                        <h3>Китай запустил новую космическую станцию</h3>
+                        <p>Модуль успешно выведен на орбиту и готов принять экипаж.</p>
+                    </div>
+                </article>
+
+                <article class="news-card">
+                    <img src="https://via.placeholder.com/400x250/00897b/ffffff?text=Мир" alt="Мир">
+                    <div class="card-content">
+                        <span class="time">3 часа назад</span>
+                        <h3>ООН призвала страны увеличить помощь развивающимся государствам</h3>
+                        <p>Генсек организации выступил с обращением к мировому сообществу.</p>
+                    </div>
+                </article>
+
+                <article class="news-card">
+                    <img src="https://via.placeholder.com/400x250/00897b/ffffff?text=Мир" alt="Мир">
+                    <div class="card-content">
+                        <span class="time">4 часа назад</span>
+                        <h3>США и Китай возобновили торговые переговоры</h3>
+                        <p>Стороны обсуждают возможность снижения пошлин.</p>
+                    </div>
+                </article>
+
+                <article class="news-card">
+                    <img src="https://via.placeholder.com/400x250/00897b/ffffff?text=Мир" alt="Мир">
+                    <div class="card-content">
+                        <span class="time">5 часов назад</span>
+                        <h3>В Африке открылся крупнейший технопарк континента</h3>
+                        <p>Проект реализован при поддержке международных инвесторов.</p>
+                    </div>
+                </article>
+
+                <article class="news-card">
+                    <img src="https://via.placeholder.com/400x250/00897b/ffffff?text=Мир" alt="Мир">
+                    <div class="card-content">
+                        <span class="time">6 часов назад</span>
+                        <h3>Индия стала третьей экономикой мира по объему ВВП</h3>
+                        <p>Страна обогнала Японию по итогам второго квартала.</p>
+                    </div>
+                </article>
+
+                <article class="news-card">
+                    <img src="https://via.placeholder.com/400x250/00897b/ffffff?text=Мир" alt="Мир">
+                    <div class="card-content">
+                        <span class="time">7 часов назад</span>
+                        <h3>Латинская Америка создает единую платежную систему</h3>
+                        <p>12 стран региона договорились об интеграции финансовых рынков.</p>
+                    </div>
+                </article>
+
+                <article class="news-card">
+                    <img src="https://via.placeholder.com/400x250/00897b/ffffff?text=Мир" alt="Мир">
+                    <div class="card-content">
+                        <span class="time">8 часов назад</span>
+                        <h3>Международная организация труда представила доклад о занятости</h3>
+                        <p>Глобальная безработица снизилась до 5.1%.</p>
+                    </div>
+                </article>
+
+                <article class="news-card">
+                    <img src="https://via.placeholder.com/400x250/00897b/ffffff?text=Мир" alt="Мир">
+                    <div class="card-content">
+                        <span class="time">9 часов назад</span>
+                        <h3>Страны Юго-Восточной Азии укрепляют оборонное сотрудничество</h3>
+                        <p>Подписан меморандум о совместных военных учениях.</p>
+                    </div>
+                </article>
+            </div>
+
+            <button class="load-more">Загрузить еще новости</button>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-col">
+                    <h4>О портале</h4>
+                    <ul>
+                        <li><a href="#">О нас</a></li>
+                        <li><a href="#">Редакция</a></li>
+                        <li><a href="#">Контакты</a></li>
+                        <li><a href="#">Реклама</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4>Разделы</h4>
+                    <ul>
+                        <li><a href="{% url 'politika' %}">Политика</a></li>
+                        <li><a href="{% url 'ekonomika' %}">Экономика</a></li>
+                        <li><a href="{% url 'obshchestvo' %}">Общество</a></li>
+                        <li><a href="{% url 'mir' %}">Мир</a></li>
+                        <li><a href="{% url 'tehnologii' %}">Технологии</a></li>
+                        <li><a href="{% url 'sport' %}">Спорт</a></li>
+                        <li><a href="{% url 'kultura' %}">Культура</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4>Сервисы</h4>
+                    <ul>
+                        <li><a href="#">RSS</a></li>
+                        <li><a href="#">Мобильная версия</a></li>
+                        <li><a href="#">Подписка</a></li>
+                        <li><a href="#">Архив</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4>Социальные сети</h4>
+                    <div class="social-links">
+                        <a href="#">ВКонтакте</a>
+                        <a href="#">Telegram</a>
+                        <a href="#">Одноклассники</a>
+                        <a href="#">Дзен</a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 Новостной Портал. Все права защищены.</p>
+                <p class="footer-legal">
+                    <a href="#">Пользовательское соглашение</a> |
+                    <a href="#">Политика конфиденциальности</a>
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        const dateElement = document.getElementById('currentDate');
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        dateElement.textContent = new Date().toLocaleDateString('ru-RU', options);
+    </script>
+</body>
+</html>
