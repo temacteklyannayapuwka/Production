@@ -5,3 +5,8 @@ menuButton.addEventListener('click', () => {
   menuButton.firstChild.textContent = expanded ? 'MENU ' : 'CLOSE ';
   document.body.classList.toggle('menu-open', !expanded);
 });
+
+document.querySelectorAll('.project').forEach((project) => {
+  project.tabIndex = 0;
+  project.setAttribute('role', 'article');
+});
