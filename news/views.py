@@ -22,7 +22,7 @@ def index(request):
         'popular_news': published_news.order_by('-views', '-date_start')[:5],
         'categories': Category.objects.filter(is_active=True).order_by('order', 'name'),
     }
-    return render(request, 'index.html', context)
+    return render(request, 'news/index.html', context)
 
 def politika(request):
     context = {}
