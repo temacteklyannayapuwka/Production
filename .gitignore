@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.Python
+.venv/
+venv/
+env/
+
+# Django runtime data
+db.sqlite3
+media/
+staticfiles/
+
+# Environment secrets
+.env
+.env.*
+!.env.example
+
+# Tooling and OS files
+.DS_Store
+.idea/
+.vscode/
+*.log
+

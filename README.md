@@ -1,0 +1,39 @@
+# StavPlus
+
+Django-проект новостного сайта «Ставрополь+». Главная страница выводит опубликованные новости и категории, которые заполняются через админ-панель Django.
+
+## Локальный запуск
+
+Требуется Python 3.9+.
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+pip install -r requirements.txt
+python manage.py migrate
+python manage.py runserver
+```
+
+Откройте `http://127.0.0.1:8000/`. Админ-панель находится по адресу `/admin/`.
+
+## Переменные окружения
+
+Перед публикацией на хостинге задайте значения из `.env.example` в настройках окружения ISPmanager или в конфигурации процесса:
+
+- `DJANGO_SECRET_KEY` — уникальный секретный ключ;
+- `DJANGO_DEBUG=0` — отключает отладочный режим;
+- `DJANGO_ALLOWED_HOSTS=stavplus.ru,www.stavplus.ru` — домены сайта.
+
+`.env`, база `db.sqlite3`, пользовательские загрузки `media/`, собранная статика и виртуальное окружение намеренно исключены из Git.
+
+## Публикация
+
+На сервере после получения коммита выполните:
+
+```bash
+python manage.py migrate
+python manage.py collectstatic --noinput
+```
+
+Затем перезапустите процесс приложения через ISPmanager или используемый процесс-менеджер.
