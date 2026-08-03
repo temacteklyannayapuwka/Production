@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#101513" />
+    <meta name="description" content="Экспериментальная концепция новостного сайта Ставрополь+." />
+    <title>Ставрополь+ — новости без лишнего</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="masthead">
+      <div class="shell masthead__inner">
+        <a class="brand" href="index.html" aria-label="Ставрополь+, на главную"><b>С+</b><span><strong>Ставрополь+</strong><small>Город. Люди. События.</small></span></a>
+        <div class="masthead__tools"><div class="social" aria-label="Социальные сети"><a href="#">VK</a><a href="#">TG</a><a href="#">OK</a><a class="social__max" href="#">MAX</a></div><form class="search" id="search-form"><label class="sr-only" for="search">Поиск новостей</label><input id="search" name="search" placeholder="Поиск новостей" /><button type="submit" aria-label="Найти">⌕</button></form></div>
+        <button class="menu-button" type="button" data-menu-trigger aria-label="Открыть меню" aria-controls="site-menu" aria-expanded="false"><i></i><span>Меню</span></button>
+      </div>
+    </header>
+    <nav class="nav" id="site-nav"><div class="shell nav__inner"><a class="active" href="index.html">Главная</a><a href="society.html">Общество</a><a href="politics.html">Политика</a><a href="economy.html">Экономика</a><a href="incidents.html">Происшествия</a><a href="sport.html">Спорт</a><a href="culture.html">Культура</a><a href="afisha.html">Афиша</a></div></nav>
+
+    <main id="top" class="shell page">
+      <aside class="ad ad--leader" aria-label="Рекламное место"><span>Реклама</span><small>970 × 90 · лидерборд</small></aside>
+      <section class="first-grid">
+        <aside class="fresh" aria-label="Свежие новости">
+          <div class="block-heading"><span>Сейчас</span><i></i></div>
+          <article class="fresh__item"><em>Культура</em><h2>Открытие выставки художников Северного Кавказа состоится в пятницу</h2><p>12:20 <span>◉ 24K</span></p></article>
+          <article class="fresh__item"><em class="violet">Спорт</em><h2>Ставропольские спортсмены завоевали медали на всероссийском турнире</h2><p>12:08 <span>◉ 22K</span></p></article>
+          <article class="fresh__item"><em class="teal">Здоровье</em><h2>В крае открыли новый медицинский центр для детей и взрослых</h2><p>11:54 <span>◉ 20K</span></p></article>
+          <article class="fresh__item"><em>Общество</em><h2>В Пятигорске благоустроят ещё три общественных пространства</h2><p>11:40 <span>◉ 18K</span></p></article>
+          <article class="fresh__item"><em class="rose">Политика</em><h2>Губернатор обсудил с главами округов планы развития территорий</h2><p>11:25 <span>◉ 16K</span></p></article>
+        </aside>
+
+        <article class="hero">
+          <img src="assets/news-1.jpg" alt="Автомобильная дорога в городе" width="600" height="520" fetchpriority="high" decoding="async" />
+          <div class="hero__overlay"></div>
+          <div class="hero__content"><span class="tag">Главное</span><p>Сегодня · 12:35</p><h1>Город меняется: пять решений, которые повлияют на жизнь Ставрополья уже в этом году</h1><a href="article.html">Читать материал <b>→</b></a></div>
+        </article>
+
+        <aside class="side-rail">
+          <div class="ad ad--square"><span>Реклама</span><small>300 × 250</small></div>
+          <section class="weather"><p>Погода · Пятигорск</p><strong>+28°</strong><span>Ясно, солнечно</span><small><b>42%</b> влажность　 <b>5 м/с</b> ветер</small></section>
+          <section class="digest"><span>Вечерний дайджест</span><p>Важное за день в одном письме.</p><button type="button" data-subscribe>Подписаться</button></section>
+        </aside>
+      </section>
+
+      <aside class="ad ad--wide"><span>Реклама</span><small>1200 × 120 · нативный блок</small></aside>
+
+      <section class="news-layout" id="latest">
+        <div class="latest"><div class="section-title"><h2>Последние новости</h2><a href="#latest">Вся лента →</a></div>
+          <div class="latest__grid">
+            <div class="cards">
+              <article class="card"><a href="article.html"><div><img src="assets/feature.jpg" alt="Дорога после происшествия" width="300" height="155" loading="lazy" decoding="async" /><span class="tag tag--red">ДТП</span></div><h3>На трассе М-29 ликвидировали крупный затор после ДТП</h3><p>Сегодня · ◉ 19 750</p></a></article>
+              <article class="card"><a href="article.html"><div><img src="assets/news-2.jpg" alt="Заседание" width="300" height="155" loading="lazy" decoding="async" /><span class="tag">Власть</span></div><h3>В крае утвердили дополнительные меры поддержки малого бизнеса</h3><p>Сегодня · ◉ 19 000</p></a></article>
+              <article class="card"><a href="article.html"><div><img src="assets/news-3.jpg" alt="Сельскохозяйственное поле" width="300" height="155" loading="lazy" decoding="async" /><span class="tag tag--green">Агро</span></div><h3>Аграрии Ставрополья собрали рекордный урожай зерновых</h3><p>Сегодня · ◉ 18 250</p></a></article>
+              <article class="card"><a href="article.html"><div><img src="assets/news-4.jpg" alt="Дети" width="300" height="155" loading="lazy" decoding="async" /><span class="tag">Город</span></div><h3>К началу учебного года в регионе откроют новые школы и детский сад</h3><p>Сегодня · ◉ 17 500</p></a></article>
+            </div>
+            <div class="headline-list">
+              <article><b>01</b><div><h3>В Пятигорске завершили ремонт важного участка дороги</h3><p>10:42 <span>◉ 16K</span></p></div></article>
+              <article><b>02</b><div><h3>На Ставрополье стартовала программа поддержки молодых семей</h3><p>10:28 <span>◉ 15K</span></p></div></article>
+              <article><b>03</b><div><h3>График работы поликлиник изменится в праздничные дни</h3><p>10:14 <span>◉ 14K</span></p></div></article>
+              <article><b>04</b><div><h3>Новый маршрут свяжет отдалённые районы краевой столицы</h3><p>09:58 <span>◉ 13K</span></p></div></article>
+              <article><b>05</b><div><h3>Школьники региона отправились на всероссийский форум</h3><p>09:43 <span>◉ 12K</span></p></div></article>
+              <article><b>06</b><div><h3>Фермеры края представили урожай на большой выставке</h3><p>09:28 <span>◉ 11K</span></p></div></article>
+              <article><b>07</b><div><h3>Спасатели предупредили жителей о сильном ветре</h3><p>09:10 <span>◉ 10K</span></p></div></article>
+              <article><b>08</b><div><h3>В центре Ставрополя пройдёт вечерний концерт</h3><p>08:55 <span>◉ 9K</span></p></div></article>
+            </div>
+          </div>
+          <aside class="ad ad--bottom"><span>Реклама</span><small>970 × 90 · нижний баннер</small></aside>
+        </div>
+        <aside class="popular"><div class="section-title"><h2>Читают сейчас</h2></div><ol><li><b>1</b><span>Когда откроют новый путепровод через железнодорожные пути<small>◉ 18 240</small></span></li><li><b>2</b><span>Список домов, где отключат горячую воду в августе<small>◉ 15 670</small></span></li><li><b>3</b><span>Какие льготы положены пенсионерам края в этом году<small>◉ 12 990</small></span></li><li><b>4</b><span>Цены на бензин снова выросли: что говорят эксперты<small>◉ 10 210</small></span></li><li><b>5</b><span>Знаменитый актёр посетил Пятигорск с семьёй<small>◉ 8 550</small></span></li></ol><aside class="ad ad--tower"><span>Реклама</span><small>300 × 600</small></aside></aside>
+      </section>
+    </main>
+
+    <footer><div class="shell footer__grid"><section><a class="brand brand--footer" href="index.html"><b>С+</b><span><strong>Ставрополь+</strong><small>Город. Люди. События.</small></span></a><p>Независимое медиа о жизни Ставропольского края и Северного Кавказа.</p></section><section><h2>Разделы</h2><a href="society.html">Общество</a><a href="politics.html">Политика</a><a href="economy.html">Экономика</a><a href="culture.html">Культура</a></section><section><h2>Контакты</h2><p>news@stavplus.ru</p><p>Пятигорск, Кавказский проспект, 24</p></section></div><div class="shell copyright">© <span data-year></span> Ставрополь+. Экспериментальная концепция.</div></footer>
+    <div class="toast" role="status" aria-live="polite"></div>
+    <script src="script.js"></script>
+  </body>
+</html>
