@@ -13,19 +13,16 @@
     <header class="masthead">
       <div class="site-shell masthead__inner">
         <a class="brand" href="{% url 'index' %}" aria-label="Ставрополь+, на главную"><b>С+</b><span><strong>Ставрополь+</strong><small>Город. Люди. События.</small></span></a>
-        <div class="masthead__tools">
-          <div class="social" aria-label="Социальные сети"><a href="#" aria-label="ВКонтакте">VK</a><a href="#" aria-label="Telegram">TG</a><a href="#" aria-label="Одноклассники">OK</a><a class="social__max" href="#">MAX</a></div>
-          <form class="search" action="{% url 'search' %}" method="get"><label class="sr-only" for="header-search">Поиск новостей</label><input id="header-search" name="q" value="{{ query|default:'' }}" placeholder="Поиск новостей"><button type="submit" aria-label="Найти">⌕</button></form>
+        <nav class="header-nav" aria-label="Основные разделы">
+          <a class="{% if not active_category %}active{% endif %}" href="{% url 'index' %}">Главная</a>
+          {% for category in navigation_categories %}<a class="{% if active_category.pk == category.pk %}active{% endif %}" href="{% url 'category' category.slug %}">{{ category.name }}</a>{% endfor %}
+        </nav>
+        <div class="header-actions">
+          <form class="search search--header" action="{% url 'search' %}" method="get"><label class="sr-only" for="header-search">Поиск новостей</label><input id="header-search" name="q" value="{{ query|default:'' }}" placeholder="Поиск"><button type="submit" aria-label="Найти">⌕</button></form>
+          <button class="menu-button" type="button" data-menu-trigger aria-controls="site-menu" aria-expanded="false"><i></i><span>Меню</span></button>
         </div>
-        <button class="menu-button" type="button" data-menu-trigger aria-controls="site-menu" aria-expanded="false"><i></i><span>Меню</span></button>
       </div>
     </header>
-    <nav class="nav" aria-label="Основные разделы">
-      <div class="site-shell nav__inner">
-        <a class="{% if not active_category %}active{% endif %}" href="{% url 'index' %}">Главная</a>
-        {% for category in navigation_categories %}<a class="{% if active_category.pk == category.pk %}active{% endif %}" href="{% url 'category' category.slug %}">{{ category.name }}</a>{% endfor %}
-      </div>
-    </nav>
 
     {% block content %}{% endblock %}
 
@@ -33,7 +30,7 @@
       <div class="site-shell footer__grid">
         <section><a class="brand brand--footer" href="{% url 'index' %}"><b>С+</b><span><strong>Ставрополь+</strong><small>Город. Люди. События.</small></span></a><p>Независимое медиа о жизни Ставропольского края и Северного Кавказа.</p></section>
         <section><h2>Разделы</h2>{% for category in navigation_categories|slice:':5' %}<a href="{% url 'category' category.slug %}">{{ category.name }}</a>{% endfor %}</section>
-        <section><h2>Контакты</h2><p>news@stavplus.ru</p><p>Пятигорск, Кавказский проспект, 24</p></section>
+        <section><h2>Контакты</h2><p>news@stavplus.ru</p><p>Пятигорск, Кавказский проспект, 24</p><div class="footer-social" aria-label="Социальные сети"><a href="#" aria-label="ВКонтакте"><img src="{% static 'social-icons/vk-icon.jpg' %}" alt=""></a><a href="#" aria-label="Telegram"><img src="{% static 'social-icons/telegram-icon.jpg' %}" alt=""></a><a href="#" aria-label="Одноклассники"><img src="{% static 'social-icons/ok-icon.jpg' %}" alt=""></a><a href="#" aria-label="MAX, мессенджер"><img src="{% static 'social-icons/max-icon.jpg' %}" alt=""></a></div></section>
       </div>
       <div class="site-shell copyright">© {% now "Y" %} Ставрополь+.</div>
     </footer>
@@ -45,7 +42,7 @@
         <form class="drawer-search" action="{% url 'search' %}" method="get"><label class="sr-only" for="drawer-search">Поиск новостей</label><input id="drawer-search" name="q" value="{{ query|default:'' }}" placeholder="Поиск..."><button type="submit" aria-label="Найти">⌕</button></form>
         <nav class="drawer-nav" aria-label="Все разделы">{% for category in navigation_categories %}<a href="{% url 'category' category.slug %}">{{ category.name }}</a>{% endfor %}</nav>
         <a class="drawer-editorial" href="mailto:news@stavplus.ru">Редакция</a>
-        <div class="drawer-social" aria-label="Социальные сети"><a href="#">VK</a><a href="#">TG</a><a href="#">OK</a><a href="#">MAX</a></div>
+        <div class="drawer-social" aria-label="Социальные сети"><a href="#" aria-label="ВКонтакте"><img src="{% static 'social-icons/vk-icon.jpg' %}" alt=""></a><a href="#" aria-label="Telegram"><img src="{% static 'social-icons/telegram-icon.jpg' %}" alt=""></a><a href="#" aria-label="Одноклассники"><img src="{% static 'social-icons/ok-icon.jpg' %}" alt=""></a><a class="drawer-social__max" href="#" aria-label="MAX, мессенджер"><img src="{% static 'social-icons/max-icon.jpg' %}" alt=""></a></div>
       </aside>
     </div>
     <div class="toast" role="status" aria-live="polite"></div>
