@@ -1,5 +1,6 @@
 from django import forms
 from django.contrib import admin
+from django.urls import reverse
 from django.utils import timezone
 from django.utils.html import format_html
 
@@ -142,6 +143,7 @@ class NewsAdmin(admin.ModelAdmin):
     ordering = ('-date_start', '-created_at')
     date_hierarchy = 'date_start'
     list_per_page = 25
+    list_before_template = 'admin/news/news/news_list_actions.html'
     readonly_fields = ('views', 'created_at', 'updated_at', 'photo_display')
     inlines = [NewsGalleryInline]
     actions = ('publish_selected', 'unpublish_selected')
@@ -221,6 +223,12 @@ class NewsAdmin(admin.ModelAdmin):
 
     def get_queryset(self, request):
         return super().get_queryset(request).select_related('category')
+
+    def changelist_view(self, request, extra_context=None):
+        extra_context = extra_context or {}
+        extra_context['editorial_can_add'] = request.user.has_perm('news.add_news')
+        extra_context['editorial_add_url'] = reverse('admin:news_news_add')
+        return super().changelist_view(request, extra_context=extra_context)
 
     @admin.action(description='Опубликовать выбранные новости')
     def publish_selected(self, request, queryset):
