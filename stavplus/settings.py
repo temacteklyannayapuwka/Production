@@ -125,3 +125,9 @@ CKEDITOR_CONFIGS = {
         'width': '100%',
     },
 }
+
+# The self-hosted Material Symbols font needs ligatures enabled explicitly in
+# WebKit-based browsers. The small stylesheet is loaded only by Django admin.
+UNFOLD = {
+    'STYLES': ['/static/admin-symbols.css'],
+}

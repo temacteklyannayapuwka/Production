@@ -1,0 +1,5 @@
+/* Render Material Symbols as icons instead of their textual ligature names. */
+.material-symbols-outlined {
+    -webkit-font-feature-settings: "liga";
+    font-feature-settings: "liga";
+}
