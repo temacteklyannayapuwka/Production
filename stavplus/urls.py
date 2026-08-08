@@ -8,6 +8,12 @@ from django.urls import path, include
 from news import views
 
 urlpatterns = [
+    # ISPmanager's default Nginx template proxies JavaScript to Django while
+    # serving the rest of /static/ directly. These narrow fallbacks keep the
+    # admin interface usable without changing host-level Nginx configuration.
+    path('static/unfold/js/<path:asset_path>', views.serve_unfold_javascript),
+    path('static/admin/js/<path:asset_path>', views.serve_admin_javascript),
+    path('static/ckeditor/<path:asset_path>', views.serve_ckeditor_javascript),
     path('', views.index, name='index'),
     path('search/', views.search, name='search'),
     path('news/<slug:slug>/', views.news_detail, name='news_detail'),

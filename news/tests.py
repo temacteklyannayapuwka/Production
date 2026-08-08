@@ -1,3 +1,14 @@
-from django.test import TestCase
+from django.test import SimpleTestCase
 
-# Create your tests here.
+
+class AdminJavascriptFallbackTests(SimpleTestCase):
+    def test_unfold_script_is_available_through_django(self):
+        response = self.client.get('/static/unfold/js/app.js')
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('javascript', response['Content-Type'])
+
+    def test_path_traversal_is_rejected(self):
+        response = self.client.get('/static/unfold/js/../../settings.py')
+
+        self.assertEqual(response.status_code, 404)

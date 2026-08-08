@@ -1,9 +1,56 @@
-from django.db.models import F, Q
+import mimetypes
+from pathlib import PurePosixPath
+
+from django.contrib.staticfiles import finders
 from django.core.paginator import Paginator
+from django.db.models import F, Q
+from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
 
 from .models import Category, News
+
+
+def _serve_admin_javascript(static_prefix, asset_path):
+    """Return a whitelisted admin JavaScript asset through Django.
+
+    The current ISPmanager Nginx configuration only serves a fixed list of
+    extensions directly. It omits JavaScript, so these requests reach Django
+    instead. Keeping the fallback limited to the admin bundles avoids exposing
+    arbitrary project files and leaves public-site CSS, images, and fonts served
+    by Nginx as usual.
+    """
+    relative_path = PurePosixPath(asset_path)
+    if (
+        relative_path.is_absolute()
+        or ".." in relative_path.parts
+        or relative_path.suffix not in {".js", ".mjs", ".map"}
+    ):
+        raise Http404("Static asset not found")
+
+    source_path = finders.find(f"{static_prefix}/{relative_path.as_posix()}")
+    if not source_path:
+        raise Http404("Static asset not found")
+
+    content_type, _ = mimetypes.guess_type(source_path)
+    response = FileResponse(
+        open(source_path, "rb"),
+        content_type=content_type or "application/javascript",
+    )
+    response["Cache-Control"] = "public, max-age=86400"
+    return response
+
+
+def serve_unfold_javascript(request, asset_path):
+    return _serve_admin_javascript("unfold/js", asset_path)
+
+
+def serve_admin_javascript(request, asset_path):
+    return _serve_admin_javascript("admin/js", asset_path)
+
+
+def serve_ckeditor_javascript(request, asset_path):
+    return _serve_admin_javascript("ckeditor", asset_path)
 
 
 def published_news():
