@@ -5,6 +5,8 @@ from django.utils.text import slugify
 from transliterate import translit
 from ckeditor.fields import RichTextField
 
+from .image_processing import convert_pending_upload_to_webp
+
 
 class Category(models.Model):
     name = models.CharField('Название', max_length=100, unique=True)
@@ -71,6 +73,10 @@ class News(models.Model):
         return self.title
 
     def save(self, *args, **kwargs):
+        converted_image = convert_pending_upload_to_webp(self.main_photo)
+        if converted_image:
+            self.main_photo.save(*converted_image, save=False)
+
         if not self.slug:
             try:
                 transliterated = translit(self.title, 'ru', reversed=True)
@@ -118,3 +124,9 @@ class NewsGallery(models.Model):
 
     def __str__(self):
         return f'{self.news.title} - Фото {self.order}'
+
+    def save(self, *args, **kwargs):
+        converted_image = convert_pending_upload_to_webp(self.image)
+        if converted_image:
+            self.image.save(*converted_image, save=False)
+        super().save(*args, **kwargs)
