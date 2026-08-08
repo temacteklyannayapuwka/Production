@@ -14,10 +14,9 @@
       <article class="hero hero--empty"><div class="hero__content"><span class="tag">Ставрополь+</span><h1>Новые материалы скоро появятся на главной странице.</h1></div></article>
     {% endif %}
 
-    <aside class="side-rail"><div class="ad ad--square"><span>Реклама</span><small>300 × 250</small></div><section class="weather"><p>Погода · Пятигорск</p><strong>+28°</strong><span>Ясно, солнечно</span><small><b>42%</b> влажность　 <b>5 м/с</b> ветер</small></section><section class="digest"><span>Вечерний дайджест</span><p>Важное за день в одном письме.</p><button type="button" data-subscribe>Подписаться</button></section></aside>
+    <aside class="side-rail"><div class="ad ad--square"><span>Реклама</span><small>300 × 250</small></div><section class="weather"><p>Погода · Пятигорск</p><strong>+28°</strong><span>Ясно, солнечно</span><small><b>42%</b> влажность　 <b>5 м/с</b> ветер</small></section></aside>
   </section>
 
-  <aside class="ad ad--wide"><span>Реклама</span><small>1200 × 120 · нативный блок</small></aside>
   <section class="news-layout">
     <div class="latest"><div class="section-title"><h2>Последние новости</h2></div><div class="latest__grid"><div class="cards">
       {% for news in card_news %}<article class="card"><a href="{% url 'news_detail' news.slug %}"><div>{% if news.main_photo %}<img src="{{ news.main_photo.url }}" alt="{{ news.title }}" loading="lazy">{% else %}<div class="card__fallback"></div>{% endif %}<span class="tag">{{ news.category.name|default:'Новости' }}</span></div><h3>{{ news.title }}</h3><p>{{ news.date_start|date:'Сегодня · H:i' }} · ◉ {{ news.views|default:0 }}</p></a></article>{% endfor %}

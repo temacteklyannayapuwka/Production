@@ -17,7 +17,7 @@ class AdminJavascriptFallbackTests(SimpleTestCase):
     def test_public_page_uses_the_current_menu_script(self):
         response = get_template('base.html').render({})
 
-        self.assertIn('/static/news-site.css?v=4', response)
+        self.assertIn('/static/news-site.css?v=5', response)
         self.assertIn('/static/news-site.js?v=2', response)
         self.assertIn('>Меню</span>', response)
         self.assertNotIn('class="header-nav"', response)
@@ -61,3 +61,10 @@ class EditorialAdminTests(SimpleTestCase):
         self.assertIsNotNone(get_template('admin/news/news/change_form.html'))
         self.assertIsNotNone(get_template('admin/news/news/change_list.html'))
         self.assertIsNotNone(get_template('index.html'))
+
+    def test_homepage_omits_the_digest_and_middle_advertisement(self):
+        source = get_template('index.html').template.source
+
+        self.assertNotIn('Вечерний дайджест', source)
+        self.assertNotIn('ad--wide', source)
+        self.assertIn('hero__lead', source)
