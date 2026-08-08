@@ -17,7 +17,10 @@ class AdminJavascriptFallbackTests(SimpleTestCase):
     def test_public_page_uses_the_current_menu_script(self):
         response = get_template('base.html').render({})
 
+        self.assertIn('/static/news-site.css?v=3', response)
         self.assertIn('/static/news-site.js?v=2', response)
+        self.assertIn('>Меню</span>', response)
+        self.assertNotIn('class="header-nav"', response)
 
     def test_unfold_script_is_available_through_django(self):
         response = self.client.get('/static/unfold/js/app.js')

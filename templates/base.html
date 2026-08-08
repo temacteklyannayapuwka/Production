@@ -7,16 +7,12 @@
     <meta name="theme-color" content="#101513">
     <meta name="description" content="Ставрополь+ — новости Ставропольского края и Северного Кавказа.">
     <title>{% block title %}Ставрополь+ — новости без лишнего{% endblock %}</title>
-    <link rel="stylesheet" href="{% static 'news-site.css' %}">
+    <link rel="stylesheet" href="{% static 'news-site.css' %}?v=3">
   </head>
   <body>
     <header class="masthead">
       <div class="site-shell masthead__inner">
         <a class="brand" href="{% url 'index' %}" aria-label="Ставрополь+, на главную"><b>С+</b><span><strong>Ставрополь+</strong><small>Город. Люди. События.</small></span></a>
-        <nav class="header-nav" aria-label="Основные разделы">
-          <a class="{% if not active_category %}active{% endif %}" href="{% url 'index' %}">Главная</a>
-          {% for category in navigation_categories %}<a class="{% if active_category.pk == category.pk %}active{% endif %}" href="{% url 'category' category.slug %}">{{ category.name }}</a>{% endfor %}
-        </nav>
         <div class="header-actions">
           <form class="search search--header" action="{% url 'search' %}" method="get"><label class="sr-only" for="header-search">Поиск новостей</label><input id="header-search" name="q" value="{{ query|default:'' }}" placeholder="Поиск"><button type="submit" aria-label="Найти">⌕</button></form>
           <button class="menu-button" type="button" data-menu-trigger aria-controls="site-menu" aria-expanded="false"><i></i><span>Меню</span></button>
