@@ -69,3 +69,4 @@ class EditorialAdminTests(SimpleTestCase):
         self.assertNotIn('ad--wide', source)
         self.assertIn('hero__lead', source)
         self.assertIn('popular__surface', source)
+        self.assertIn('Погода · Ставрополь', source)
