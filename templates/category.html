@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block title %}{{ active_category.name }} — Ставрополь+{% endblock %}
+{% block content %}
+<main class="site-shell rubric-page">
+  <aside class="ad ad--leader"><span>Реклама</span><small>970 × 90 · лидерборд</small></aside>
+  <header class="rubric-intro"><p>Раздел</p><h1>{{ active_category.name }}</h1><span>{{ active_category.description|default:'Свежие материалы, события и новости региона.' }}</span></header>
+  <div class="rubric-layout">
+    <section class="rubric-feed" aria-label="Лента раздела"><div class="rubric-feed__head"><span>Сегодня</span><i></i><small>Свежее по времени</small></div>
+      {% for news in category_news %}<article class="rubric-row"><b>{{ forloop.counter|stringformat:'02d' }}</b><a href="{% url 'news_detail' news.slug %}"><h2>{{ news.title }}</h2><p>{{ news.date_start|date:'Сегодня · H:i' }} <span>◉ {{ news.views|default:0 }}</span></p></a></article>{% empty %}<div class="empty-state">В этом разделе пока нет опубликованных материалов.</div>{% endfor %}
+    </section>
+    <aside class="rubric-rail"><div class="ad ad--square"><span>Реклама</span><small>300 × 250</small></div><section class="rail-note"><span>Подписка</span><h2>Главное за день — в одном письме</h2><p>Коротко, один раз в день. Без лишнего шума.</p><button type="button" data-subscribe>Подписаться</button></section><div class="ad ad--rail"><span>Реклама</span><small>300 × 300</small></div></aside>
+  </div>
+  {% include 'pagination.html' %}
+  <aside class="ad ad--bottom"><span>Реклама</span><small>970 × 90 · нижний баннер</small></aside>
+</main>
+{% endblock %}

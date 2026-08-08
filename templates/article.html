@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block title %}{{ article.meta_title|default:article.title }} — Ставрополь+{% endblock %}
+{% block content %}
+<main class="site-shell article-page">
+  <aside class="ad ad--leader"><span>Реклама</span><small>970 × 90 · лидерборд</small></aside>
+  <div class="article-layout">
+    <aside class="article-sidebar" aria-label="Свежие новости"><div class="block-heading"><span>Сейчас</span><i></i></div>{% for news in recent_news %}<a href="{% url 'news_detail' news.slug %}"><span>{{ news.date_start|date:'H:i' }}</span>{{ news.title }}</a>{% endfor %}<div class="ad ad--article-side"><span>Реклама</span><small>240 × 400</small></div></aside>
+    <article class="article-content">
+      <nav class="breadcrumbs" aria-label="Навигация"><a href="{% url 'index' %}">Главная</a>{% if article.category %}<span>·</span><a href="{% url 'category' article.category.slug %}">{{ article.category.name }}</a>{% endif %}</nav>
+      <span class="article-tag">{{ article.category.name|default:'Новости' }}</span>
+      <h1>{{ article.title }}</h1>
+      {% if article.excerpt %}<p class="article-lead">{{ article.excerpt }}</p>{% endif %}
+      <div class="article-meta"><span>{{ article.date_start|date:'j E Y, H:i' }}</span><span>◉ {{ article.views }}</span><span>Новости региона</span></div>
+      {% if article.main_photo %}<figure class="article-photo"><img src="{{ article.main_photo.url }}" alt="{{ article.title }}">{% if article.main_photo.name %}<figcaption>Фото: Ставрополь+</figcaption>{% endif %}</figure>{% endif %}
+      <div class="article-body">{{ article.content|safe }}</div>
+      <aside class="ad ad--article-inline"><span>Реклама</span><small>680 × 120 · нативный блок</small></aside>
+      <div class="article-author"><b>Ставрополь+</b><span>Редакция · Новости региона</span></div>
+      {% if recent_news %}<section class="article-next"><p>Читайте также</p><a href="{% url 'news_detail' recent_news.0.slug %}">{{ recent_news.0.title }} <b>→</b></a></section>{% endif %}
+    </article>
+  </div>
+</main>
+{% endblock %}
