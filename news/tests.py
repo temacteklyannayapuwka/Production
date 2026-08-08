@@ -111,3 +111,9 @@ class FeaturedNewsTests(TestCase):
 
         self.assertEqual(published_news().first(), featured)
         self.assertNotEqual(published_news().first(), recent)
+
+    def test_featured_status_renders_in_the_admin_list(self):
+        featured = self.create_news('admin-featured', is_featured=True)
+        model_admin = NewsAdmin(News, admin.site)
+
+        self.assertIn('★ Главная', str(model_admin.featured_status(featured)))

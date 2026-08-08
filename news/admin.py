@@ -172,7 +172,8 @@ class NewsAdmin(admin.ModelAdmin):
     def featured_status(self, obj):
         if obj.is_featured:
             return format_html(
-                '<span style="color: #a16207; font-weight: 700;">★ Главная</span>'
+                '<span style="color: #7d2e2e; font-weight: 700;">{}</span>',
+                '★ Главная',
             )
         return '—'
 
