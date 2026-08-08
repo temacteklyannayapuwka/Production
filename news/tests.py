@@ -14,6 +14,11 @@ class AdminJavascriptFallbackTests(SimpleTestCase):
         self.assertIn('javascript', response['Content-Type'])
         self.assertIn(b'data-menu-trigger', b''.join(response.streaming_content))
 
+    def test_public_page_uses_the_current_menu_script(self):
+        response = get_template('base.html').render({})
+
+        self.assertIn('/static/news-site.js?v=2', response)
+
     def test_unfold_script_is_available_through_django(self):
         response = self.client.get('/static/unfold/js/app.js')
 
