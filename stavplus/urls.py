@@ -14,6 +14,7 @@ urlpatterns = [
     path('static/unfold/js/<path:asset_path>', views.serve_unfold_javascript),
     path('static/admin/js/<path:asset_path>', views.serve_admin_javascript),
     path('static/ckeditor/<path:asset_path>', views.serve_ckeditor_javascript),
+    path('static/news-site.js', views.serve_public_javascript),
     path('', views.index, name='index'),
     path('search/', views.search, name='search'),
     path('news/<slug:slug>/', views.news_detail, name='news_detail'),

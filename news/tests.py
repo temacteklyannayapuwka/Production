@@ -7,6 +7,13 @@ from .models import News
 
 
 class AdminJavascriptFallbackTests(SimpleTestCase):
+    def test_public_site_script_is_available_through_django(self):
+        response = self.client.get('/static/news-site.js')
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('javascript', response['Content-Type'])
+        self.assertIn(b'data-menu-trigger', b''.join(response.streaming_content))
+
     def test_unfold_script_is_available_through_django(self):
         response = self.client.get('/static/unfold/js/app.js')
 

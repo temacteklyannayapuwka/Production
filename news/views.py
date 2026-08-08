@@ -11,14 +11,13 @@ from django.utils import timezone
 from .models import Category, News
 
 
-def _serve_admin_javascript(static_prefix, asset_path):
-    """Return a whitelisted admin JavaScript asset through Django.
+def _serve_javascript_asset(static_prefix, asset_path):
+    """Return a whitelisted JavaScript asset through Django.
 
     The current ISPmanager Nginx configuration only serves a fixed list of
     extensions directly. It omits JavaScript, so these requests reach Django
-    instead. Keeping the fallback limited to the admin bundles avoids exposing
-    arbitrary project files and leaves public-site CSS, images, and fonts served
-    by Nginx as usual.
+    instead. The narrow fallbacks keep the admin interface and public menu
+    usable without exposing arbitrary project files.
     """
     relative_path = PurePosixPath(asset_path)
     if (
@@ -28,7 +27,10 @@ def _serve_admin_javascript(static_prefix, asset_path):
     ):
         raise Http404("Static asset not found")
 
-    source_path = finders.find(f"{static_prefix}/{relative_path.as_posix()}")
+    source_name = "/".join(
+        part for part in (static_prefix.strip("/"), relative_path.as_posix()) if part
+    )
+    source_path = finders.find(source_name)
     if not source_path:
         raise Http404("Static asset not found")
 
@@ -42,15 +44,27 @@ def _serve_admin_javascript(static_prefix, asset_path):
 
 
 def serve_unfold_javascript(request, asset_path):
-    return _serve_admin_javascript("unfold/js", asset_path)
+    return _serve_javascript_asset("unfold/js", asset_path)
 
 
 def serve_admin_javascript(request, asset_path):
-    return _serve_admin_javascript("admin/js", asset_path)
+    return _serve_javascript_asset("admin/js", asset_path)
 
 
 def serve_ckeditor_javascript(request, asset_path):
-    return _serve_admin_javascript("ckeditor", asset_path)
+    return _serve_javascript_asset("ckeditor", asset_path)
+
+
+def serve_public_javascript(request):
+    """Serve the public site's single interactive bundle through Django.
+
+    ISPmanager's standard Nginx configuration in this project does not include
+    the ``.js`` extension in its static-file location. As a result,
+    ``/static/news-site.js`` is proxied to Django and used to return 404,
+    leaving the menu button without its click handler. This explicit route
+    keeps the workaround small and does not expose arbitrary static files.
+    """
+    return _serve_javascript_asset("", "news-site.js")
 
 
 def published_news():
