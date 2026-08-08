@@ -4,18 +4,11 @@
 <main class="site-shell page">
   <aside class="ad ad--leader" aria-label="Рекламное место"><span>Реклама</span><small>970 × 90 · лидерборд</small></aside>
   <section class="front-grid">
-    <aside class="fresh" aria-label="Свежие новости">
-      <div class="block-heading"><span>Сейчас</span><i></i></div>
-      {% for news in fresh_news %}
-        <article class="fresh__item"><em>{{ news.category.name|default:'Новости' }}</em><h2><a href="{% url 'news_detail' news.slug %}">{{ news.title }}</a></h2><p>{{ news.date_start|date:'H:i' }} <span>◉ {{ news.views|default:0 }}</span></p></article>
-      {% empty %}<div class="empty-state">Новые материалы появятся здесь после публикации.</div>{% endfor %}
-    </aside>
-
     {% if hero_news %}
       <article class="hero">
         {% if hero_news.main_photo %}<img src="{{ hero_news.main_photo.url }}" alt="{{ hero_news.title }}" fetchpriority="high">{% else %}<div class="hero__fallback"></div>{% endif %}
         <div class="hero__overlay"></div>
-        <div class="hero__content"><span class="tag">{{ hero_news.category.name|default:'Главное' }}</span><p>{{ hero_news.date_start|date:'Сегодня · H:i' }}</p><h1>{{ hero_news.title }}</h1><a href="{% url 'news_detail' hero_news.slug %}">Читать материал <b>→</b></a></div>
+        <div class="hero__content"><span class="tag">{{ hero_news.category.name|default:'Главное' }}</span><p class="hero__meta">{{ hero_news.date_start|date:'Сегодня · H:i' }}</p><h1>{{ hero_news.title }}</h1><p class="hero__lead">{{ hero_news.excerpt|default:hero_news.content|striptags|truncatewords:38 }}</p><a href="{% url 'news_detail' hero_news.slug %}">Читать материал <b>→</b></a></div>
       </article>
     {% else %}
       <article class="hero hero--empty"><div class="hero__content"><span class="tag">Ставрополь+</span><h1>Новые материалы скоро появятся на главной странице.</h1></div></article>

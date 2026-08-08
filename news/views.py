@@ -100,7 +100,6 @@ def index(request):
         "index.html",
         shared_context(
             hero_news=news.first(),
-            fresh_news=news[1:6],
             card_news=news[1:5],
             headline_news=news[5:13],
             popular_news=news.order_by("-views", "-date_start")[:5],
