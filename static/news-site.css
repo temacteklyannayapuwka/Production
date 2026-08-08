@@ -180,8 +180,8 @@ img { display: block; max-width: 100%; }
 .weather small { position: relative; z-index: 1; display: block; margin-top: 18px; color: #c5c0bb; font-size: 10px; }
 .weather b { color: var(--lime); }
 
-.news-layout { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 20px; }
-.section-title { display: flex; align-items: center; justify-content: space-between; margin: 3px 0 15px; }
+.news-layout { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 20px; margin-top: clamp(38px, 4vw, 52px); }
+.section-title { display: flex; align-items: center; justify-content: space-between; margin: 0 0 18px; }
 .section-title h2 { display: flex; align-items: center; gap: 9px; margin: 0; font-size: 15px; letter-spacing: -.35px; text-transform: uppercase; }
 .section-title h2::before { width: 18px; height: 4px; border-radius: 8px; background: var(--lime); content: ""; }
 .latest__grid { display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 20px; min-width: 0; }
@@ -202,7 +202,7 @@ img { display: block; max-width: 100%; }
 .headline-list article > b { color: #9c9daa; font-size: 11px; }
 .headline-list h3 { margin: 0 0 5px; font-size: 14px; line-height: 1.24; letter-spacing: -.25px; }
 .popular { height: max-content; }
-.popular .section-title { padding: 16px 16px 1px; }
+.popular .section-title { margin: 0; padding: 16px 16px 1px; }
 .popular ol { margin: 7px 0 0; padding: 0; list-style: none; }
 .popular li { display: grid; grid-template-columns: 24px minmax(0, 1fr); gap: 8px; padding: 12px 15px; border-bottom: 1px solid var(--line-soft); transition: background .18s ease; }
 .popular li:hover { background: #f4efe8; }
@@ -358,7 +358,7 @@ body.menu-open { overflow: hidden; }
   .side-rail { grid-column: auto; grid-template-columns: 1fr 1fr; grid-template-rows: none; align-self: auto; }
   .ad--square { height: 170px; }
   .weather { height: auto; min-height: 170px; }
-  .news-layout { display: block; }
+  .news-layout { display: block; margin-top: 30px; }
   .latest__grid, .cards { grid-template-columns: minmax(0, 1fr); }
   .popular { display: block; margin-top: 21px; }
   .ad--tower { display: none; }

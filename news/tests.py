@@ -17,7 +17,7 @@ class AdminJavascriptFallbackTests(SimpleTestCase):
     def test_public_page_uses_the_current_menu_script(self):
         response = get_template('base.html').render({})
 
-        self.assertIn('/static/news-site.css?v=5', response)
+        self.assertIn('/static/news-site.css?v=6', response)
         self.assertIn('/static/news-site.js?v=2', response)
         self.assertIn('>Меню</span>', response)
         self.assertNotIn('class="header-nav"', response)
