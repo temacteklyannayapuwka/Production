@@ -1,5 +1,7 @@
 from django.test import SimpleTestCase
 
+from .admin import NewsAdminForm
+
 
 class AdminJavascriptFallbackTests(SimpleTestCase):
     def test_unfold_script_is_available_through_django(self):
@@ -17,3 +19,13 @@ class AdminJavascriptFallbackTests(SimpleTestCase):
         response = self.client.get('/admin/login/')
 
         self.assertContains(response, '/static/admin-symbols.css')
+
+
+class EditorialAdminTests(SimpleTestCase):
+    def test_new_news_form_starts_as_a_draft_with_editorial_help(self):
+        form = NewsAdminForm()
+
+        self.assertFalse(form.fields['is_published'].initial)
+        self.assertEqual(form.fields['main_photo'].label, 'Главное фото')
+        self.assertIn('WebP', form.fields['main_photo'].help_text)
+        self.assertIn('Основной текст', form.fields['content'].help_text)
