@@ -1,5 +1,5 @@
 from django import forms
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.html import format_html
@@ -40,6 +40,10 @@ class NewsAdminForm(forms.ModelForm):
             'is_published': (
                 'Показывать на сайте',
                 'Включи только когда новость полностью готова. Выключенная новость останется черновиком.',
+            ),
+            'is_featured': (
+                'Главная новость',
+                'Включи, чтобы поставить этот материал в большой блок на главной странице. Предыдущая главная новость сменится автоматически.',
             ),
             'date_start': (
                 'Показать на сайте с',
@@ -135,6 +139,7 @@ class NewsAdmin(admin.ModelAdmin):
     change_list_template = 'admin/news/news/change_list.html'
     list_display = (
         'title_short',
+        'featured_status',
         'category',
         'publication_status',
         'date_start',
@@ -142,7 +147,7 @@ class NewsAdmin(admin.ModelAdmin):
         'updated_at',
     )
     list_display_links = ('title_short',)
-    list_filter = ('is_published', 'category', 'date_start', 'created_at')
+    list_filter = ('is_featured', 'is_published', 'category', 'date_start', 'created_at')
     search_fields = ('title', 'content', 'excerpt', 'meta_keywords')
     prepopulated_fields = {'slug': ('title',)}
     ordering = ('-date_start', '-created_at')
@@ -151,12 +156,25 @@ class NewsAdmin(admin.ModelAdmin):
     list_before_template = 'admin/news/news/news_list_actions.html'
     readonly_fields = ('views', 'created_at', 'updated_at', 'photo_display')
     inlines = [NewsGalleryInline]
-    actions = ('publish_selected', 'unpublish_selected')
+    actions = (
+        'make_selected_featured',
+        'clear_selected_featured',
+        'publish_selected',
+        'unpublish_selected',
+    )
     save_on_top = True
 
     @admin.display(description='Новость')
     def title_short(self, obj):
         return f'{obj.title[:60]}…' if len(obj.title) > 60 else obj.title
+
+    @admin.display(description='Главная')
+    def featured_status(self, obj):
+        if obj.is_featured:
+            return format_html(
+                '<span style="color: #a16207; font-weight: 700;">★ Главная</span>'
+            )
+        return '—'
 
     @admin.display(description='Статус')
     def publication_status(self, obj):
@@ -216,8 +234,8 @@ class NewsAdmin(admin.ModelAdmin):
                 'fields': ('content', 'excerpt'),
             }),
             ('3. Публикация', {
-                'description': 'Оставь черновиком или включи показ на сайте. Для отложенной публикации укажи дату и время.',
-                'fields': ('is_published', 'date_start', 'date_end'),
+                'description': 'Выбери, будет ли материал на сайте и станет ли он главным. Для отложенной публикации укажи дату и время.',
+                'fields': ('is_published', 'is_featured', 'date_start', 'date_end'),
             }),
             ('Настройки страницы', {
                 'classes': ('collapse',),
@@ -240,6 +258,29 @@ class NewsAdmin(admin.ModelAdmin):
     def publish_selected(self, request, queryset):
         queryset.update(is_published=True)
         self.message_user(request, 'Выбранные новости опубликованы.')
+
+    @admin.action(description='Сделать выбранную новость главной')
+    def make_selected_featured(self, request, queryset):
+        if queryset.count() != 1:
+            self.message_user(
+                request,
+                'Выбери одну новость — она появится в большом блоке на главной странице.',
+                level=messages.ERROR,
+            )
+            return
+
+        news = queryset.first()
+        news.is_featured = True
+        news.save(update_fields=('is_featured',))
+        self.message_user(request, f'Главная новость: «{news.title}».')
+
+    @admin.action(description='Убрать выбранные новости с главного места')
+    def clear_selected_featured(self, request, queryset):
+        changed = queryset.filter(is_featured=True).update(is_featured=False)
+        if changed:
+            self.message_user(request, 'Выбранные новости больше не закреплены на главной.')
+        else:
+            self.message_user(request, 'Среди выбранных новостей нет главной.', level=messages.INFO)
 
     @admin.action(description='Снять выбранные новости с публикации')
     def unpublish_selected(self, request, queryset):

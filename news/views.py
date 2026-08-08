@@ -74,7 +74,7 @@ def published_news():
         News.objects.select_related("category")
         .filter(is_published=True, date_start__lte=now)
         .filter(Q(date_end__isnull=True) | Q(date_end__gte=now))
-        .order_by("-date_start", "-created_at")
+        .order_by("-is_featured", "-date_start", "-created_at")
     )
 
 

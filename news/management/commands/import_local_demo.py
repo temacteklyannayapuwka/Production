@@ -70,6 +70,7 @@ class Command(BaseCommand):
                     'category': category,
                     'main_photo': fields['main_photo'] or None,
                     'is_published': fields['is_published'],
+                    'is_featured': fields.get('is_featured', False),
                     'date_start': fields['date_start'],
                     'date_end': fields['date_end'],
                     'meta_title': fields['meta_title'],

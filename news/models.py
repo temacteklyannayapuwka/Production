@@ -1,4 +1,4 @@
-from django.db import models
+from django.db import models, transaction
 from django.utils import timezone
 from django.urls import reverse
 from django.utils.text import slugify
@@ -48,6 +48,12 @@ class News(models.Model):
     )
 
     is_published = models.BooleanField('Опубликовано', default=True, db_index=True)
+    is_featured = models.BooleanField(
+        'Главная новость',
+        default=False,
+        db_index=True,
+        help_text='Показывать этот материал в большом блоке на главной странице.',
+    )
     date_start = models.DateTimeField('Дата начала публикации', default=timezone.now, db_index=True)
     date_end = models.DateTimeField('Дата окончания публикации', null=True, blank=True)
 
@@ -93,6 +99,16 @@ class News(models.Model):
             self.meta_title = self.title
         if not self.meta_description:
             self.meta_description = self.excerpt
+
+        if self.is_featured:
+            # The homepage has one lead material. Selecting a new one replaces
+            # the old choice while retaining all of its publication data.
+            with transaction.atomic():
+                type(self).objects.filter(is_featured=True).exclude(pk=self.pk).update(
+                    is_featured=False
+                )
+                super().save(*args, **kwargs)
+            return
 
         super().save(*args, **kwargs)
 

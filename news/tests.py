@@ -1,9 +1,13 @@
+from datetime import timedelta
+
 from django.contrib import admin
 from django.template.loader import get_template
-from django.test import SimpleTestCase
+from django.test import SimpleTestCase, TestCase
+from django.utils import timezone
 
 from .admin import NewsAdmin, NewsAdminForm
-from .models import News
+from .models import Category, News
+from .views import published_news
 
 
 class AdminJavascriptFallbackTests(SimpleTestCase):
@@ -50,6 +54,7 @@ class EditorialAdminTests(SimpleTestCase):
         self.assertEqual(form.fields['main_photo'].label, 'Главное фото')
         self.assertIn('WebP', form.fields['main_photo'].help_text)
         self.assertIn('Основной текст', form.fields['content'].help_text)
+        self.assertEqual(form.fields['is_featured'].label, 'Главная новость')
 
     def test_add_form_excludes_the_empty_photo_preview(self):
         model_admin = NewsAdmin(News, admin.site)
@@ -71,3 +76,38 @@ class EditorialAdminTests(SimpleTestCase):
         self.assertIn('hero__lead', source)
         self.assertIn('popular__surface', source)
         self.assertIn('Погода · Ставрополь', source)
+
+
+class FeaturedNewsTests(TestCase):
+    def setUp(self):
+        self.category = Category.objects.create(name='Общество', slug='obshchestvo')
+
+    def create_news(self, slug, *, is_featured=False, date_start=None):
+        return News.objects.create(
+            title=f'Новость {slug}',
+            slug=slug,
+            content='<p>Текст новости</p>',
+            category=self.category,
+            is_published=True,
+            is_featured=is_featured,
+            date_start=date_start or timezone.now(),
+        )
+
+    def test_selecting_a_new_featured_news_replaces_the_old_one(self):
+        previous = self.create_news('previous', is_featured=True)
+        selected = self.create_news('selected', is_featured=True)
+
+        previous.refresh_from_db()
+        self.assertFalse(previous.is_featured)
+        self.assertTrue(selected.is_featured)
+
+    def test_featured_news_is_shown_first_on_the_homepage(self):
+        recent = self.create_news('recent', date_start=timezone.now())
+        featured = self.create_news(
+            'featured',
+            is_featured=True,
+            date_start=timezone.now() - timedelta(days=1),
+        )
+
+        self.assertEqual(published_news().first(), featured)
+        self.assertNotEqual(published_news().first(), recent)
