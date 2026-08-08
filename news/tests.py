@@ -1,6 +1,9 @@
+from django.contrib import admin
+from django.template.loader import get_template
 from django.test import SimpleTestCase
 
-from .admin import NewsAdminForm
+from .admin import NewsAdmin, NewsAdminForm
+from .models import News
 
 
 class AdminJavascriptFallbackTests(SimpleTestCase):
@@ -19,6 +22,8 @@ class AdminJavascriptFallbackTests(SimpleTestCase):
         response = self.client.get('/admin/login/')
 
         self.assertContains(response, '/static/admin-symbols.css')
+        self.assertContains(response, '/static/admin-editorial.css')
+        self.assertContains(response, '--color-primary-600: rgb(71, 85, 105)')
 
 
 class EditorialAdminTests(SimpleTestCase):
@@ -29,3 +34,14 @@ class EditorialAdminTests(SimpleTestCase):
         self.assertEqual(form.fields['main_photo'].label, 'Главное фото')
         self.assertIn('WebP', form.fields['main_photo'].help_text)
         self.assertIn('Основной текст', form.fields['content'].help_text)
+
+    def test_add_form_excludes_the_empty_photo_preview(self):
+        model_admin = NewsAdmin(News, admin.site)
+        fieldsets = model_admin.get_fieldsets(request=None, obj=None)
+        first_fields = fieldsets[0][1]['fields']
+
+        self.assertNotIn('photo_display', first_fields)
+
+    def test_editorial_templates_compile(self):
+        self.assertIsNotNone(get_template('admin/news/news/change_form.html'))
+        self.assertIsNotNone(get_template('admin/news/news/change_list.html'))

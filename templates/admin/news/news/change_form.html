@@ -1,0 +1,22 @@
+{% extends "admin/change_form.html" %}
+{% load admin_urls %}
+
+{% block form_before %}
+  <section class="editorial-guide">
+    <div class="editorial-guide__top">
+      <div>
+        <div class="editorial-guide__title">{% if change %}Редактирование новости{% else %}Новая новость{% endif %}</div>
+        <p class="editorial-guide__text">Заполни материал по шагам. Обязательны только заголовок и основной текст; фото и анонс можно добавить позже.</p>
+      </div>
+      {% if change and original %}
+        {% url opts|admin_urlname:'history' original.pk as history_url %}
+        <a class="editorial-history-link" href="{{ history_url }}">История изменений</a>
+      {% endif %}
+    </div>
+    <div class="editorial-guide__steps">
+      <div class="editorial-guide__step"><strong>1. Карточка</strong>Заголовок, раздел и главное фото.</div>
+      <div class="editorial-guide__step"><strong>2. Текст</strong>Основной текст и короткий анонс.</div>
+      <div class="editorial-guide__step"><strong>3. Публикация</strong>Черновик, время выхода и снятие с сайта.</div>
+    </div>
+  </section>
+{% endblock %}

@@ -120,14 +120,36 @@ SESSION_SAVE_EVERY_REQUEST = True
 CKEDITOR_UPLOAD_PATH = 'uploads/'
 CKEDITOR_CONFIGS = {
     'default': {
-        'toolbar': 'full',
-        'height': 400,
+        'toolbar': [
+            ['Format'],
+            ['Bold', 'Italic', 'Link', 'Unlink'],
+            ['BulletedList', 'NumberedList', 'Blockquote'],
+            ['RemoveFormat'],
+        ],
+        'height': 360,
         'width': '100%',
     },
 }
 
-# The self-hosted Material Symbols font needs ligatures enabled explicitly in
-# WebKit-based browsers. The small stylesheet is loaded only by Django admin.
+# Editorial admin is intentionally neutral: content should remain the focus.
 UNFOLD = {
-    'STYLES': ['/static/admin-symbols.css'],
+    'SITE_HEADER': 'Ставрополь+',
+    'SITE_TITLE': 'Ставрополь+ · редакция',
+    'SITE_SUBHEADER': 'Новости и материалы',
+    'STYLES': ['/static/admin-symbols.css', '/static/admin-editorial.css'],
+    'COLORS': {
+        'primary': {
+            '50': '#f8fafc',
+            '100': '#f1f5f9',
+            '200': '#e2e8f0',
+            '300': '#cbd5e1',
+            '400': '#94a3b8',
+            '500': '#64748b',
+            '600': '#475569',
+            '700': '#334155',
+            '800': '#1e293b',
+            '900': '#0f172a',
+            '950': '#020617',
+        },
+    },
 }

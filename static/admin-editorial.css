@@ -1,0 +1,100 @@
+/* Calm, task-focused adjustments for the editor interface. */
+.editorial-guide {
+    border: 1px solid var(--color-base-200);
+    border-radius: var(--border-radius, 8px);
+    background: var(--color-base-50);
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+}
+
+.dark .editorial-guide {
+    border-color: var(--color-base-800);
+    background: var(--color-base-900);
+}
+
+.editorial-guide__top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.editorial-guide__title {
+    color: var(--color-font-important-light);
+    font-size: 1rem;
+    font-weight: 650;
+}
+
+.dark .editorial-guide__title {
+    color: var(--color-font-important-dark);
+}
+
+.editorial-guide__text {
+    color: var(--color-font-subtle-light);
+    font-size: .875rem;
+    line-height: 1.45;
+    margin-top: .25rem;
+}
+
+.dark .editorial-guide__text {
+    color: var(--color-font-subtle-dark);
+}
+
+.editorial-guide__steps {
+    display: grid;
+    gap: .75rem;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin-top: 1rem;
+}
+
+.editorial-guide__step {
+    border-left: 2px solid var(--color-base-400);
+    color: var(--color-font-subtle-light);
+    font-size: .8125rem;
+    line-height: 1.4;
+    padding-left: .625rem;
+}
+
+.dark .editorial-guide__step {
+    color: var(--color-font-subtle-dark);
+}
+
+.editorial-guide__step strong {
+    color: var(--color-font-important-light);
+    display: block;
+    font-weight: 600;
+    margin-bottom: .125rem;
+}
+
+.dark .editorial-guide__step strong {
+    color: var(--color-font-important-dark);
+}
+
+.editorial-history-link {
+    border: 1px solid var(--color-base-300);
+    border-radius: var(--border-radius, 8px);
+    color: var(--color-font-default-light);
+    flex: 0 0 auto;
+    font-size: .8125rem;
+    font-weight: 600;
+    padding: .5rem .75rem;
+    text-decoration: none;
+}
+
+.dark .editorial-history-link {
+    border-color: var(--color-base-700);
+    color: var(--color-font-default-dark);
+}
+
+.editorial-history-link:hover {
+    background: var(--color-base-100);
+}
+
+.dark .editorial-history-link:hover {
+    background: var(--color-base-800);
+}
+
+@media (max-width: 640px) {
+    .editorial-guide__top { flex-direction: column; }
+    .editorial-guide__steps { grid-template-columns: 1fr; }
+}

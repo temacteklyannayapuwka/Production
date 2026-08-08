@@ -71,6 +71,8 @@ class NewsAdminForm(forms.ModelForm):
                 self.fields[name].label = label
                 self.fields[name].help_text = help_text
 
+        self.fields['main_photo'].widget.attrs['accept'] = 'image/jpeg,image/png,image/webp'
+
         # New items start as drafts. Existing news retain their saved state.
         if not self.instance.pk:
             self.fields['is_published'].initial = False
@@ -129,12 +131,15 @@ class CategoryAdmin(admin.ModelAdmin):
 @admin.register(News)
 class NewsAdmin(admin.ModelAdmin):
     form = NewsAdminForm
+    change_form_template = 'admin/news/news/change_form.html'
+    change_list_template = 'admin/news/news/change_list.html'
     list_display = (
         'title_short',
         'category',
-        'photo_preview',
         'publication_status',
         'date_start',
+        'photo_preview',
+        'updated_at',
     )
     list_display_links = ('title_short',)
     list_filter = ('is_published', 'category', 'date_start', 'created_at')
@@ -147,35 +152,7 @@ class NewsAdmin(admin.ModelAdmin):
     readonly_fields = ('views', 'created_at', 'updated_at', 'photo_display')
     inlines = [NewsGalleryInline]
     actions = ('publish_selected', 'unpublish_selected')
-
-    fieldsets = (
-        ('1. Карточка новости', {
-            'description': 'Сначала заполни то, что читатель увидит в ленте: заголовок, тему и главное фото.',
-            'fields': ('title', 'category', 'main_photo', 'photo_display'),
-        }),
-        ('2. Текст новости', {
-            'description': 'Короткий анонс показывается в карточке, а полный текст — после открытия новости.',
-            'fields': ('excerpt', 'content'),
-        }),
-        ('3. Публикация', {
-            'description': 'Сохрани как черновик или включи показ на сайте. Можно запланировать дату публикации.',
-            'fields': ('is_published', 'date_start', 'date_end'),
-        }),
-        ('Адрес страницы', {
-            'classes': ('collapse',),
-            'description': 'Обычно заполнять не нужно — адрес создаётся сам после сохранения.',
-            'fields': ('slug',),
-        }),
-        ('Поисковики (необязательно)', {
-            'classes': ('collapse',),
-            'description': 'Заполняй только когда нужен отдельный заголовок или описание для поисковой выдачи.',
-            'fields': ('meta_title', 'meta_description', 'meta_keywords'),
-        }),
-        ('Статистика', {
-            'classes': ('collapse',),
-            'fields': ('views', 'created_at', 'updated_at'),
-        }),
-    )
+    save_on_top = True
 
     @admin.display(description='Новость')
     def title_short(self, obj):
@@ -223,6 +200,35 @@ class NewsAdmin(admin.ModelAdmin):
 
     def get_queryset(self, request):
         return super().get_queryset(request).select_related('category')
+
+    def get_fieldsets(self, request, obj=None):
+        card_fields = ['title', 'category', 'main_photo']
+        if obj and obj.main_photo:
+            card_fields.append('photo_display')
+
+        return (
+            ('1. Основа новости', {
+                'description': 'Заполни заголовок, раздел и главное фото. Это читатель увидит в ленте.',
+                'fields': tuple(card_fields),
+            }),
+            ('2. Текст материала', {
+                'description': 'Напиши основной текст. Короткий анонс ниже можно оставить пустым — сайт создаст его сам.',
+                'fields': ('content', 'excerpt'),
+            }),
+            ('3. Публикация', {
+                'description': 'Оставь черновиком или включи показ на сайте. Для отложенной публикации укажи дату и время.',
+                'fields': ('is_published', 'date_start', 'date_end'),
+            }),
+            ('Настройки страницы', {
+                'classes': ('collapse',),
+                'description': 'Обычно эти настройки не нужны: адрес и данные для поисковиков создаются автоматически.',
+                'fields': ('slug', 'meta_title', 'meta_description', 'meta_keywords'),
+            }),
+            ('Служебная информация', {
+                'classes': ('collapse',),
+                'fields': ('views', 'created_at', 'updated_at'),
+            }),
+        )
 
     def changelist_view(self, request, extra_context=None):
         extra_context = extra_context or {}
