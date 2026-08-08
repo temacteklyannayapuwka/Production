@@ -56,10 +56,15 @@ TEMPLATES = [{
 WSGI_APPLICATION = 'stavplus.wsgi.application'
 ASGI_APPLICATION = 'stavplus.asgi.application'
 
+DB_ENGINE = os.getenv('DB_ENGINE', 'django.db.backends.sqlite3')
+DB_NAME = os.getenv('DB_NAME') or (
+    BASE_DIR / 'db.sqlite3' if DB_ENGINE == 'django.db.backends.sqlite3' else ''
+)
+
 DATABASES = {
     'default': {
-        'ENGINE': os.getenv('DB_ENGINE', 'django.db.backends.postgresql_psycopg2'),
-        'NAME': os.getenv('DB_NAME', ''),
+        'ENGINE': DB_ENGINE,
+        'NAME': DB_NAME,
         'USER': os.getenv('DB_USER', ''),
         'PASSWORD': os.getenv('DB_PASSWORD', ''),
         'HOST': os.getenv('DB_HOST', 'localhost'),
