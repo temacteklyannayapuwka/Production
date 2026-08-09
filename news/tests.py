@@ -102,6 +102,9 @@ class EditorialAdminTests(SimpleTestCase):
 
         self.assertEqual(index_source.count('news.views'), 1)
         self.assertIn('popular_news', index_source)
+        self.assertIn('Топ по просмотрам', index_source)
+        self.assertIn('Лента новостей', index_source)
+        self.assertIn('Категории', index_source)
         category_source = get_template('category.html').template.source
         self.assertEqual(category_source.count('news.views'), 1)
         self.assertIn('popular_news', category_source)

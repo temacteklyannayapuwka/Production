@@ -4,7 +4,7 @@
 <main class="site-shell page">
   {% include 'components/ad_slot.html' with ad=advertisements.top css_class='ad--leader' slot_size='970 × 90' slot_label='верх сайта' %}
   <section class="home-layout">
-    <aside class="popular popular--sticky" aria-label="Читают сейчас"><div class="section-title"><h2>Читают сейчас</h2></div><div class="popular__surface"><ol>{% for news in popular_news %}<li><b>{{ forloop.counter }}</b><span><a href="{% url 'news_detail' news.slug %}">{{ news.title }}</a><small>◉ {{ news.views|default:0 }}</small></span></li>{% empty %}<li class="empty-state">Здесь появятся популярные материалы.</li>{% endfor %}</ol></div></aside>
+    <aside class="popular popular--sticky" aria-label="Лента новостей"><div class="section-title"><h2>Лента новостей</h2></div><div class="popular__surface"><ol>{% for news in headline_news %}<li><b>{{ forloop.counter }}</b><span><a href="{% url 'news_detail' news.slug %}">{{ news.title }}</a><small>{{ news.date_start|date:'H:i' }}</small></span></li>{% empty %}<li class="empty-state">Лента обновляется.</li>{% endfor %}</ol></div></aside>
 
     <div class="home-main">
       <section class="front-grid">
@@ -22,10 +22,10 @@
       </section>
 
       <section class="home-main__feed">
-        <div><div class="section-title"><h2>Лента новостей</h2></div><div class="headline-list">
-      {% for news in headline_news %}<article><b>{{ forloop.counter|stringformat:'02d' }}</b><div><h3><a href="{% url 'news_detail' news.slug %}">{{ news.title }}</a></h3><p>{{ news.date_start|date:'H:i' }}</p></div></article>{% empty %}<div class="empty-state">Лента обновляется.</div>{% endfor %}
+        <div><div class="section-title"><h2>Топ по просмотрам</h2></div><div class="headline-list">
+      {% for news in popular_news %}<article><b>{{ forloop.counter|stringformat:'02d' }}</b><div><h3><a href="{% url 'news_detail' news.slug %}">{{ news.title }}</a></h3><p>◉ {{ news.views|default:0 }}</p></div></article>{% empty %}<div class="empty-state">Популярные материалы появятся здесь.</div>{% endfor %}
         </div></div>
-        <aside class="latest latest--feed" aria-label="Последние новости"><div class="section-title"><h2>Последние новости</h2></div><div class="cards">
+        <aside class="latest latest--feed" aria-label="Категории"><div class="section-title"><h2>Категории</h2></div><div class="cards">
           {% for news in card_news %}<article class="card"><a href="{% url 'news_detail' news.slug %}"><div>{% if news.main_photo %}<img src="{{ news.main_photo.url }}" alt="{{ news.title }}" loading="lazy">{% else %}<div class="card__fallback"></div>{% endif %}<span class="tag">{{ news.category.name|default:'Новости' }}</span></div><h3>{{ news.title }}</h3><p>{{ news.date_start|date:'Сегодня · H:i' }}</p></a></article>{% endfor %}
         </div></aside>
       </section>
