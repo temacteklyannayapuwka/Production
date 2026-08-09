@@ -21,7 +21,7 @@ class AdminJavascriptFallbackTests(SimpleTestCase):
     def test_public_page_uses_the_current_menu_script(self):
         response = get_template('base.html').render({})
 
-        self.assertIn('/static/news-site.css?v=36', response)
+        self.assertIn('/static/news-site.css?v=37', response)
         self.assertIn('family=Merriweather', response)
         self.assertIn('content="#151515"', response)
         self.assertNotIn('family=Playfair+Display', response)
@@ -88,16 +88,20 @@ class EditorialAdminTests(SimpleTestCase):
         self.assertGreater(source.index('latest--feed'), source.index('home-main__feed'))
         self.assertIn('Погода · Ставрополь', source)
 
-    def test_category_page_uses_a_sticky_popular_rail_without_lower_advertisements(self):
+    def test_category_page_uses_a_sticky_news_feed_without_lower_advertisements(self):
         source = get_template('category.html').template.source
 
         self.assertIn('rubric-rail--sticky', source)
-        self.assertIn('popular_news', source)
+        self.assertIn('rubric-feed-scroll', source)
+        self.assertIn('latest_news', source)
+        self.assertIn('rubric-row__excerpt', source)
+        self.assertIn('Лента новостей', source)
+        self.assertNotIn('popular_news', source)
         self.assertNotIn('section_rail', source)
         self.assertNotIn('section_bottom', source)
         self.assertNotIn('Главное за день — в одном письме', source)
 
-    def test_view_counts_are_only_visible_in_the_popular_block(self):
+    def test_view_counts_are_only_visible_in_the_homepage_top_block(self):
         index_source = get_template('index.html').template.source
 
         self.assertEqual(index_source.count('news.views'), 1)
@@ -107,8 +111,8 @@ class EditorialAdminTests(SimpleTestCase):
         self.assertIn('Лента новостей', index_source)
         self.assertIn('Категории', index_source)
         category_source = get_template('category.html').template.source
-        self.assertEqual(category_source.count('news.views'), 1)
-        self.assertIn('popular_news', category_source)
+        self.assertEqual(category_source.count('news.views'), 0)
+        self.assertIn('latest_news', category_source)
 
         for template_name in ('article.html', 'search.html'):
             self.assertNotIn(

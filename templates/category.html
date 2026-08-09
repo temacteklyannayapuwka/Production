@@ -6,13 +6,13 @@
   <header class="rubric-intro"><p>Раздел</p><h1>{{ active_category.name }}</h1><span>{{ active_category.description|default:'Свежие материалы, события и новости региона.' }}</span></header>
   <div class="rubric-layout">
     <section class="rubric-feed" aria-label="Лента раздела"><div class="rubric-feed__head"><span>Сегодня</span><i></i><small>Свежее по времени</small></div>
-      {% for news in category_news %}<article class="rubric-row"><b>{{ forloop.counter|stringformat:'02d' }}</b><a href="{% url 'news_detail' news.slug %}"><h2>{{ news.title }}</h2><p>{{ news.date_start|date:'Сегодня · H:i' }}</p></a></article>{% empty %}<div class="empty-state">В этом разделе пока нет опубликованных материалов.</div>{% endfor %}
+      {% for news in category_news %}<article class="rubric-row"><b>{{ forloop.counter|stringformat:'02d' }}</b><a href="{% url 'news_detail' news.slug %}"><h2>{{ news.title }}</h2><p class="rubric-row__excerpt">{{ news.excerpt|default:news.content|striptags|truncatewords:24 }}</p><p class="rubric-row__date">{{ news.date_start|date:'Сегодня · H:i' }}</p></a></article>{% empty %}<div class="empty-state">В этом разделе пока нет опубликованных материалов.</div>{% endfor %}
     </section>
     <aside class="rubric-rail rubric-rail--sticky">
       {% include 'components/ad_slot.html' with ad=advertisements.section_sidebar css_class='ad--square' slot_size='300 × 250' slot_label='разделы · справа' %}
-      <section class="popular rubric-popular" aria-label="Читают сейчас">
-        <div class="section-title"><h2>Читают сейчас</h2></div>
-        <div class="popular__surface"><ol>{% for news in popular_news %}<li><b>{{ forloop.counter }}</b><span><a href="{% url 'news_detail' news.slug %}">{{ news.title }}</a><small>◉ {{ news.views|default:0 }}</small></span></li>{% empty %}<li class="empty-state">Здесь появятся популярные материалы.</li>{% endfor %}</ol></div>
+      <section class="popular rubric-popular rubric-feed-scroll" aria-label="Лента новостей">
+        <div class="section-title"><h2>Лента новостей</h2></div>
+        <div class="popular__surface"><ol>{% for news in latest_news %}<li><b>{{ forloop.counter }}</b><span><a href="{% url 'news_detail' news.slug %}">{{ news.title }}</a><small>{{ news.date_start|date:'Сегодня · H:i' }}</small></span></li>{% empty %}<li class="empty-state">Лента обновляется.</li>{% endfor %}</ol></div>
       </section>
     </aside>
   </div>

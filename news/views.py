@@ -129,6 +129,7 @@ def category_page(request, category_slug):
         Category.objects.filter(is_active=True), slug=category_slug
     )
     page_obj = paginate(request, published_news().filter(category=category))
+    latest_news = published_news().order_by("-date_start", "-created_at")[:24]
     return render(
         request,
         "category.html",
@@ -136,7 +137,7 @@ def category_page(request, category_slug):
             active_category=category,
             category_news=page_obj,
             page_obj=page_obj,
-            popular_news=published_news().order_by("-views", "-date_start")[:5],
+            latest_news=latest_news,
         ),
     )
 
