@@ -5,7 +5,7 @@
   {% include 'components/ad_slot.html' with ad=advertisements.top css_class='ad--leader' slot_size='970 × 90' slot_label='верх сайта' %}
   <div class="article-layout">
     <aside class="article-sidebar" aria-label="Лента новостей">
-      <section class="popular popular--feed-scroll article-news-feed">
+      <section class="popular rubric-popular rubric-feed-scroll article-news-feed">
         <div class="section-title"><h2>Лента новостей</h2></div>
         <div class="popular__surface"><ol>{% for news in news_feed %}<li><b>{{ forloop.counter }}</b><span><a href="{% url 'news_detail' news.slug %}">{{ news.title }}</a><small>{{ news.date_start|date:'H:i' }}</small></span></li>{% empty %}<li class="empty-state">Лента обновляется.</li>{% endfor %}</ol></div>
       </section>

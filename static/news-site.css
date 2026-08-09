@@ -325,8 +325,6 @@ img { display: block; max-width: 100%; }
 }
 .article-sidebar { position: sticky; top: 74px; display: grid; min-width: 0; gap: 16px; align-self: start; }
 .article-news-feed { width: min(280px, 100%); }
-.article-news-feed .section-title { height: 18px; margin-bottom: 14px; }
-.article-news-feed .section-title h2 { line-height: 18px; }
 .ad--article-side { width: min(280px, 100%); height: 250px; margin: 0; }
 .article-content { min-width: 0; padding: 8px 0 12px; }
 .breadcrumbs { display: flex; gap: 8px; margin-bottom: 20px; color: var(--muted); font-size: 11px; }
