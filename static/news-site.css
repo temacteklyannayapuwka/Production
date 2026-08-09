@@ -131,6 +131,11 @@ img { display: block; max-width: 100%; }
 .headline-list, .popular__surface, .card, .rubric-feed, .article-sidebar {
   min-width: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 22px; background: var(--paper);
 }
+.headline-list {
+  display: grid;
+  grid-auto-rows: minmax(76px, 1fr);
+  align-self: stretch;
+}
 .block-heading {
   display: flex; align-items: center; gap: 9px; padding: 15px 16px; border-bottom: 1px solid var(--line);
   color: var(--muted); font-size: 10px; font-weight: 850; letter-spacing: .1em; text-transform: uppercase;
@@ -199,11 +204,11 @@ img { display: block; max-width: 100%; }
 .card .tag { position: absolute; top: 11px; left: 11px; max-width: calc(100% - 22px); background: var(--paper); color: var(--ink); }
 .card h3 { margin: 0; padding: 12px 13px 5px; overflow-wrap: anywhere; font-size: 13px; line-height: 1.31; letter-spacing: -.25px; }
 .card p { padding: 0 13px 12px; }
-.headline-list article { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 7px; padding: 13px 15px; border-bottom: 1px solid var(--line-soft); transition: background .18s ease, transform .18s ease; }
+.headline-list article { display: grid; grid-template-columns: 42px minmax(0, 1fr); align-items: center; gap: 9px; padding: clamp(15px, 1.3vw, 19px) clamp(18px, 1.6vw, 23px); border-bottom: 1px solid var(--line-soft); transition: background .18s ease, transform .18s ease; }
 .headline-list article:last-child { border: 0; }
 .headline-list article:hover { transform: translateX(3px); background: #b3b7ba; }
-.headline-list article > b { color: var(--muted-light); font-size: 11px; }
-.headline-list h3 { margin: 0 0 5px; font-size: 14px; line-height: 1.24; letter-spacing: -.25px; }
+.headline-list article > b { color: var(--muted-light); font-size: 12px; }
+.headline-list h3 { margin: 0 0 7px; font-size: clamp(14px, 1.15vw, 16px); line-height: 1.24; letter-spacing: -.3px; }
 .popular { min-width: 0; }
 .popular__surface { height: max-content; }
 .popular ol { margin: 0; padding: 0; list-style: none; }
