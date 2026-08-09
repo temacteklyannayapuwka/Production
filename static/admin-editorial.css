@@ -43,6 +43,25 @@
     font-weight: 650;
 }
 
+#content-main .field-line .grow > input[type="text"],
+#content-main .field-line .grow > input[type="url"],
+#content-main .field-line .grow > input[type="number"],
+#content-main .field-line .grow > input[type="datetime-local"],
+#content-main .field-line .grow > input[type="date"],
+#content-main .field-line .grow > select {
+    min-height: 46px;
+    width: 100% !important;
+    max-width: none !important;
+    padding-inline: .85rem !important;
+}
+
+#content-main .field-title .grow > input[type="text"] {
+    min-height: 56px;
+    font-size: 1.2rem;
+    font-weight: 600;
+    letter-spacing: -.01em;
+}
+
 #content-main textarea[name="excerpt"] {
     display: block;
     min-height: 132px;

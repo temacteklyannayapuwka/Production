@@ -139,7 +139,7 @@ UNFOLD = {
     'SITE_HEADER': 'Ставрополь+',
     'SITE_TITLE': 'Ставрополь+ · редакция',
     'SITE_SUBHEADER': 'Новости и материалы',
-    'STYLES': ['/static/admin-symbols.css', '/static/admin-editorial.css?v=3'],
+    'STYLES': ['/static/admin-symbols.css', '/static/admin-editorial.css?v=4'],
     'COLORS': {
         'primary': {
             '50': '#f7f7f6',

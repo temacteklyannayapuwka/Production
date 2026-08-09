@@ -76,6 +76,9 @@ class NewsAdminForm(forms.ModelForm):
                 self.fields[name].help_text = help_text
 
         self.fields['main_photo'].widget.attrs['accept'] = 'image/jpeg,image/png,image/webp'
+        self.fields['title'].widget.attrs.update({
+            'style': 'width: 100%; max-width: none;',
+        })
         self.fields['excerpt'].widget.attrs.update({
             'rows': 4,
             'style': 'width: 100%; max-width: none;',
