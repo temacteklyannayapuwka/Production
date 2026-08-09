@@ -122,7 +122,10 @@ class EditorialAdminTests(SimpleTestCase):
 
     def test_templates_render_advertising_slots_and_article_gallery(self):
         self.assertIn('components/ad_slot.html', get_template('index.html').template.source)
-        self.assertIn('article.gallery.all', get_template('article.html').template.source)
+        article_source = get_template('article.html').template.source
+        self.assertIn('article.gallery.all', article_source)
+        self.assertIn('Лента новостей', article_source)
+        self.assertNotIn('<span>Сейчас</span>', article_source)
         self.assertIsNotNone(get_template('components/ad_slot.html'))
 
 

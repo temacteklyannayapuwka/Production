@@ -167,7 +167,11 @@ def news_detail(request, slug):
     article = get_object_or_404(published_news().prefetch_related('gallery'), slug=slug)
     News.objects.filter(pk=article.pk).update(views=F("views") + 1)
     article.refresh_from_db(fields=["views"])
-    recent_news = published_news().exclude(pk=article.pk)[:5]
+    recent_news = (
+        published_news()
+        .exclude(pk=article.pk)
+        .order_by("-date_start", "-created_at")[:5]
+    )
     return render(
         request,
         "article.html",
