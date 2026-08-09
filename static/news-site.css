@@ -272,7 +272,16 @@ img { display: block; max-width: 100%; }
 .pagination a:hover { transform: translate(-2px, -2px); border-color: var(--ink); box-shadow: 3px 3px 0 var(--lime); }
 
 /* Article page */
-.article-layout { display: grid; grid-template-columns: 244px minmax(0, 760px); gap: clamp(34px, 6vw, 92px); justify-content: center; align-items: start; }
+.article-layout {
+  --article-sidebar-width: 244px;
+  --article-content-width: 760px;
+  --article-gap: clamp(34px, 6vw, 92px);
+  display: grid;
+  /* The sidebar absorbs the former centering offset, so its left edge aligns with the leader banner. */
+  grid-template-columns: minmax(var(--article-sidebar-width), calc(50% - 258px - clamp(17px, 3vw, 46px))) minmax(0, var(--article-content-width));
+  gap: var(--article-gap);
+  align-items: start;
+}
 .article-sidebar { position: sticky; top: 74px; border-radius: 16px; }
 .article-sidebar > a { display: block; padding: 14px 16px; border-bottom: 1px solid var(--line-soft); color: var(--ink); font-size: 12px; font-weight: 750; line-height: 1.35; text-decoration: none; transition: background .18s ease, color .18s ease; }
 .article-sidebar > a:hover { background: var(--surface-hover); color: var(--ink); }
