@@ -21,7 +21,7 @@ class AdminJavascriptFallbackTests(SimpleTestCase):
     def test_public_page_uses_the_current_menu_script(self):
         response = get_template('base.html').render({})
 
-        self.assertIn('/static/news-site.css?v=18', response)
+        self.assertIn('/static/news-site.css?v=19', response)
         self.assertIn('family=Golos+Text', response)
         self.assertIn('family=Prata', response)
         self.assertIn('/static/brand/stavplus-mark.svg', response)
@@ -78,6 +78,17 @@ class EditorialAdminTests(SimpleTestCase):
         self.assertIn('hero__lead', source)
         self.assertIn('popular__surface', source)
         self.assertIn('Погода · Ставрополь', source)
+
+    def test_view_counts_are_only_visible_in_the_popular_block(self):
+        index_source = get_template('index.html').template.source
+
+        self.assertEqual(index_source.count('news.views'), 1)
+        self.assertIn('popular_news', index_source)
+        for template_name in ('article.html', 'category.html', 'search.html'):
+            self.assertNotIn(
+                '.views',
+                get_template(template_name).template.source,
+            )
 
 
 class FeaturedNewsTests(TestCase):

@@ -10,7 +10,7 @@
       <span class="article-tag">{{ article.category.name|default:'Новости' }}</span>
       <h1>{{ article.title }}</h1>
       {% if article.excerpt %}<p class="article-lead">{{ article.excerpt }}</p>{% endif %}
-      <div class="article-meta"><span>{{ article.date_start|date:'j E Y, H:i' }}</span><span>◉ {{ article.views }}</span><span>Новости региона</span></div>
+      <div class="article-meta"><span>{{ article.date_start|date:'j E Y, H:i' }}</span><span>Новости региона</span></div>
       {% if article.main_photo %}<figure class="article-photo"><img src="{{ article.main_photo.url }}" alt="{{ article.title }}">{% if article.main_photo.name %}<figcaption>Фото: Ставрополь+</figcaption>{% endif %}</figure>{% endif %}
       <div class="article-body">{{ article.content|safe }}</div>
       <aside class="ad ad--article-inline"><span>Реклама</span><small>680 × 120 · нативный блок</small></aside>
