@@ -76,7 +76,48 @@
 .dark #content-main textarea,
 .dark #content-main select,
 .dark .cke {
-    border-color: #69707a !important;
+    background-color: #202b3a !important;
+    border-color: #65758a !important;
+    color: #f5f7fa !important;
+    box-shadow: inset 0 0 0 1px rgba(148, 163, 184, .12) !important;
+}
+
+.dark #content-main input[type="text"]:hover,
+.dark #content-main input[type="url"]:hover,
+.dark #content-main input[type="number"]:hover,
+.dark #content-main input[type="datetime-local"]:hover,
+.dark #content-main input[type="date"]:hover,
+.dark #content-main textarea:hover,
+.dark #content-main select:hover {
+    background-color: #27364a !important;
+    border-color: #90a0b5 !important;
+}
+
+.dark #content-main input[type="text"]:focus,
+.dark #content-main input[type="url"]:focus,
+.dark #content-main input[type="number"]:focus,
+.dark #content-main input[type="datetime-local"]:focus,
+.dark #content-main input[type="date"]:focus,
+.dark #content-main textarea:focus,
+.dark #content-main select:focus {
+    background-color: #26364a !important;
+    border-color: var(--editorial-accent) !important;
+    box-shadow: 0 0 0 3px rgba(229, 197, 71, .26) !important;
+}
+
+.dark #content-main select option {
+    background: #202b3a;
+    color: #f5f7fa;
+}
+
+.dark #content-main input[type="file"]::file-selector-button {
+    border: 0;
+    border-radius: .375rem;
+    margin-right: .75rem;
+    padding: .45rem .65rem;
+    background: #37475d;
+    color: #f5f7fa;
+    cursor: pointer;
 }
 
 .dark #content-main .help,
