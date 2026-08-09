@@ -192,6 +192,7 @@ class FeaturedNewsTests(TestCase):
 class ArticleContinuationTests(TestCase):
     def setUp(self):
         self.society = Category.objects.create(name='Общество', slug='obshchestvo')
+        self.politics = Category.objects.create(name='Политика', slug='politika')
         self.economy = Category.objects.create(name='Экономика', slug='ekonomika')
 
     def create_news(self, slug, category, position):
@@ -210,6 +211,7 @@ class ArticleContinuationTests(TestCase):
             self.create_news(f'society-{position}', self.society, position)
             for position in range(1, 12)
         ]
+        politics_first = self.create_news('politics-1', self.politics, 2)
         economy_first = self.create_news('economy-1', self.economy, 1)
 
         response = self.client.get(society_news[2].get_absolute_url())
@@ -225,9 +227,15 @@ class ArticleContinuationTests(TestCase):
             society_news[2].pk,
             [item['news'].pk for item in response.context['continuation_articles']],
         )
-        self.assertEqual(response.context['next_category_article'], economy_first)
+        self.assertEqual(response.context['next_category_article'], politics_first)
         self.assertContains(response, 'Продолжение ленты')
         self.assertContains(response, 'Материал №04')
+
+        economy_response = self.client.get(economy_first.get_absolute_url())
+        self.assertEqual(
+            economy_response.context['next_category_article'],
+            society_news[0],
+        )
 
 
 class EditorialStatusAndSearchTests(TestCase):

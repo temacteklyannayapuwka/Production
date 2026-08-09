@@ -12,6 +12,17 @@ from django.utils import timezone
 from .models import Advertisement, Category, News
 
 
+ARTICLE_CATEGORY_FLOW = (
+    "общество",
+    "политика",
+    "экономика",
+    "культура",
+    "спорт",
+    "наука",
+    "происшествия",
+)
+
+
 def _serve_javascript_asset(static_prefix, asset_path):
     """Return a whitelisted JavaScript asset through Django.
 
@@ -81,6 +92,43 @@ def published_news():
 
 def navigation_categories():
     return Category.objects.filter(is_active=True).order_by("order", "name")
+
+
+def article_category_flow():
+    """Return categories in the editorial reading order used by articles."""
+    categories = list(navigation_categories())
+    category_rank = {
+        category_name: position
+        for position, category_name in enumerate(ARTICLE_CATEGORY_FLOW)
+    }
+    return sorted(
+        categories,
+        key=lambda category: (
+            category_rank.get(category.name.casefold(), len(category_rank)),
+            category.order,
+            category.name,
+        ),
+    )
+
+
+def next_article_category(article):
+    """Choose the first available news item from the next editorial category."""
+    categories = article_category_flow()
+    try:
+        current_position = next(
+            position
+            for position, category in enumerate(categories)
+            if category.pk == article.category_id
+        )
+    except StopIteration:
+        return published_news().exclude(pk=article.pk).first()
+
+    following_categories = categories[current_position + 1 :] + categories[:current_position]
+    for category in following_categories:
+        candidate = published_news().filter(category_id=category.pk).first()
+        if candidate:
+            return candidate
+    return None
 
 
 def active_advertisements():
@@ -193,9 +241,11 @@ def news_detail(request, slug):
     news_feed = published_news().exclude(pk=article.pk).order_by(
         "-date_start", "-created_at"
     )[:13]
-    next_category_news = published_news().exclude(pk=article.pk)
-    if article.category_id:
-        next_category_news = next_category_news.exclude(category_id=article.category_id)
+    next_category_article = (
+        next_article_category(article)
+        if article.category_id
+        else published_news().exclude(pk=article.pk).first()
+    )
 
     return render(
         request,
@@ -205,7 +255,7 @@ def news_detail(request, slug):
             news_feed=news_feed,
             article_sequence_number=article_sequence_number,
             continuation_articles=continuation_articles,
-            next_category_article=next_category_news.first(),
+            next_category_article=next_category_article,
         ),
     )
 
