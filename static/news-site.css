@@ -153,6 +153,12 @@ img { display: block; max-width: 100%; }
 
 /* Homepage */
 .front-grid { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 20px; align-items: start; }
+.home-layout { display: grid; grid-template-columns: 280px minmax(0, 1fr); align-items: start; gap: 20px; }
+.home-main { min-width: 0; }
+.home-main .hero { min-height: 480px; }
+.latest--sticky { position: sticky; top: 18px; align-self: start; }
+.latest--sticky .section-title { margin-bottom: 14px; }
+.home-main__feed { display: grid; grid-template-columns: minmax(0, 1fr) 280px; align-items: start; gap: 20px; margin-top: clamp(38px, 4vw, 52px); }
 .tag {
   display: inline-flex; max-width: 100%; overflow: hidden; border-radius: 6px; padding: 4px 7px; background: var(--carbon);
   color: var(--white); font-size: 9px; font-style: normal; font-weight: 850; letter-spacing: .055em;
@@ -346,6 +352,10 @@ body.menu-open { overflow: hidden; }
   .social--header .social__max { display: none; }
   .search--header { width: 150px; }
   .front-grid { grid-template-columns: minmax(0, 1fr) 250px; }
+  .home-layout { grid-template-columns: 240px minmax(0, 1fr); }
+  .home-main__feed { grid-template-columns: minmax(0, 1fr) 250px; }
+  .home-main__feed .popular__surface { display: block; }
+  .home-main__feed .popular__surface .ad--tower { display: block; height: 420px; margin: 16px; border-width: 1px; border-radius: 18px; }
   .side-rail { grid-template-rows: 160px minmax(0, 1fr); }
   .ad--square { height: 160px; }
   .news-layout { grid-template-columns: 1fr; }
@@ -359,6 +369,11 @@ body.menu-open { overflow: hidden; }
   .masthead__inner { grid-template-columns: 1fr auto; }
   .header-nav { display: none; }
   .search--header { width: 184px; }
+  .home-layout { display: block; }
+  .latest--sticky { position: static; margin-bottom: 30px; }
+  .latest--sticky .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .home-main__feed { grid-template-columns: 1fr; margin-top: 30px; }
+  .home-main__feed .popular { margin-top: 30px; }
 }
 
 @media (max-width: 720px) {
@@ -373,6 +388,7 @@ body.menu-open { overflow: hidden; }
   .ad--leader { height: 76px; margin-bottom: 17px; }
   .front-grid { grid-template-columns: minmax(0, 1fr); }
   .hero { min-height: 430px; border-radius: 16px; }
+  .home-main .hero { min-height: 430px; }
   .hero__content { padding: 22px; }
   .hero h1 { font-size: 30px; }
   .hero__lead { margin-top: 14px; font-size: 13px; }

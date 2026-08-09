@@ -3,27 +3,33 @@
 {% block content %}
 <main class="site-shell page">
   {% include 'components/ad_slot.html' with ad=advertisements.top css_class='ad--leader' slot_size='970 × 90' slot_label='верх сайта' %}
-  <section class="front-grid">
-    {% if hero_news %}
-      <article class="hero">
-        {% if hero_news.main_photo %}<img src="{{ hero_news.main_photo.url }}" alt="{{ hero_news.title }}" fetchpriority="high">{% else %}<div class="hero__fallback"></div>{% endif %}
-        <div class="hero__overlay"></div>
-        <div class="hero__content"><span class="tag">{{ hero_news.category.name|default:'Главное' }}</span><p class="hero__meta">{{ hero_news.date_start|date:'Сегодня · H:i' }}</p><h1>{{ hero_news.title }}</h1><p class="hero__lead">{{ hero_news.excerpt|default:hero_news.content|striptags|truncatewords:38 }}</p><a href="{% url 'news_detail' hero_news.slug %}">Читать материал <b>→</b></a></div>
-      </article>
-    {% else %}
-      <article class="hero hero--empty"><div class="hero__content"><span class="tag">Ставрополь+</span><h1>Новые материалы скоро появятся на главной странице.</h1></div></article>
-    {% endif %}
-
-    <aside class="side-rail">{% include 'components/ad_slot.html' with ad=advertisements.home_sidebar css_class='ad--square' slot_size='300 × 250' slot_label='главная · справа' %}<section class="weather"><p>Погода · Ставрополь</p><strong>+28°</strong><span>Ясно, солнечно</span><small><b>42%</b> влажность　 <b>5 м/с</b> ветер</small></section></aside>
-  </section>
-
-  <section class="news-layout">
-    <div class="latest"><div class="section-title"><h2>Последние новости</h2></div><div class="latest__grid"><div class="cards">
+  <section class="home-layout">
+    <aside class="latest latest--sticky" aria-label="Последние новости"><div class="section-title"><h2>Последние новости</h2></div><div class="cards">
       {% for news in card_news %}<article class="card"><a href="{% url 'news_detail' news.slug %}"><div>{% if news.main_photo %}<img src="{{ news.main_photo.url }}" alt="{{ news.title }}" loading="lazy">{% else %}<div class="card__fallback"></div>{% endif %}<span class="tag">{{ news.category.name|default:'Новости' }}</span></div><h3>{{ news.title }}</h3><p>{{ news.date_start|date:'Сегодня · H:i' }}</p></a></article>{% endfor %}
-    </div><div class="headline-list">
+    </div></aside>
+
+    <div class="home-main">
+      <section class="front-grid">
+        {% if hero_news %}
+          <article class="hero">
+            {% if hero_news.main_photo %}<img src="{{ hero_news.main_photo.url }}" alt="{{ hero_news.title }}" fetchpriority="high">{% else %}<div class="hero__fallback"></div>{% endif %}
+            <div class="hero__overlay"></div>
+            <div class="hero__content"><span class="tag">{{ hero_news.category.name|default:'Главное' }}</span><p class="hero__meta">{{ hero_news.date_start|date:'Сегодня · H:i' }}</p><h1>{{ hero_news.title }}</h1><p class="hero__lead">{{ hero_news.excerpt|default:hero_news.content|striptags|truncatewords:38 }}</p><a href="{% url 'news_detail' hero_news.slug %}">Читать материал <b>→</b></a></div>
+          </article>
+        {% else %}
+          <article class="hero hero--empty"><div class="hero__content"><span class="tag">Ставрополь+</span><h1>Новые материалы скоро появятся на главной странице.</h1></div></article>
+        {% endif %}
+
+        <aside class="side-rail">{% include 'components/ad_slot.html' with ad=advertisements.home_sidebar css_class='ad--square' slot_size='300 × 250' slot_label='главная · справа' %}<section class="weather"><p>Погода · Ставрополь</p><strong>+28°</strong><span>Ясно, солнечно</span><small><b>42%</b> влажность　 <b>5 м/с</b> ветер</small></section></aside>
+      </section>
+
+      <section class="home-main__feed">
+        <div><div class="section-title"><h2>Лента новостей</h2></div><div class="headline-list">
       {% for news in headline_news %}<article><b>{{ forloop.counter|stringformat:'02d' }}</b><div><h3><a href="{% url 'news_detail' news.slug %}">{{ news.title }}</a></h3><p>{{ news.date_start|date:'H:i' }}</p></div></article>{% empty %}<div class="empty-state">Лента обновляется.</div>{% endfor %}
-    </div></div>{% include 'components/ad_slot.html' with ad=advertisements.home_bottom css_class='ad--bottom' slot_size='970 × 90' slot_label='главная · нижний баннер' %}</div>
-    <aside class="popular"><div class="section-title"><h2>Читают сейчас</h2></div><div class="popular__surface"><ol>{% for news in popular_news %}<li><b>{{ forloop.counter }}</b><span><a href="{% url 'news_detail' news.slug %}">{{ news.title }}</a><small>◉ {{ news.views|default:0 }}</small></span></li>{% empty %}<li class="empty-state">Здесь появятся популярные материалы.</li>{% endfor %}</ol>{% include 'components/ad_slot.html' with ad=advertisements.home_popular css_class='ad--tower' slot_size='300 × 600' slot_label='главная · читают сейчас' %}</div></aside>
+        </div></div>
+        <aside class="popular"><div class="section-title"><h2>Читают сейчас</h2></div><div class="popular__surface"><ol>{% for news in popular_news %}<li><b>{{ forloop.counter }}</b><span><a href="{% url 'news_detail' news.slug %}">{{ news.title }}</a><small>◉ {{ news.views|default:0 }}</small></span></li>{% empty %}<li class="empty-state">Здесь появятся популярные материалы.</li>{% endfor %}</ol>{% include 'components/ad_slot.html' with ad=advertisements.home_popular css_class='ad--tower' slot_size='300 × 600' slot_label='главная · читают сейчас' %}</div></aside>
+      </section>
+    </div>
   </section>
 </main>
 {% endblock %}
