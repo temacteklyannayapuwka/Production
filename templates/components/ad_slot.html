@@ -1,0 +1,14 @@
+{% if ad %}
+  <aside class="ad {{ css_class }} ad--filled" aria-label="Рекламный баннер: {{ ad.name }}">
+    {% if ad.link %}
+      <a class="ad__link" href="{{ ad.link }}"{% if ad.open_in_new_tab %} target="_blank" rel="sponsored noopener"{% endif %}>
+        <img class="ad__image" src="{{ ad.image.url }}" alt="{{ ad.alt_text|default:ad.name }}" loading="lazy">
+      </a>
+    {% else %}
+      <img class="ad__image" src="{{ ad.image.url }}" alt="{{ ad.alt_text|default:ad.name }}" loading="lazy">
+    {% endif %}
+    <span class="ad__label">Реклама</span>
+  </aside>
+{% else %}
+  <aside class="ad {{ css_class }}" aria-label="Рекламное место"><span>Реклама</span><small>{{ slot_size }} · {{ slot_label }}</small></aside>
+{% endif %}

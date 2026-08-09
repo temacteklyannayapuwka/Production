@@ -1,0 +1,17 @@
+{% extends "admin/change_form.html" %}
+
+{% block form_before %}
+  <section class="editorial-guide">
+    <div class="editorial-guide__top">
+      <div>
+        <div class="editorial-guide__title">{% if change %}Настройка рекламного баннера{% else %}Новый рекламный баннер{% endif %}</div>
+        <p class="editorial-guide__text">Один баннер занимает одно место на сайте. Размер и расположение указаны в поле «Где показывать» — это защищает макет от случайной замены не того блока.</p>
+      </div>
+    </div>
+    <div class="editorial-guide__steps">
+      <div class="editorial-guide__step"><strong>1. Место</strong>Выбери единственную позицию: верх сайта, главная, раздел или статья.</div>
+      <div class="editorial-guide__step"><strong>2. Баннер</strong>Загрузи JPG, PNG или WebP. Сайт сожмёт JPG и PNG в WebP.</div>
+      <div class="editorial-guide__step"><strong>3. Показ</strong>Добавь ссылку и период, затем включи показ. Сохранение применит изменения.</div>
+    </div>
+  </section>
+{% endblock %}

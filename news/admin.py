@@ -4,7 +4,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.html import format_html
 
-from .models import Category, News, NewsGallery
+from .models import Advertisement, Category, News, NewsGallery
 
 
 class NewsAdminForm(forms.ModelForm):
@@ -35,11 +35,11 @@ class NewsAdminForm(forms.ModelForm):
             ),
             'content': (
                 'Полный текст новости',
-                'Основной текст статьи. Используй панель редактора для подзаголовков, ссылок и списков.',
+                'Основной текст статьи. Редактор можно развернуть на весь экран кнопкой ⛶. Фото в тексте добавляй через кнопку изображения, а подборку фото после статьи — в блоке «Фотогалерея».',
             ),
-            'is_published': (
-                'Показывать на сайте',
-                'Включи только когда новость полностью готова. Выключенная новость останется черновиком.',
+            'editorial_status': (
+                'Статус материала',
+                '«Черновик» виден только редакции. «Запланирована» выйдет в указанное время. «На сайте» публикуется сразу.',
             ),
             'is_featured': (
                 'Главная новость',
@@ -79,7 +79,7 @@ class NewsAdminForm(forms.ModelForm):
 
         # New items start as drafts. Existing news retain their saved state.
         if not self.instance.pk:
-            self.fields['is_published'].initial = False
+            self.fields['editorial_status'].initial = News.EditorialStatus.DRAFT
 
 
 class NewsGalleryInlineForm(forms.ModelForm):
@@ -94,13 +94,13 @@ class NewsGalleryInlineForm(forms.ModelForm):
         self.fields['order'].help_text = 'Меньшее число покажет фото раньше.'
 
 
-class NewsGalleryInline(admin.TabularInline):
+class NewsGalleryInline(admin.StackedInline):
     model = NewsGallery
     form = NewsGalleryInlineForm
-    extra = 0
+    extra = 1
     fields = ('image', 'caption', 'order')
-    verbose_name = 'Дополнительное фото'
-    verbose_name_plural = 'Фото внутри статьи — необязательно'
+    verbose_name = 'Фото для галереи'
+    verbose_name_plural = '4. Фотогалерея материала'
 
 
 @admin.register(Category)
@@ -139,15 +139,16 @@ class NewsAdmin(admin.ModelAdmin):
     change_list_template = 'admin/news/news/change_list.html'
     list_display = (
         'title_short',
-        'featured_status',
         'category',
-        'publication_status',
+        'editorial_status',
+        'is_featured',
         'date_start',
         'photo_preview',
         'updated_at',
     )
     list_display_links = ('title_short',)
-    list_filter = ('is_featured', 'is_published', 'category', 'date_start', 'created_at')
+    list_editable = ('editorial_status', 'is_featured')
+    list_filter = ('editorial_status', 'is_featured', 'category', 'date_start', 'created_at')
     search_fields = ('title', 'content', 'excerpt', 'meta_keywords')
     prepopulated_fields = {'slug': ('title',)}
     ordering = ('-date_start', '-created_at')
@@ -167,37 +168,6 @@ class NewsAdmin(admin.ModelAdmin):
     @admin.display(description='Новость')
     def title_short(self, obj):
         return f'{obj.title[:60]}…' if len(obj.title) > 60 else obj.title
-
-    @admin.display(description='Главная')
-    def featured_status(self, obj):
-        if obj.is_featured:
-            return format_html(
-                '<span style="color: #7d2e2e; font-weight: 700;">{}</span>',
-                '★ Главная',
-            )
-        return '—'
-
-    @admin.display(description='Статус')
-    def publication_status(self, obj):
-        if obj.is_active:
-            return format_html(
-                '<span style="color: #15803d; font-weight: 600;">{}</span>',
-                '● На сайте',
-            )
-        if not obj.is_published:
-            return format_html(
-                '<span style="color: #9a6700; font-weight: 600;">{}</span>',
-                '● Черновик',
-            )
-        if obj.date_start > timezone.now():
-            return format_html(
-                '<span style="color: #2563eb; font-weight: 600;">{}</span>',
-                '● Запланирована',
-            )
-        return format_html(
-            '<span style="color: #6b7280; font-weight: 600;">{}</span>',
-            '● Снята с публикации',
-        )
 
     @admin.display(description='Фото')
     def photo_preview(self, obj):
@@ -231,12 +201,12 @@ class NewsAdmin(admin.ModelAdmin):
                 'fields': tuple(card_fields),
             }),
             ('2. Текст материала', {
-                'description': 'Напиши основной текст. Короткий анонс ниже можно оставить пустым — сайт создаст его сам.',
+                'description': 'Напиши основной текст. Кнопка ⛶ в редакторе открывает рабочую область на весь экран; анонс можно оставить пустым — сайт составит его сам.',
                 'fields': ('content', 'excerpt'),
             }),
             ('3. Публикация', {
-                'description': 'Выбери, будет ли материал на сайте и станет ли он главным. Для отложенной публикации укажи дату и время.',
-                'fields': ('is_published', 'is_featured', 'date_start', 'date_end'),
+                'description': 'Выбери статус, отметь главную новость при необходимости и задай время. Главной может быть только одна новость — новая отметка заменит прежнюю.',
+                'fields': ('editorial_status', 'is_featured', 'date_start', 'date_end'),
             }),
             ('Настройки страницы', {
                 'classes': ('collapse',),
@@ -257,7 +227,11 @@ class NewsAdmin(admin.ModelAdmin):
 
     @admin.action(description='Опубликовать выбранные новости')
     def publish_selected(self, request, queryset):
-        queryset.update(is_published=True)
+        queryset.update(
+            editorial_status=News.EditorialStatus.PUBLISHED,
+            is_published=True,
+            date_start=timezone.now(),
+        )
         self.message_user(request, 'Выбранные новости опубликованы.')
 
     @admin.action(description='Сделать выбранную новость главной')
@@ -285,8 +259,11 @@ class NewsAdmin(admin.ModelAdmin):
 
     @admin.action(description='Снять выбранные новости с публикации')
     def unpublish_selected(self, request, queryset):
-        queryset.update(is_published=False)
-        self.message_user(request, 'Выбранные новости сняты с публикации.')
+        queryset.update(
+            editorial_status=News.EditorialStatus.DRAFT,
+            is_published=False,
+        )
+        self.message_user(request, 'Выбранные новости переведены в черновики.')
 
 
 @admin.register(NewsGallery)
@@ -305,6 +282,73 @@ class NewsGalleryAdmin(admin.ModelAdmin):
                 obj.image.url,
             )
         return '—'
+
+
+class AdvertisementAdminForm(forms.ModelForm):
+    """A concise banner workflow for editors rather than technical ad settings."""
+
+    class Meta:
+        model = Advertisement
+        fields = '__all__'
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        copy = {
+            'name': ('Название баннера', 'Внутреннее название для редакции — читатели его не увидят.'),
+            'placement': ('Где показывать', 'Каждое место на сайте может занимать один баннер. Чтобы заменить рекламу, открой существующий баннер этого места.'),
+            'image': ('Файл баннера', 'Загрузи JPG, PNG или WebP. JPG и PNG автоматически конвертируются в WebP для быстрой загрузки.'),
+            'link': ('Ссылка при клике', 'Необязательно. Если оставить пустым, баннер будет только изображением.'),
+            'alt_text': ('Короткое описание', 'Текст для доступности и поисковых систем. Например: «Летний фестиваль в Ставрополе». '),
+            'is_enabled': ('Показывать баннер', 'Выключи, чтобы временно скрыть баннер без удаления файла.'),
+            'date_start': ('Показывать с', 'Дата и время начала показа.'),
+            'date_end': ('Снять с показа', 'Необязательно. После этой даты баннер скроется сам.'),
+        }
+        for name, (label, help_text) in copy.items():
+            if name in self.fields:
+                self.fields[name].label = label
+                self.fields[name].help_text = help_text
+        self.fields['image'].widget.attrs['accept'] = 'image/jpeg,image/png,image/webp'
+
+
+@admin.register(Advertisement)
+class AdvertisementAdmin(admin.ModelAdmin):
+    form = AdvertisementAdminForm
+    change_form_template = 'admin/news/advertisement/change_form.html'
+    change_list_template = 'admin/news/advertisement/change_list.html'
+    list_display = ('name', 'placement', 'is_enabled', 'date_start', 'date_end', 'banner_preview')
+    list_display_links = ('name',)
+    list_editable = ('is_enabled',)
+    list_filter = ('placement', 'is_enabled', 'date_start')
+    search_fields = ('name', 'alt_text', 'link')
+    ordering = ('placement', 'name')
+    list_per_page = 25
+    readonly_fields = ('banner_preview', 'updated_at')
+    save_on_top = True
+
+    fieldsets = (
+        ('1. Место и файл', {
+            'description': 'Сначала выбери место на сайте, затем загрузи изображение. Размер баннера указан прямо в списке мест.',
+            'fields': ('name', 'placement', 'image', 'banner_preview'),
+        }),
+        ('2. Переход и подпись', {
+            'description': 'Ссылка и описание не обязательны, но помогают читателю понять рекламу.',
+            'fields': ('link', 'open_in_new_tab', 'alt_text'),
+        }),
+        ('3. Показ', {
+            'description': 'Отключи баннер или задай даты, чтобы управлять размещением без удаления.',
+            'fields': ('is_enabled', 'date_start', 'date_end'),
+        }),
+        ('Служебная информация', {'classes': ('collapse',), 'fields': ('updated_at',)}),
+    )
+
+    @admin.display(description='Предпросмотр')
+    def banner_preview(self, obj):
+        if obj and obj.image:
+            return format_html(
+                '<img src="{}" style="max-width: 420px; max-height: 180px; border-radius: 8px; object-fit: cover;" alt="Предпросмотр баннера" />',
+                obj.image.url,
+            )
+        return 'Загрузи файл и сохрани баннер — здесь появится предпросмотр.'
 
 
 admin.site.site_header = 'Ставрополь+ · редакция'

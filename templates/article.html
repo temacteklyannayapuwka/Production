@@ -2,9 +2,9 @@
 {% block title %}{{ article.meta_title|default:article.title }} — Ставрополь+{% endblock %}
 {% block content %}
 <main class="site-shell article-page">
-  <aside class="ad ad--leader"><span>Реклама</span><small>970 × 90 · лидерборд</small></aside>
+  {% include 'components/ad_slot.html' with ad=advertisements.top css_class='ad--leader' slot_size='970 × 90' slot_label='верх сайта' %}
   <div class="article-layout">
-    <aside class="article-sidebar" aria-label="Свежие новости"><div class="block-heading"><span>Сейчас</span><i></i></div>{% for news in recent_news %}<a href="{% url 'news_detail' news.slug %}"><span>{{ news.date_start|date:'H:i' }}</span>{{ news.title }}</a>{% endfor %}<div class="ad ad--article-side"><span>Реклама</span><small>240 × 400</small></div></aside>
+    <aside class="article-sidebar" aria-label="Свежие новости"><div class="block-heading"><span>Сейчас</span><i></i></div>{% for news in recent_news %}<a href="{% url 'news_detail' news.slug %}"><span>{{ news.date_start|date:'H:i' }}</span>{{ news.title }}</a>{% endfor %}{% include 'components/ad_slot.html' with ad=advertisements.article_sidebar css_class='ad--article-side' slot_size='240 × 400' slot_label='статья · слева' %}</aside>
     <article class="article-content">
       <nav class="breadcrumbs" aria-label="Навигация"><a href="{% url 'index' %}">Главная</a>{% if article.category %}<span>·</span><a href="{% url 'category' article.category.slug %}">{{ article.category.name }}</a>{% endif %}</nav>
       <span class="article-tag">{{ article.category.name|default:'Новости' }}</span>
@@ -13,7 +13,8 @@
       <div class="article-meta"><span>{{ article.date_start|date:'j E Y, H:i' }}</span><span>Новости региона</span></div>
       {% if article.main_photo %}<figure class="article-photo"><img src="{{ article.main_photo.url }}" alt="{{ article.title }}">{% if article.main_photo.name %}<figcaption>Фото: Ставрополь+</figcaption>{% endif %}</figure>{% endif %}
       <div class="article-body">{{ article.content|safe }}</div>
-      <aside class="ad ad--article-inline"><span>Реклама</span><small>680 × 120 · нативный блок</small></aside>
+      {% if article.gallery.all %}<section class="article-gallery" aria-label="Фотогалерея материала">{% for photo in article.gallery.all %}<figure><img src="{{ photo.image.url }}" alt="{{ photo.caption|default:article.title }}" loading="lazy">{% if photo.caption %}<figcaption>{{ photo.caption }}</figcaption>{% endif %}</figure>{% endfor %}</section>{% endif %}
+      {% include 'components/ad_slot.html' with ad=advertisements.article_inline css_class='ad--article-inline' slot_size='680 × 120' slot_label='статья · внутри текста' %}
       <div class="article-author"><b>Ставрополь+</b><span>Редакция · Новости региона</span></div>
       {% if recent_news %}<section class="article-next"><p>Читайте также</p><a href="{% url 'news_detail' recent_news.0.slug %}">{{ recent_news.0.title }} <b>→</b></a></section>{% endif %}
     </article>

@@ -6,7 +6,7 @@ from django.test import SimpleTestCase, TestCase
 from django.utils import timezone
 
 from .admin import NewsAdmin, NewsAdminForm
-from .models import Category, News
+from .models import Advertisement, Category, News
 from .views import published_news
 
 
@@ -21,7 +21,7 @@ class AdminJavascriptFallbackTests(SimpleTestCase):
     def test_public_page_uses_the_current_menu_script(self):
         response = get_template('base.html').render({})
 
-        self.assertIn('/static/news-site.css?v=24', response)
+        self.assertIn('/static/news-site.css?v=25', response)
         self.assertIn('family=Merriweather', response)
         self.assertIn('content="#151515"', response)
         self.assertNotIn('family=Playfair+Display', response)
@@ -48,17 +48,17 @@ class AdminJavascriptFallbackTests(SimpleTestCase):
 
         self.assertContains(response, '/static/admin-symbols.css')
         self.assertContains(response, '/static/admin-editorial.css')
-        self.assertContains(response, '--color-primary-600: rgb(71, 85, 105)')
+        self.assertContains(response, '--color-primary-600: rgb(55, 55, 55)')
 
 
 class EditorialAdminTests(SimpleTestCase):
     def test_new_news_form_starts_as_a_draft_with_editorial_help(self):
         form = NewsAdminForm()
 
-        self.assertFalse(form.fields['is_published'].initial)
+        self.assertEqual(form.fields['editorial_status'].initial, News.EditorialStatus.DRAFT)
         self.assertEqual(form.fields['main_photo'].label, 'Главное фото')
         self.assertIn('WebP', form.fields['main_photo'].help_text)
-        self.assertIn('Основной текст', form.fields['content'].help_text)
+        self.assertIn('весь экран', form.fields['content'].help_text)
         self.assertEqual(form.fields['is_featured'].label, 'Главная новость')
 
     def test_add_form_excludes_the_empty_photo_preview(self):
@@ -93,6 +93,11 @@ class EditorialAdminTests(SimpleTestCase):
                 get_template(template_name).template.source,
             )
 
+    def test_templates_render_advertising_slots_and_article_gallery(self):
+        self.assertIn('components/ad_slot.html', get_template('index.html').template.source)
+        self.assertIn('article.gallery.all', get_template('article.html').template.source)
+        self.assertIsNotNone(get_template('components/ad_slot.html'))
+
 
 class FeaturedNewsTests(TestCase):
     def setUp(self):
@@ -105,6 +110,7 @@ class FeaturedNewsTests(TestCase):
             content='<p>Текст новости</p>',
             category=self.category,
             is_published=True,
+            editorial_status=News.EditorialStatus.PUBLISHED,
             is_featured=is_featured,
             date_start=date_start or timezone.now(),
         )
@@ -128,11 +134,11 @@ class FeaturedNewsTests(TestCase):
         self.assertEqual(published_news().first(), featured)
         self.assertNotEqual(published_news().first(), recent)
 
-    def test_featured_status_renders_in_the_admin_list(self):
-        featured = self.create_news('admin-featured', is_featured=True)
+    def test_admin_list_allows_inline_status_and_featured_selection(self):
         model_admin = NewsAdmin(News, admin.site)
 
-        self.assertIn('★ Главная', str(model_admin.featured_status(featured)))
+        self.assertIn('editorial_status', model_admin.list_editable)
+        self.assertIn('is_featured', model_admin.list_editable)
 
     def test_homepage_feed_contains_every_news_after_lead_and_cards(self):
         for number in range(18):
@@ -146,3 +152,56 @@ class FeaturedNewsTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.context['card_news']), 4)
         self.assertEqual(len(response.context['headline_news']), 13)
+
+
+class EditorialStatusAndSearchTests(TestCase):
+    def setUp(self):
+        self.category = Category.objects.create(name='Общество', slug='obshchestvo')
+
+    def create_news(self, slug, **overrides):
+        values = {
+            'title': 'Новости Ставрополя: общественное пространство',
+            'slug': slug,
+            'content': '<p>Город Ставрополь получил общественное пространство для прогулок и встреч.</p>',
+            'excerpt': 'Новый городской маршрут появился в центре Ставрополя.',
+            'category': self.category,
+            'editorial_status': News.EditorialStatus.PUBLISHED,
+            'date_start': timezone.now() - timedelta(minutes=5),
+        }
+        values.update(overrides)
+        return News.objects.create(**values)
+
+    def test_status_controls_publication_flags(self):
+        draft = self.create_news('draft', editorial_status=News.EditorialStatus.DRAFT)
+        scheduled = self.create_news(
+            'scheduled',
+            editorial_status=News.EditorialStatus.SCHEDULED,
+            date_start=timezone.now() + timedelta(hours=2),
+        )
+
+        self.assertFalse(draft.is_published)
+        self.assertTrue(scheduled.is_published)
+        self.assertFalse(draft.is_active)
+        self.assertFalse(scheduled.is_active)
+
+    def test_search_shows_match_source_context_and_highlight(self):
+        self.create_news('stavropol-search')
+
+        response = self.client.get('/search/', {'q': 'Ставрополь'})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Найдено в:')
+        self.assertContains(response, 'class="search-highlight">Ставрополь</mark>', html=False)
+        self.assertContains(response, 'общественное пространство')
+
+    def test_active_banner_is_available_to_the_homepage(self):
+        banner = Advertisement.objects.create(
+            name='Верхний баннер',
+            placement=Advertisement.Placement.TOP,
+            image='advertising/test.webp',
+        )
+
+        response = self.client.get('/')
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['advertisements']['top'], banner)

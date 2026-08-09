@@ -6,9 +6,10 @@ from django.core.paginator import Paginator
 from django.db.models import F, Q
 from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404, render
+from django.utils.html import strip_tags
 from django.utils import timezone
 
-from .models import Category, News
+from .models import Advertisement, Category, News
 
 
 def _serve_javascript_asset(static_prefix, asset_path):
@@ -82,8 +83,21 @@ def navigation_categories():
     return Category.objects.filter(is_active=True).order_by("order", "name")
 
 
+def active_advertisements():
+    """Return active banners keyed by their clearly named page slot."""
+    now = timezone.now()
+    banners = (
+        Advertisement.objects.filter(is_enabled=True, date_start__lte=now)
+        .filter(Q(date_end__isnull=True) | Q(date_end__gte=now))
+    )
+    return {banner.placement: banner for banner in banners}
+
+
 def shared_context(**extra):
-    context = {"navigation_categories": navigation_categories()}
+    context = {
+        "navigation_categories": navigation_categories(),
+        "advertisements": active_advertisements(),
+    }
     context.update(extra)
     return context
 
@@ -138,6 +152,9 @@ def search(request):
             | Q(category__name__icontains=query)
         )
     page_obj = paginate(request, results)
+    if query:
+        for news in page_obj:
+            _attach_search_context(news, query)
     return render(
         request,
         "search.html",
@@ -146,7 +163,7 @@ def search(request):
 
 
 def news_detail(request, slug):
-    article = get_object_or_404(published_news(), slug=slug)
+    article = get_object_or_404(published_news().prefetch_related('gallery'), slug=slug)
     News.objects.filter(pk=article.pk).update(views=F("views") + 1)
     article.refresh_from_db(fields=["views"])
     recent_news = published_news().exclude(pk=article.pk)[:5]
@@ -155,6 +172,56 @@ def news_detail(request, slug):
         "article.html",
         shared_context(article=article, recent_news=recent_news),
     )
+
+
+def _attach_search_context(news, query):
+    """Attach a human-readable source and a short text fragment to a result."""
+    normalized_query = query.casefold()
+    title = news.title or ''
+    excerpt = news.excerpt or ''
+    content = strip_tags(news.content or ' ').strip()
+    category_name = news.category.name if news.category else ''
+
+    matched_sources = []
+    if normalized_query in title.casefold():
+        matched_sources.append('заголовке')
+    if normalized_query in excerpt.casefold():
+        matched_sources.append('анонсе')
+    if normalized_query in content.casefold():
+        matched_sources.append('тексте')
+    if normalized_query in category_name.casefold():
+        matched_sources.append('разделе')
+
+    source_text = ', '.join(matched_sources) or 'материале'
+    if normalized_query in excerpt.casefold():
+        context = _search_fragment(excerpt, query)
+    elif normalized_query in content.casefold():
+        context = _search_fragment(content, query)
+    elif normalized_query in category_name.casefold():
+        context = f'Раздел: {category_name}'
+    else:
+        context = excerpt or _search_fragment(content, query)
+
+    news.search_match_source = f'Найдено в: {source_text}'
+    news.search_context = context
+
+
+def _search_fragment(text, query, radius=115):
+    """Cut a concise, whole-text fragment around the first query match."""
+    clean_text = ' '.join((text or '').split())
+    position = clean_text.casefold().find(query.casefold())
+    if position < 0:
+        return clean_text[: radius * 2]
+
+    start = max(0, position - radius)
+    end = min(len(clean_text), position + len(query) + radius)
+    if start:
+        first_space = clean_text.find(' ', start)
+        start = first_space + 1 if first_space != -1 else start
+    if end < len(clean_text):
+        last_space = clean_text.rfind(' ', 0, end)
+        end = last_space if last_space != -1 else end
+    return f"{'…' if start else ''}{clean_text[start:end]}{'…' if end < len(clean_text) else ''}"
 
 
 # Legacy paths remain available for old bookmarks and navigation links.

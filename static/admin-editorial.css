@@ -1,4 +1,86 @@
 /* Calm, task-focused adjustments for the editor interface. */
+:root {
+    --editorial-ink: #151515;
+    --editorial-graphite: #373737;
+    --editorial-paper: #f7f7f6;
+    --editorial-line: #b9b9b1;
+    --editorial-accent: #e5c547;
+}
+
+#content-main input[type="text"],
+#content-main input[type="url"],
+#content-main input[type="number"],
+#content-main input[type="datetime-local"],
+#content-main input[type="date"],
+#content-main textarea,
+#content-main select {
+    border-color: var(--editorial-line) !important;
+    box-shadow: inset 0 0 0 1px rgba(21, 21, 21, .03);
+}
+
+#content-main input[type="text"]:focus,
+#content-main input[type="url"]:focus,
+#content-main input[type="number"]:focus,
+#content-main input[type="datetime-local"]:focus,
+#content-main input[type="date"]:focus,
+#content-main textarea:focus,
+#content-main select:focus {
+    border-color: var(--editorial-graphite) !important;
+    box-shadow: 0 0 0 3px rgba(229, 197, 71, .38) !important;
+}
+
+#content-main .help,
+#content-main .helptext {
+    color: #5d5d57;
+    display: block;
+    line-height: 1.45;
+    margin-top: .45rem;
+}
+
+#content-main .aligned label,
+#content-main label {
+    color: var(--editorial-ink);
+    font-weight: 650;
+}
+
+.django-ckeditor-widget,
+.cke {
+    max-width: 100% !important;
+    width: 100% !important;
+}
+
+.cke {
+    border: 1px solid var(--editorial-line) !important;
+    border-radius: .5rem;
+    box-shadow: inset 0 0 0 1px rgba(21, 21, 21, .03);
+    overflow: hidden;
+}
+
+.cke_top { background: var(--editorial-paper) !important; border-bottom-color: var(--editorial-line) !important; }
+.cke_button:hover,
+.cke_button:focus,
+.cke_button_on { background: #fff3ae !important; border-color: #d3b541 !important; }
+.cke_maximized { z-index: 1000 !important; }
+
+.inline-group,
+.module,
+.fieldset {
+    border-color: var(--editorial-line) !important;
+}
+
+.dark #content-main input[type="text"],
+.dark #content-main input[type="url"],
+.dark #content-main input[type="number"],
+.dark #content-main input[type="datetime-local"],
+.dark #content-main input[type="date"],
+.dark #content-main textarea,
+.dark #content-main select,
+.dark .cke {
+    border-color: #69707a !important;
+}
+
+.dark #content-main .help,
+.dark #content-main .helptext { color: #b9b9b1; }
 .editorial-guide {
     border: 1px solid var(--color-base-200);
     border-radius: var(--border-radius, 8px);

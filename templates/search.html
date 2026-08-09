@@ -1,13 +1,14 @@
 {% extends 'base.html' %}
+{% load search_highlight %}
 {% block title %}{% if query %}Поиск: {{ query }} — Ставрополь+{% else %}Поиск — Ставрополь+{% endif %}{% endblock %}
 {% block content %}
 <main class="site-shell rubric-page search-page">
-  <aside class="ad ad--leader"><span>Реклама</span><small>970 × 90 · лидерборд</small></aside>
+  {% include 'components/ad_slot.html' with ad=advertisements.top css_class='ad--leader' slot_size='970 × 90' slot_label='верх сайта' %}
   <header class="rubric-intro"><p>Поиск</p><h1>{% if query %}Результаты{% else %}Найдём нужное{% endif %}</h1><span>{% if query %}По запросу «{{ query }}»{% else %}Введите тему, имя или ключевое слово в строке поиска.{% endif %}</span></header>
   <section class="rubric-feed search-results" aria-label="Результаты поиска">
     <div class="rubric-feed__head"><span>{% if query %}Найдено: {{ page_obj.paginator.count }}{% else %}Новости{% endif %}</span><i></i><small>{% if query %}по релевантности и дате{% else %}поиск по сайту{% endif %}</small></div>
     {% for news in search_results %}
-      <article class="rubric-row"><b>{{ forloop.counter0|add:page_obj.start_index|stringformat:'02d' }}</b><a href="{% url 'news_detail' news.slug %}"><h2>{{ news.title }}</h2><p>{{ news.date_start|date:'j E Y, H:i' }}</p>{% if news.excerpt %}<span class="search-excerpt">{{ news.excerpt }}</span>{% endif %}</a></article>
+      <article class="rubric-row"><b>{{ forloop.counter0|add:page_obj.start_index|stringformat:'02d' }}</b><a href="{% url 'news_detail' news.slug %}"><h2>{{ news.title|highlight_query:query }}</h2><p>{{ news.date_start|date:'j E Y, H:i' }}</p><span class="search-match-source">{{ news.search_match_source }}</span>{% if news.search_context %}<span class="search-excerpt">{{ news.search_context|highlight_query:query }}</span>{% endif %}</a></article>
     {% empty %}<div class="empty-state">{% if query %}По этому запросу ничего не найдено. Попробуйте изменить формулировку.{% else %}Введите запрос в строку поиска выше.{% endif %}</div>
     {% endfor %}
   </section>

@@ -7,6 +7,8 @@ from pathlib import Path
 
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
+from django.utils import timezone
+from django.utils.dateparse import parse_datetime
 
 from news.models import Category, News
 
@@ -63,6 +65,14 @@ class Command(BaseCommand):
                 if fields['category'] is not None and category is None:
                     raise CommandError(f"Category for news '{fields['slug']}' was not imported.")
 
+                publication_time = parse_datetime(fields['date_start']) if fields['date_start'] else None
+                if not fields['is_published']:
+                    editorial_status = News.EditorialStatus.DRAFT
+                elif publication_time and publication_time > timezone.now():
+                    editorial_status = News.EditorialStatus.SCHEDULED
+                else:
+                    editorial_status = News.EditorialStatus.PUBLISHED
+
                 defaults = {
                     'title': fields['title'],
                     'content': fields['content'],
@@ -70,6 +80,7 @@ class Command(BaseCommand):
                     'category': category,
                     'main_photo': fields['main_photo'] or None,
                     'is_published': fields['is_published'],
+                    'editorial_status': editorial_status,
                     'is_featured': fields.get('is_featured', False),
                     'date_start': fields['date_start'],
                     'date_end': fields['date_end'],

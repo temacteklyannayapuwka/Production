@@ -121,13 +121,16 @@ CKEDITOR_UPLOAD_PATH = 'uploads/'
 CKEDITOR_CONFIGS = {
     'default': {
         'toolbar': [
-            ['Format'],
-            ['Bold', 'Italic', 'Link', 'Unlink'],
-            ['BulletedList', 'NumberedList', 'Blockquote'],
-            ['RemoveFormat'],
+            ['Format', 'Styles'],
+            ['Bold', 'Italic', 'Underline', 'Strike', 'RemoveFormat'],
+            ['NumberedList', 'BulletedList', 'Outdent', 'Indent', 'Blockquote'],
+            ['Link', 'Unlink', 'Image', 'Table', 'HorizontalRule', 'SpecialChar'],
+            ['Undo', 'Redo', 'Source', 'Maximize'],
         ],
-        'height': 360,
+        'height': 520,
         'width': '100%',
+        'resize_enabled': True,
+        'removePlugins': 'elementspath',
     },
 }
 
@@ -139,17 +142,17 @@ UNFOLD = {
     'STYLES': ['/static/admin-symbols.css', '/static/admin-editorial.css'],
     'COLORS': {
         'primary': {
-            '50': '#f8fafc',
-            '100': '#f1f5f9',
-            '200': '#e2e8f0',
-            '300': '#cbd5e1',
-            '400': '#94a3b8',
-            '500': '#64748b',
-            '600': '#475569',
-            '700': '#334155',
-            '800': '#1e293b',
-            '900': '#0f172a',
-            '950': '#020617',
+            '50': '#f7f7f6',
+            '100': '#ecece7',
+            '200': '#dbdbd5',
+            '300': '#b9b9b1',
+            '400': '#878780',
+            '500': '#5d5d57',
+            '600': '#373737',
+            '700': '#2a2a2a',
+            '800': '#202020',
+            '900': '#151515',
+            '950': '#0d0d0d',
         },
     },
 }
