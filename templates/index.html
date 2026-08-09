@@ -4,7 +4,7 @@
 <main class="site-shell page">
   {% include 'components/ad_slot.html' with ad=advertisements.top css_class='ad--leader' slot_size='970 × 90' slot_label='верх сайта' %}
   <section class="home-layout">
-    <aside class="popular popular--sticky" aria-label="Читают сейчас"><div class="section-title"><h2>Читают сейчас</h2></div><div class="popular__surface"><ol>{% for news in popular_news %}<li><b>{{ forloop.counter }}</b><span><a href="{% url 'news_detail' news.slug %}">{{ news.title }}</a><small>◉ {{ news.views|default:0 }}</small></span></li>{% empty %}<li class="empty-state">Здесь появятся популярные материалы.</li>{% endfor %}</ol>{% include 'components/ad_slot.html' with ad=advertisements.home_popular css_class='ad--tower' slot_size='300 × 600' slot_label='главная · читают сейчас' %}</div></aside>
+    <aside class="popular popular--sticky" aria-label="Читают сейчас"><div class="section-title"><h2>Читают сейчас</h2></div><div class="popular__surface"><ol>{% for news in popular_news %}<li><b>{{ forloop.counter }}</b><span><a href="{% url 'news_detail' news.slug %}">{{ news.title }}</a><small>◉ {{ news.views|default:0 }}</small></span></li>{% empty %}<li class="empty-state">Здесь появятся популярные материалы.</li>{% endfor %}</ol>{% include 'components/ad_slot.html' with ad=advertisements.home_sidebar css_class='ad--square ad--popular-copy' slot_size='300 × 250' slot_label='главная · справа' %}</div></aside>
 
     <div class="home-main">
       <section class="front-grid">
