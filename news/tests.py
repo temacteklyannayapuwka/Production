@@ -21,7 +21,7 @@ class AdminJavascriptFallbackTests(SimpleTestCase):
     def test_public_page_uses_the_current_menu_script(self):
         response = get_template('base.html').render({})
 
-        self.assertIn('/static/news-site.css?v=39', response)
+        self.assertIn('/static/news-site.css?v=40', response)
         self.assertIn('family=Merriweather', response)
         self.assertIn('content="#151515"', response)
         self.assertNotIn('family=Playfair+Display', response)
@@ -127,6 +127,8 @@ class EditorialAdminTests(SimpleTestCase):
         self.assertIn('Лента новостей', article_source)
         self.assertIn('article-news-feed', article_source)
         self.assertIn('news_feed', article_source)
+        self.assertIn('continuation_articles', article_source)
+        self.assertIn('next_category_article', article_source)
         self.assertNotIn('<span>Сейчас</span>', article_source)
         self.assertIsNotNone(get_template('components/ad_slot.html'))
 
@@ -185,6 +187,47 @@ class FeaturedNewsTests(TestCase):
         self.assertEqual(len(response.context['card_news']), 4)
         self.assertEqual(len(response.context['headline_news']), 13)
         self.assertEqual(len(response.context['popular_news']), 8)
+
+
+class ArticleContinuationTests(TestCase):
+    def setUp(self):
+        self.society = Category.objects.create(name='Общество', slug='obshchestvo')
+        self.economy = Category.objects.create(name='Экономика', slug='ekonomika')
+
+    def create_news(self, slug, category, position):
+        return News.objects.create(
+            title=f'Новость {slug}',
+            slug=slug,
+            content=f'<p>Полный текст материала {slug}.</p>',
+            excerpt=f'Короткий анонс материала {slug}.',
+            category=category,
+            editorial_status=News.EditorialStatus.PUBLISHED,
+            date_start=timezone.now() - timedelta(minutes=position),
+        )
+
+    def test_article_continues_with_nine_other_materials_from_its_category(self):
+        society_news = [
+            self.create_news(f'society-{position}', self.society, position)
+            for position in range(1, 12)
+        ]
+        economy_first = self.create_news('economy-1', self.economy, 1)
+
+        response = self.client.get(society_news[2].get_absolute_url())
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['article_sequence_number'], 3)
+        self.assertEqual(len(response.context['continuation_articles']), 9)
+        self.assertEqual(
+            [item['position'] for item in response.context['continuation_articles']],
+            [1, 2, 4, 5, 6, 7, 8, 9, 10],
+        )
+        self.assertNotIn(
+            society_news[2].pk,
+            [item['news'].pk for item in response.context['continuation_articles']],
+        )
+        self.assertEqual(response.context['next_category_article'], economy_first)
+        self.assertContains(response, 'Продолжение ленты')
+        self.assertContains(response, 'Материал №04')
 
 
 class EditorialStatusAndSearchTests(TestCase):

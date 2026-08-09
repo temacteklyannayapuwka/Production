@@ -164,25 +164,48 @@ def search(request):
 
 
 def news_detail(request, slug):
-    article = get_object_or_404(published_news().prefetch_related('gallery'), slug=slug)
+    article = get_object_or_404(published_news().prefetch_related("gallery"), slug=slug)
     News.objects.filter(pk=article.pk).update(views=F("views") + 1)
     article.refresh_from_db(fields=["views"])
-    latest_news = (
-        published_news()
-        .exclude(pk=article.pk)
-        .order_by("-date_start", "-created_at")[:5]
-    )
-    recent_news = latest_news
+
+    article_sequence_number = None
+    continuation_articles = []
+    if article.category_id:
+        category_sequence = list(
+            published_news()
+            .filter(category_id=article.category_id)
+            .prefetch_related("gallery")
+        )
+        article_sequence_number = next(
+            (
+                position
+                for position, candidate in enumerate(category_sequence, start=1)
+                if candidate.pk == article.pk
+            ),
+            None,
+        )
+        continuation_articles = [
+            {"news": candidate, "position": position}
+            for position, candidate in enumerate(category_sequence, start=1)
+            if candidate.pk != article.pk
+        ][:9]
+
     news_feed = published_news().exclude(pk=article.pk).order_by(
         "-date_start", "-created_at"
     )[:13]
+    next_category_news = published_news().exclude(pk=article.pk)
+    if article.category_id:
+        next_category_news = next_category_news.exclude(category_id=article.category_id)
+
     return render(
         request,
         "article.html",
         shared_context(
             article=article,
-            recent_news=recent_news,
             news_feed=news_feed,
+            article_sequence_number=article_sequence_number,
+            continuation_articles=continuation_articles,
+            next_category_article=next_category_news.first(),
         ),
     )
 

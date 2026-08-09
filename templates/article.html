@@ -14,6 +14,7 @@
     <article class="article-content">
       <nav class="breadcrumbs" aria-label="Навигация"><a href="{% url 'index' %}">Главная</a>{% if article.category %}<span>·</span><a href="{% url 'category' article.category.slug %}">{{ article.category.name }}</a>{% endif %}</nav>
       <span class="article-tag">{{ article.category.name|default:'Новости' }}</span>
+      {% if article_sequence_number %}<span class="article-sequence-number">Материал №{{ article_sequence_number|stringformat:'02d' }}</span>{% endif %}
       <h1>{{ article.title }}</h1>
       {% if article.excerpt %}<p class="article-lead">{{ article.excerpt }}</p>{% endif %}
       <div class="article-meta"><span>{{ article.date_start|date:'j E Y, H:i' }}</span><span>Новости региона</span></div>
@@ -22,7 +23,35 @@
       {% if article.gallery.all %}<section class="article-gallery" aria-label="Фотогалерея материала">{% for photo in article.gallery.all %}<figure><img src="{{ photo.image.url }}" alt="{{ photo.caption|default:article.title }}" loading="lazy">{% if photo.caption %}<figcaption>{{ photo.caption }}</figcaption>{% endif %}</figure>{% endfor %}</section>{% endif %}
       {% include 'components/ad_slot.html' with ad=advertisements.article_inline css_class='ad--article-inline' slot_size='680 × 120' slot_label='статья · внутри текста' %}
       <div class="article-author"><b>Ставрополь+</b><span>Редакция · Новости региона</span></div>
-      {% if recent_news %}<section class="article-next"><p>Читайте также</p><a href="{% url 'news_detail' recent_news.0.slug %}">{{ recent_news.0.title }} <b>→</b></a></section>{% endif %}
+
+      {% if continuation_articles %}
+        <section class="article-continuation" aria-labelledby="article-continuation-title">
+          <div class="article-continuation__intro">
+            <p>Продолжение ленты</p>
+            <h2 id="article-continuation-title">Ещё материалы раздела «{{ article.category.name }}»</h2>
+          </div>
+          {% for item in continuation_articles %}
+            <article class="article-continuation__item" id="material-{{ item.position }}">
+              <p class="article-continuation__position">Материал №{{ item.position|stringformat:'02d' }}</p>
+              <span class="article-tag">{{ item.news.category.name|default:'Новости' }}</span>
+              <h3>{{ item.news.title }}</h3>
+              {% if item.news.excerpt %}<p class="article-lead">{{ item.news.excerpt }}</p>{% endif %}
+              <div class="article-meta"><span>{{ item.news.date_start|date:'j E Y, H:i' }}</span><span>Новости региона</span></div>
+              {% if item.news.main_photo %}<figure class="article-photo"><img src="{{ item.news.main_photo.url }}" alt="{{ item.news.title }}" loading="lazy"><figcaption>Фото: Ставрополь+</figcaption></figure>{% endif %}
+              <div class="article-body">{{ item.news.content|safe }}</div>
+              {% if item.news.gallery.all %}<section class="article-gallery" aria-label="Фотогалерея материала «{{ item.news.title }}»">{% for photo in item.news.gallery.all %}<figure><img src="{{ photo.image.url }}" alt="{{ photo.caption|default:item.news.title }}" loading="lazy">{% if photo.caption %}<figcaption>{{ photo.caption }}</figcaption>{% endif %}</figure>{% endfor %}</section>{% endif %}
+              <div class="article-author"><b>Ставрополь+</b><span>Редакция · Новости региона</span></div>
+            </article>
+          {% endfor %}
+        </section>
+      {% endif %}
+
+      {% if next_category_article %}
+        <section class="article-next article-next--cross-category">
+          <p>Читать далее · {{ next_category_article.category.name|default:'Другой раздел' }}</p>
+          <a href="{% url 'news_detail' next_category_article.slug %}">{{ next_category_article.title }} <b>→</b></a>
+        </section>
+      {% endif %}
     </article>
   </div>
 </main>
