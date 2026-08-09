@@ -21,8 +21,10 @@ class AdminJavascriptFallbackTests(SimpleTestCase):
     def test_public_page_uses_the_current_menu_script(self):
         response = get_template('base.html').render({})
 
-        self.assertIn('/static/news-site.css?v=20', response)
-        self.assertIn('family=Playfair+Display', response)
+        self.assertIn('/static/news-site.css?v=21', response)
+        self.assertIn('family=Merriweather', response)
+        self.assertIn('content="#97C2EC"', response)
+        self.assertNotIn('family=Playfair+Display', response)
         self.assertNotIn('family=Golos+Text', response)
         self.assertNotIn('family=Prata', response)
         self.assertIn('/static/brand/stavplus-mark.svg', response)

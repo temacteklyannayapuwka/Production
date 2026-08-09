@@ -1,10 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" role="img" aria-labelledby="title desc">
   <title id="title">Ставрополь+</title>
   <desc id="desc">Горный силуэт, новостной сигнал и знак плюс</desc>
-  <path d="M13 35.5a19 19 0 0 1 33.1-12.8" stroke="#B3B7BA" stroke-width="5" stroke-linecap="round"/>
-  <path d="M20 37.5a12 12 0 0 1 20.4-8.6" stroke="#B3B7BA" stroke-width="4.5" stroke-linecap="round"/>
-  <path d="M41.5 10.5v13M35 17h13" stroke="#B3B7BA" stroke-width="4.5" stroke-linecap="round"/>
-  <path d="m7 50 16.2-18L35 43.2l7.8-7.5L57 50H7Z" fill="#090F15"/>
-  <path d="m7 50 16.2-18L35 43.2l7.8-7.5L57 50H7Z" stroke="#090F15" stroke-width="3" stroke-linejoin="round"/>
-  <path d="m23.2 32 7.4 8.4-5.2 4.9-3.6-3.4-6.2 7.4h-7l14.6-17.3Z" fill="#D3D1CE"/>
+  <path d="M13 35.5a19 19 0 0 1 33.1-12.8" stroke="#97C2EC" stroke-width="5" stroke-linecap="round"/>
+  <path d="M20 37.5a12 12 0 0 1 20.4-8.6" stroke="#97C2EC" stroke-width="4.5" stroke-linecap="round"/>
+  <path d="M41.5 10.5v13M35 17h13" stroke="#97C2EC" stroke-width="4.5" stroke-linecap="round"/>
+  <path d="m7 50 16.2-18L35 43.2l7.8-7.5L57 50H7Z" fill="#1F1F1F"/>
+  <path d="m7 50 16.2-18L35 43.2l7.8-7.5L57 50H7Z" stroke="#1F1F1F" stroke-width="3" stroke-linejoin="round"/>
+  <path d="m23.2 32 7.4 8.4-5.2 4.9-3.6-3.4-6.2 7.4h-7l14.6-17.3Z" fill="#D6D0C2"/>
 </svg>
