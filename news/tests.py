@@ -117,3 +117,16 @@ class FeaturedNewsTests(TestCase):
         model_admin = NewsAdmin(News, admin.site)
 
         self.assertIn('★ Главная', str(model_admin.featured_status(featured)))
+
+    def test_homepage_feed_contains_every_news_after_lead_and_cards(self):
+        for number in range(18):
+            self.create_news(
+                f'feed-{number}',
+                date_start=timezone.now() - timedelta(minutes=number),
+            )
+
+        response = self.client.get('/')
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context['card_news']), 4)
+        self.assertEqual(len(response.context['headline_news']), 13)

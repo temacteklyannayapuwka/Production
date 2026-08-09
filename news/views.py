@@ -101,7 +101,10 @@ def index(request):
         shared_context(
             hero_news=news.first(),
             card_news=news[1:5],
-            headline_news=news[5:13],
+            # The lead story and four visual cards occupy the first five
+            # positions. Everything else continues in the compact feed so
+            # published materials do not disappear from the homepage.
+            headline_news=news[5:],
             popular_news=news.order_by("-views", "-date_start")[:5],
         ),
     )
