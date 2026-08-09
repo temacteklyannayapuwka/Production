@@ -21,7 +21,7 @@ class AdminJavascriptFallbackTests(SimpleTestCase):
     def test_public_page_uses_the_current_menu_script(self):
         response = get_template('base.html').render({})
 
-        self.assertIn('/static/news-site.css?v=22', response)
+        self.assertIn('/static/news-site.css?v=23', response)
         self.assertIn('family=Merriweather', response)
         self.assertIn('content="#6E6E6C"', response)
         self.assertNotIn('family=Playfair+Display', response)

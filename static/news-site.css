@@ -3,15 +3,15 @@
   --carbon: #6e6e6c;
   --lime: #dbdad6;
   --lime-deep: #6e6e6c;
-  --paper: #f7f7f6;
-  --ground: #dbdad6;
-  --line: #a4a3a0;
-  --line-soft: #dbdad6;
+  --paper: #ffffff;
+  --ground: #ffffff;
+  --line: #dbdad6;
+  --line-soft: #ecebe8;
   --muted: #6e6e6c;
   --muted-light: #6e6e6c;
   --white: #f7f7f6;
-  --concrete: #dbdad6;
-  --surface-hover: #dbdad6;
+  --concrete: #ecebe8;
+  --surface-hover: #f1f0ed;
   --ui: "Merriweather", Georgia, "Times New Roman", serif;
   --serif: "Merriweather", Georgia, "Times New Roman", serif;
 }
