@@ -119,7 +119,7 @@ def index(request):
             # positions. Everything else continues in the compact feed so
             # published materials do not disappear from the homepage.
             headline_news=news[5:],
-            popular_news=news.order_by("-views", "-date_start")[:5],
+            popular_news=news.order_by("-views", "-date_start")[:8],
         ),
     )
 
