@@ -21,7 +21,7 @@ class AdminJavascriptFallbackTests(SimpleTestCase):
     def test_public_page_uses_the_current_menu_script(self):
         response = get_template('base.html').render({})
 
-        self.assertIn('/static/news-site.css?v=26', response)
+        self.assertIn('/static/news-site.css?v=27', response)
         self.assertIn('family=Merriweather', response)
         self.assertIn('content="#151515"', response)
         self.assertNotIn('family=Playfair+Display', response)
@@ -79,17 +79,31 @@ class EditorialAdminTests(SimpleTestCase):
         self.assertNotIn('Вечерний дайджест', source)
         self.assertNotIn('ad--wide', source)
         self.assertNotIn('advertisements.home_bottom', source)
+        self.assertNotIn('advertisements.home_popular', source)
         self.assertIn('hero__lead', source)
         self.assertIn('latest--sticky', source)
         self.assertIn('popular__surface', source)
         self.assertIn('Погода · Ставрополь', source)
+
+    def test_category_page_uses_a_sticky_popular_rail_without_lower_advertisements(self):
+        source = get_template('category.html').template.source
+
+        self.assertIn('rubric-rail--sticky', source)
+        self.assertIn('popular_news', source)
+        self.assertNotIn('section_rail', source)
+        self.assertNotIn('section_bottom', source)
+        self.assertNotIn('Главное за день — в одном письме', source)
 
     def test_view_counts_are_only_visible_in_the_popular_block(self):
         index_source = get_template('index.html').template.source
 
         self.assertEqual(index_source.count('news.views'), 1)
         self.assertIn('popular_news', index_source)
-        for template_name in ('article.html', 'category.html', 'search.html'):
+        category_source = get_template('category.html').template.source
+        self.assertEqual(category_source.count('news.views'), 1)
+        self.assertIn('popular_news', category_source)
+
+        for template_name in ('article.html', 'search.html'):
             self.assertNotIn(
                 '.views',
                 get_template(template_name).template.source,
