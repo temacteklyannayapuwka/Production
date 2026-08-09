@@ -21,7 +21,7 @@ class AdminJavascriptFallbackTests(SimpleTestCase):
     def test_public_page_uses_the_current_menu_script(self):
         response = get_template('base.html').render({})
 
-        self.assertIn('/static/news-site.css?v=35', response)
+        self.assertIn('/static/news-site.css?v=36', response)
         self.assertIn('family=Merriweather', response)
         self.assertIn('content="#151515"', response)
         self.assertNotIn('family=Playfair+Display', response)
@@ -103,6 +103,7 @@ class EditorialAdminTests(SimpleTestCase):
         self.assertEqual(index_source.count('news.views'), 1)
         self.assertIn('popular_news', index_source)
         self.assertIn('Топ по просмотрам', index_source)
+        self.assertIn('headline-list__excerpt', index_source)
         self.assertIn('Лента новостей', index_source)
         self.assertIn('Категории', index_source)
         category_source = get_template('category.html').template.source

@@ -23,7 +23,7 @@
 
       <section class="home-main__feed">
         <div><div class="section-title"><h2>Топ по просмотрам</h2></div><div class="headline-list">
-      {% for news in popular_news %}<article><b>{{ forloop.counter|stringformat:'02d' }}</b><div><h3><a href="{% url 'news_detail' news.slug %}">{{ news.title }}</a></h3><p>◉ {{ news.views|default:0 }}</p></div></article>{% empty %}<div class="empty-state">Популярные материалы появятся здесь.</div>{% endfor %}
+      {% for news in popular_news %}<article><b>{{ forloop.counter|stringformat:'02d' }}</b><div><h3><a href="{% url 'news_detail' news.slug %}">{{ news.title }}</a></h3><p class="headline-list__excerpt">{{ news.excerpt|default:news.content|striptags|truncatewords:20 }}</p><p class="headline-list__views">◉ {{ news.views|default:0 }}</p></div></article>{% empty %}<div class="empty-state">Популярные материалы появятся здесь.</div>{% endfor %}
         </div></div>
         <aside class="latest latest--feed" aria-label="Категории"><div class="section-title"><h2>Категории</h2></div><div class="cards">
           {% for news in card_news %}<article class="card"><a href="{% url 'news_detail' news.slug %}"><div>{% if news.main_photo %}<img src="{{ news.main_photo.url }}" alt="{{ news.title }}" loading="lazy">{% else %}<div class="card__fallback"></div>{% endif %}<span class="tag">{{ news.category.name|default:'Новости' }}</span></div><h3>{{ news.title }}</h3><p>{{ news.date_start|date:'Сегодня · H:i' }}</p></a></article>{% endfor %}

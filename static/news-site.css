@@ -236,6 +236,17 @@ img { display: block; max-width: 100%; }
 .headline-list article:hover { transform: translateX(3px); background: var(--surface-hover); }
 .headline-list article > b { color: var(--muted-light); font-size: 11px; }
 .headline-list h3 { margin: 0 0 5px; font-size: 14px; line-height: 1.24; letter-spacing: -.25px; }
+.headline-list__excerpt {
+  display: -webkit-box;
+  margin: 0 0 6px !important;
+  overflow: hidden;
+  color: var(--muted) !important;
+  font-size: 11px !important;
+  line-height: 1.4;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+.headline-list__views { font-size: 10px !important; }
 .popular { min-width: 0; }
 .popular__surface { height: max-content; }
 .popular ol { margin: 0; padding: 0; list-style: none; }
