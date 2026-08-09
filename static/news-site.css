@@ -11,8 +11,8 @@
   --muted-light: #6c6d74;
   --white: #e7e6e2;
   --concrete: #b3b7ba;
-  --ui: "Golos Text", "Segoe UI", system-ui, -apple-system, sans-serif;
-  --serif: "Prata", Georgia, "Times New Roman", serif;
+  --ui: "Playfair Display", Georgia, "Times New Roman", serif;
+  --serif: "Playfair Display", Georgia, "Times New Roman", serif;
 }
 
 * { box-sizing: border-box; }
