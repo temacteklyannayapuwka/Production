@@ -66,6 +66,20 @@ class Command(BaseCommand):
                     raise CommandError(f"Category for news '{fields['slug']}' was not imported.")
 
                 publication_time = parse_datetime(fields['date_start']) if fields['date_start'] else None
+                expiration_time = parse_datetime(fields['date_end']) if fields['date_end'] else None
+                if fields['date_start'] and publication_time is None:
+                    raise CommandError(
+                        f"Invalid publication date for news '{fields['slug']}'."
+                    )
+                if fields['date_end'] and expiration_time is None:
+                    raise CommandError(
+                        f"Invalid expiration date for news '{fields['slug']}'."
+                    )
+
+                if publication_time and timezone.is_naive(publication_time):
+                    publication_time = timezone.make_aware(publication_time)
+                if expiration_time and timezone.is_naive(expiration_time):
+                    expiration_time = timezone.make_aware(expiration_time)
                 if not fields['is_published']:
                     editorial_status = News.EditorialStatus.DRAFT
                 elif publication_time and publication_time > timezone.now():
@@ -82,8 +96,8 @@ class Command(BaseCommand):
                     'is_published': fields['is_published'],
                     'editorial_status': editorial_status,
                     'is_featured': fields.get('is_featured', False),
-                    'date_start': fields['date_start'],
-                    'date_end': fields['date_end'],
+                    'date_start': publication_time,
+                    'date_end': expiration_time,
                     'meta_title': fields['meta_title'],
                     'meta_description': fields['meta_description'],
                     'meta_keywords': fields['meta_keywords'],

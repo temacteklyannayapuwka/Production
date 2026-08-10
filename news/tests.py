@@ -1,6 +1,7 @@
 from datetime import timedelta
 
 from django.contrib import admin
+from django.core.management import call_command
 from django.template.loader import get_template
 from django.test import SimpleTestCase, TestCase
 from django.utils import timezone
@@ -187,6 +188,17 @@ class FeaturedNewsTests(TestCase):
         self.assertEqual(len(response.context['card_news']), 4)
         self.assertEqual(len(response.context['headline_news']), 13)
         self.assertEqual(len(response.context['popular_news']), 8)
+
+
+class LocalDemoImportTests(TestCase):
+    def test_local_demo_import_parses_fixture_dates_and_creates_text_only_news(self):
+        call_command('import_local_demo')
+
+        self.assertEqual(News.objects.count(), 33)
+        text_only_news = News.objects.get(slug='stavropol-community-sports-space')
+        self.assertFalse(text_only_news.main_photo)
+        self.assertTrue(timezone.is_aware(text_only_news.date_start))
+        self.assertGreaterEqual(text_only_news.content.count('<p>'), 3)
 
 
 class ArticleContinuationTests(TestCase):
