@@ -286,6 +286,21 @@ img { display: block; max-width: 100%; }
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
 }
+.rubric-row__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin: 0 0 8px !important;
+}
+.rubric-row__tags span {
+  border-radius: 999px;
+  padding: 3px 6px;
+  background: var(--surface-hover);
+  color: var(--lime-deep);
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 1.2;
+}
 .rubric-rail { display: grid; gap: 17px; }
 .rubric-rail--sticky { position: sticky; top: 18px; align-self: start; }
 .rubric-popular .section-title { margin: 0 0 13px; }
@@ -331,6 +346,28 @@ img { display: block; max-width: 100%; }
 .breadcrumbs a { color: inherit; text-decoration: none; background-image: linear-gradient(currentColor, currentColor); background-position: 0 calc(100% + 2px); background-repeat: no-repeat; background-size: 0 1px; transition: color .18s ease, background-size .18s ease; }
 .breadcrumbs a:hover { background-size: 100% 1px; color: var(--lime-deep); }
 .article-tag { display: inline-flex; margin-bottom: 14px; border-radius: 6px; padding: 5px 8px; background: var(--carbon); color: var(--white); font-size: 9px; font-weight: 850; letter-spacing: .08em; text-transform: uppercase; }
+.article-topic-tags {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin: 0 8px 14px;
+  vertical-align: top;
+}
+.article-topic-tags a {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 4px 7px;
+  background: var(--paper);
+  color: var(--lime-deep);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .02em;
+  line-height: 1.2;
+  text-decoration: none;
+  transition: background .18s ease, border-color .18s ease, color .18s ease, transform .18s ease;
+}
+.article-topic-tags a:hover { transform: translateY(-1px); border-color: var(--carbon); background: var(--lime); color: var(--ink); }
+.article-topic-tags--continuation { margin-left: 8px; }
 .article-sequence-number { display: inline-flex; margin: 0 0 14px 8px; color: var(--muted-light); font-size: 10px; font-weight: 750; letter-spacing: .05em; text-transform: uppercase; vertical-align: top; }
 .article-content h1 { max-width: 750px; margin: 0; font-family: var(--serif); font-size: clamp(38px, 4.3vw, 64px); font-weight: 400; line-height: 1.06; letter-spacing: -1.8px; }
 .article-lead { max-width: 680px; margin: 25px 0 17px; color: var(--lime-deep); font-size: 19px; line-height: 1.43; }

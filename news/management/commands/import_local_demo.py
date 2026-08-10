@@ -10,10 +10,23 @@ from django.db import transaction
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 
-from news.models import Category, News
+from news.models import Category, News, Tag
 
 
 FIXTURE_PATH = Path(__file__).resolve().parents[2] / 'fixtures' / 'local_demo_content.json'
+
+# The starter content remains useful immediately after a clean deployment: each
+# imported material gets a small, reusable topic set. Editors can then add or
+# remove tags in the admin without a later import replacing their choices.
+DEFAULT_TAGS_BY_CATEGORY = {
+    'obshchestvo': ('Ставрополь', 'Городская среда'),
+    'politika': ('Региональная политика', 'Муниципалитеты'),
+    'ekonomika': ('Экономика края', 'Предпринимательство'),
+    'kultura': ('Культура', 'События'),
+    'sport': ('Спорт', 'Здоровый образ жизни'),
+    'nauka': ('Наука', 'Образование'),
+    'proisshestviya': ('Безопасность', 'Происшествия'),
+}
 
 
 class Command(BaseCommand):
@@ -103,7 +116,12 @@ class Command(BaseCommand):
                     'meta_keywords': fields['meta_keywords'],
                     'views': fields['views'],
                 }
-                _, created = News.objects.update_or_create(slug=fields['slug'], defaults=defaults)
+                news, created = News.objects.update_or_create(
+                    slug=fields['slug'], defaults=defaults
+                )
+                for tag_name in DEFAULT_TAGS_BY_CATEGORY.get(category.slug if category else '', ()):
+                    tag, _ = Tag.objects.get_or_create(name=tag_name)
+                    news.tags.add(tag)
                 if created:
                     created_news += 1
                 else:

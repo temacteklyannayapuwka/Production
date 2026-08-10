@@ -27,6 +27,42 @@ class Category(models.Model):
         return self.name
 
 
+class Tag(models.Model):
+    """A reusable, editor-managed topic label for one or more news items."""
+
+    name = models.CharField('Название тега', max_length=80, unique=True)
+    slug = models.SlugField('URL', unique=True, max_length=100, blank=True)
+    description = models.TextField('Описание', blank=True)
+    is_active = models.BooleanField(
+        'Показывать на сайте',
+        default=True,
+        help_text='Выключи, чтобы временно скрыть тег и его страницу от читателей.',
+    )
+
+    class Meta:
+        verbose_name = 'Тег'
+        verbose_name_plural = 'Теги'
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            try:
+                base_slug = slugify(translit(self.name, 'ru', reversed=True))
+            except Exception:
+                base_slug = slugify(self.name)
+            base_slug = base_slug or 'tag'
+            candidate = base_slug
+            suffix = 2
+            while type(self).objects.exclude(pk=self.pk).filter(slug=candidate).exists():
+                candidate = f'{base_slug}-{suffix}'
+                suffix += 1
+            self.slug = candidate
+        super().save(*args, **kwargs)
+
+
 class News(models.Model):
     class EditorialStatus(models.TextChoices):
         DRAFT = 'draft', 'Черновик'
@@ -45,6 +81,13 @@ class News(models.Model):
         blank=True,
         related_name='news',
         verbose_name='Категория'
+    )
+    tags = models.ManyToManyField(
+        Tag,
+        blank=True,
+        related_name='news_items',
+        verbose_name='Теги',
+        help_text='Добавь от 1 до 5 меток, по которым читатель сможет найти похожие материалы.',
     )
 
     main_photo = models.ImageField(

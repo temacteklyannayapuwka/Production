@@ -3,13 +3,13 @@ from pathlib import PurePosixPath
 
 from django.contrib.staticfiles import finders
 from django.core.paginator import Paginator
-from django.db.models import F, Q
+from django.db.models import F, Prefetch, Q
 from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404, render
 from django.utils.html import strip_tags
 from django.utils import timezone
 
-from .models import Advertisement, Category, News
+from .models import Advertisement, Category, News, Tag
 
 
 ARTICLE_CATEGORY_FLOW = (
@@ -84,6 +84,12 @@ def published_news():
     now = timezone.now()
     return (
         News.objects.select_related("category")
+        .prefetch_related(
+            Prefetch(
+                "tags",
+                queryset=Tag.objects.filter(is_active=True).order_by("name"),
+            )
+        )
         .filter(is_published=True, date_start__lte=now)
         .filter(Q(date_end__isnull=True) | Q(date_end__gte=now))
         .order_by("-is_featured", "-date_start", "-created_at")
@@ -190,6 +196,22 @@ def category_page(request, category_slug):
     )
 
 
+def tag_page(request, tag_slug):
+    tag = get_object_or_404(Tag.objects.filter(is_active=True), slug=tag_slug)
+    page_obj = paginate(request, published_news().filter(tags=tag).distinct())
+    latest_news = published_news().order_by("-date_start", "-created_at")[:24]
+    return render(
+        request,
+        "tag.html",
+        shared_context(
+            active_tag=tag,
+            tag_news=page_obj,
+            page_obj=page_obj,
+            latest_news=latest_news,
+        ),
+    )
+
+
 def search(request):
     query = request.GET.get("q", "").strip()
     results = published_news().none()
@@ -199,7 +221,8 @@ def search(request):
             | Q(excerpt__icontains=query)
             | Q(content__icontains=query)
             | Q(category__name__icontains=query)
-        )
+            | Q(tags__name__icontains=query)
+        ).distinct()
     page_obj = paginate(request, results)
     if query:
         for news in page_obj:
@@ -267,6 +290,7 @@ def _attach_search_context(news, query):
     excerpt = news.excerpt or ''
     content = strip_tags(news.content or ' ').strip()
     category_name = news.category.name if news.category else ''
+    tag_names = ', '.join(tag.name for tag in news.tags.all())
 
     matched_sources = []
     if normalized_query in title.casefold():
@@ -277,6 +301,8 @@ def _attach_search_context(news, query):
         matched_sources.append('тексте')
     if normalized_query in category_name.casefold():
         matched_sources.append('разделе')
+    if normalized_query in tag_names.casefold():
+        matched_sources.append('тегах')
 
     source_text = ', '.join(matched_sources) or 'материале'
     if normalized_query in excerpt.casefold():
@@ -285,6 +311,8 @@ def _attach_search_context(news, query):
         context = _search_fragment(content, query)
     elif normalized_query in category_name.casefold():
         context = f'Раздел: {category_name}'
+    elif normalized_query in tag_names.casefold():
+        context = f'Теги: {tag_names}'
     else:
         context = excerpt or _search_fragment(content, query)
 

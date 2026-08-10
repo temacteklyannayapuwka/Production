@@ -4,7 +4,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.html import format_html
 
-from .models import Advertisement, Category, News, NewsGallery
+from .models import Advertisement, Category, News, NewsGallery, Tag
 
 
 class NewsAdminForm(forms.ModelForm):
@@ -24,6 +24,10 @@ class NewsAdminForm(forms.ModelForm):
             'category': (
                 'Раздел сайта',
                 'Выбери тему, например «Общество» или «Спорт».',
+            ),
+            'tags': (
+                'Теги темы',
+                'Выбери от 1 до 5 уточняющих тем: например «Транспорт», «Ставрополь», «Благоустройство». Новые теги создаются в разделе «Теги» слева.',
             ),
             'main_photo': (
                 'Главное фото',
@@ -139,6 +143,35 @@ class CategoryAdmin(admin.ModelAdmin):
         return obj.news.count()
 
 
+@admin.register(Tag)
+class TagAdmin(admin.ModelAdmin):
+    list_display = ('name', 'slug', 'is_active', 'news_count')
+    list_display_links = ('name',)
+    list_editable = ('is_active',)
+    list_filter = ('is_active',)
+    search_fields = ('name', 'slug', 'description')
+    prepopulated_fields = {'slug': ('name',)}
+    ordering = ('name',)
+    fieldsets = (
+        ('Тег', {
+            'description': 'Тег — дополнительная тема новости. Например: «Транспорт», «Семья», «Городская среда». Один тег можно использовать в разных разделах.',
+            'fields': ('name', 'description'),
+        }),
+        ('Показ на сайте', {
+            'description': 'Включённый тег появляется в статьях и открывает страницу со всеми материалами по этой теме.',
+            'fields': ('is_active',),
+        }),
+        ('Технические настройки', {
+            'classes': ('collapse',),
+            'fields': ('slug',),
+        }),
+    )
+
+    @admin.display(description='Новостей')
+    def news_count(self, obj):
+        return obj.news_items.count()
+
+
 @admin.register(News)
 class NewsAdmin(admin.ModelAdmin):
     form = NewsAdminForm
@@ -156,7 +189,8 @@ class NewsAdmin(admin.ModelAdmin):
     list_display_links = ('title_short',)
     list_editable = ('editorial_status', 'is_featured')
     list_filter = ('editorial_status', 'is_featured', 'category', 'date_start', 'created_at')
-    search_fields = ('title', 'content', 'excerpt', 'meta_keywords')
+    search_fields = ('title', 'content', 'excerpt', 'meta_keywords', 'tags__name')
+    autocomplete_fields = ('tags',)
     prepopulated_fields = {'slug': ('title',)}
     ordering = ('-date_start', '-created_at')
     date_hierarchy = 'date_start'
@@ -198,13 +232,13 @@ class NewsAdmin(admin.ModelAdmin):
         return super().get_queryset(request).select_related('category')
 
     def get_fieldsets(self, request, obj=None):
-        card_fields = ['title', 'category', 'main_photo']
+        card_fields = ['title', 'category', 'tags', 'main_photo']
         if obj and obj.main_photo:
             card_fields.append('photo_display')
 
         return (
             ('1. Основа новости', {
-                'description': 'Заполни заголовок, раздел и главное фото. Это читатель увидит в ленте.',
+                'description': 'Заполни заголовок, раздел, теги и главное фото. Это читатель увидит в ленте и на странице статьи.',
                 'fields': tuple(card_fields),
             }),
             ('2. Текст материала', {

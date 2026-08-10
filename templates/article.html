@@ -14,6 +14,7 @@
     <article class="article-content">
       <nav class="breadcrumbs" aria-label="Навигация"><a href="{% url 'index' %}">Главная</a>{% if article.category %}<span>·</span><a href="{% url 'category' article.category.slug %}">{{ article.category.name }}</a>{% endif %}</nav>
       <span class="article-tag">{{ article.category.name|default:'Новости' }}</span>
+      {% if article.tags.all %}<nav class="article-topic-tags" aria-label="Теги материала">{% for tag in article.tags.all %}<a href="{% url 'tag' tag.slug %}">#{{ tag.name }}</a>{% endfor %}</nav>{% endif %}
       {% if article_sequence_number %}<span class="article-sequence-number">Материал №{{ article_sequence_number|stringformat:'02d' }}</span>{% endif %}
       <h1>{{ article.title }}</h1>
       {% if article.excerpt %}<p class="article-lead">{{ article.excerpt }}</p>{% endif %}
@@ -34,6 +35,7 @@
             <article class="article-continuation__item" id="material-{{ item.position }}">
               <p class="article-continuation__position">Материал №{{ item.position|stringformat:'02d' }}</p>
               <span class="article-tag">{{ item.news.category.name|default:'Новости' }}</span>
+              {% if item.news.tags.all %}<nav class="article-topic-tags article-topic-tags--continuation" aria-label="Теги материала">{% for tag in item.news.tags.all %}<a href="{% url 'tag' tag.slug %}">#{{ tag.name }}</a>{% endfor %}</nav>{% endif %}
               <h3>{{ item.news.title }}</h3>
               {% if item.news.excerpt %}<p class="article-lead">{{ item.news.excerpt }}</p>{% endif %}
               <div class="article-meta"><span>{{ item.news.date_start|date:'j E Y, H:i' }}</span><span>Новости региона</span></div>

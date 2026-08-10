@@ -2,12 +2,13 @@ from datetime import timedelta
 
 from django.contrib import admin
 from django.core.management import call_command
+from django.urls import reverse
 from django.template.loader import get_template
 from django.test import SimpleTestCase, TestCase
 from django.utils import timezone
 
 from .admin import NewsAdmin, NewsAdminForm
-from .models import Advertisement, Category, News
+from .models import Advertisement, Category, News, Tag
 from .views import published_news
 
 
@@ -22,7 +23,7 @@ class AdminJavascriptFallbackTests(SimpleTestCase):
     def test_public_page_uses_the_current_menu_script(self):
         response = get_template('base.html').render({})
 
-        self.assertIn('/static/news-site.css?v=40', response)
+        self.assertIn('/static/news-site.css?v=41', response)
         self.assertIn('family=Merriweather', response)
         self.assertIn('content="#151515"', response)
         self.assertNotIn('family=Playfair+Display', response)
@@ -61,6 +62,7 @@ class EditorialAdminTests(SimpleTestCase):
         self.assertIn('WebP', form.fields['main_photo'].help_text)
         self.assertIn('весь экран', form.fields['content'].help_text)
         self.assertEqual(form.fields['is_featured'].label, 'Главная новость')
+        self.assertEqual(form.fields['tags'].label, 'Теги темы')
 
     def test_add_form_excludes_the_empty_photo_preview(self):
         model_admin = NewsAdmin(News, admin.site)
@@ -199,6 +201,10 @@ class LocalDemoImportTests(TestCase):
         self.assertFalse(text_only_news.main_photo)
         self.assertTrue(timezone.is_aware(text_only_news.date_start))
         self.assertGreaterEqual(text_only_news.content.count('<p>'), 3)
+        self.assertSetEqual(
+            set(text_only_news.tags.values_list('name', flat=True)),
+            {'Ставрополь', 'Городская среда'},
+        )
 
 
 class ArticleContinuationTests(TestCase):
@@ -301,3 +307,49 @@ class EditorialStatusAndSearchTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context['advertisements']['top'], banner)
+
+
+class TagPageAndSearchTests(TestCase):
+    def setUp(self):
+        self.category = Category.objects.create(name='Общество', slug='obshchestvo')
+        self.tag = Tag.objects.create(
+            name='Городская среда',
+            description='Парки, дворы, улицы и общественные пространства.',
+        )
+
+    def create_news(self, slug, title, *, tags=()):
+        news = News.objects.create(
+            title=title,
+            slug=slug,
+            content='<p>Подробный текст материала о городской жизни.</p>',
+            excerpt='Короткий анонс для тематической ленты.',
+            category=self.category,
+            editorial_status=News.EditorialStatus.PUBLISHED,
+            date_start=timezone.now() - timedelta(minutes=5),
+        )
+        news.tags.set(tags)
+        return news
+
+    def test_tag_page_contains_only_matching_news_and_article_displays_tag_link(self):
+        tagged = self.create_news('tagged', 'Открыли новую прогулочную зону', tags=(self.tag,))
+        self.create_news('untagged', 'Обновили расписание маршрута')
+
+        tag_response = self.client.get(reverse('tag', args=(self.tag.slug,)))
+        article_response = self.client.get(tagged.get_absolute_url())
+
+        self.assertEqual(tag_response.status_code, 200)
+        self.assertContains(tag_response, 'Открыли новую прогулочную зону')
+        self.assertEqual(list(tag_response.context['tag_news']), [tagged])
+        self.assertContains(tag_response, '#Городская среда')
+        self.assertContains(article_response, reverse('tag', args=(self.tag.slug,)))
+
+    def test_search_finds_news_by_tag_and_explains_the_match(self):
+        transport_tag = Tag.objects.create(name='Транспорт')
+        self.create_news('tag-search', 'Объявлен новый график', tags=(transport_tag,))
+
+        response = self.client.get('/search/', {'q': 'Транспорт'})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Найдено в: тегах')
+        self.assertContains(response, 'Теги:')
+        self.assertContains(response, 'class="search-highlight">Транспорт</mark>', html=False)

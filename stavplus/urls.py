@@ -18,6 +18,7 @@ urlpatterns = [
     path('', views.index, name='index'),
     path('search/', views.search, name='search'),
     path('news/<slug:slug>/', views.news_detail, name='news_detail'),
+    path('tag/<slug:tag_slug>/', views.tag_page, name='tag'),
     path('rubric/<slug:category_slug>/', views.category_page, name='category'),
     path('politika/', views.politika, name='politika'),
     path('ekonomika/', views.ekonomika, name='ekonomika'),
