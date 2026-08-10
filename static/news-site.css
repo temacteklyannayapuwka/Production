@@ -468,8 +468,9 @@ body.menu-open { overflow: hidden; }
   .masthead__inner { grid-template-columns: 1fr auto; }
   .header-nav { display: none; }
   .search--header { width: 184px; }
-  .home-layout { display: block; }
-  .home-main { margin-top: 0; }
+  .home-layout { display: flex; flex-direction: column; }
+  .home-main { order: 1; margin-top: 0; }
+  .home-layout > .popular--sticky { order: 2; margin-top: 30px; }
   .popular--sticky { position: static; height: auto; max-height: none; margin-bottom: 30px; }
   .popular--feed-scroll .popular__surface { max-height: none; overflow: visible; scrollbar-gutter: auto; }
   .home-main__feed { grid-template-columns: 1fr; margin-top: 30px; }
