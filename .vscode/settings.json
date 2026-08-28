@@ -1,0 +1,14 @@
+{
+  "files.exclude": {
+    "**/__pycache__": true,
+    "**/.ruff_cache": true,
+    "**/.venv": true,
+    "**/db.sqlite3": true,
+    "**/staticfiles": true
+  },
+  "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
+  "search.exclude": {
+    "**/.venv": true,
+    "**/staticfiles": true
+  }
+}

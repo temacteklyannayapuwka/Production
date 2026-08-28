@@ -1,0 +1,6 @@
+# Transitive runtime versions verified with Python 3.12 and Django 6.0.6.
+# Direct project dependencies remain in requirements.txt.
+asgiref==3.12.1
+django-js-asset==4.1.0
+six==1.17.0
+sqlparse==0.6.0

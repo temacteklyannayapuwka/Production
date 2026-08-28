@@ -1,4 +1,5 @@
 from datetime import timedelta
+from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from django.contrib import admin
@@ -231,7 +232,15 @@ class AdminQueryTests(TestCase):
 
 class LocalDemoImportTests(TestCase):
     def test_local_demo_import_parses_fixture_dates_and_creates_text_only_news(self):
-        call_command('import_local_demo')
+        with TemporaryDirectory() as media_root, override_settings(MEDIA_ROOT=media_root):
+            call_command('import_local_demo')
+
+            bundled_photo = News.objects.get(slug='stavropol-public-garden').main_photo
+            missing_photo = News.objects.get(slug='preview-1').main_photo
+
+            self.assertTrue(bundled_photo)
+            self.assertTrue((Path(media_root) / bundled_photo.name).is_file())
+            self.assertFalse(missing_photo)
 
         self.assertEqual(News.objects.count(), 33)
         text_only_news = News.objects.get(slug='stavropol-community-sports-space')

@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import json
+import shutil
 from pathlib import Path
 
+from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from django.utils import timezone
@@ -14,6 +16,7 @@ from news.models import Category, News, Tag
 
 
 FIXTURE_PATH = Path(__file__).resolve().parents[2] / 'fixtures' / 'local_demo_content.json'
+FIXTURE_MEDIA_ROOT = FIXTURE_PATH.parent / 'media'
 
 # The starter content remains useful immediately after a clean deployment: each
 # imported material gets a small, reusable topic set. Editors can then add or
@@ -100,12 +103,16 @@ class Command(BaseCommand):
                 else:
                     editorial_status = News.EditorialStatus.PUBLISHED
 
+                main_photo = self.prepare_main_photo(
+                    fields['main_photo'],
+                    copy_file=not options['dry_run'],
+                )
                 defaults = {
                     'title': fields['title'],
                     'content': fields['content'],
                     'excerpt': fields['excerpt'],
                     'category': category,
-                    'main_photo': fields['main_photo'] or None,
+                    'main_photo': main_photo,
                     'is_published': fields['is_published'],
                     'editorial_status': editorial_status,
                     'is_featured': fields.get('is_featured', False),
@@ -136,3 +143,26 @@ class Command(BaseCommand):
             f'categories +{created_categories}/~{updated_categories}, '
             f'news +{created_news}/~{updated_news}.'
         ))
+
+    def prepare_main_photo(self, raw_path: str, *, copy_file: bool) -> str | None:
+        """Copy a bundled fixture image into MEDIA_ROOT or keep the record text-only."""
+        if not raw_path:
+            return None
+
+        relative_path = Path(raw_path)
+        if relative_path.is_absolute() or '..' in relative_path.parts:
+            raise CommandError(f'Unsafe fixture media path: {raw_path}')
+
+        source = FIXTURE_MEDIA_ROOT / relative_path
+        if not source.is_file():
+            self.stderr.write(self.style.WARNING(
+                f'Fixture image is not bundled; importing without it: {raw_path}'
+            ))
+            return None
+
+        if copy_file:
+            destination = Path(settings.MEDIA_ROOT) / relative_path
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(source, destination)
+
+        return relative_path.as_posix()
