@@ -4,10 +4,10 @@ Django-проект новостного сайта «Ставрополь+». �
 
 ## Локальный запуск
 
-Требуется Python 3.9+.
+Целевой runtime совпадает с production: Python 3.12 и Django 6.0.6.
 
 ```bash
-python3 -m venv .venv
+python3.12 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
 pip install -r requirements.txt
@@ -42,6 +42,14 @@ python manage.py seed_demo_news
 Для опционального PostgreSQL установите системные клиентские библиотеки и
 используйте `pip install -r requirements-postgres.txt` вместо базового списка.
 
+## Известный долг CKEditor
+
+`django-ckeditor` 6.7.3 включает неподдерживаемый CKEditor 4.22.1 с известными
+неисправленными уязвимостями и поэтому выдаёт предупреждение `ckeditor.W001`
+при системных проверках Django. Предупреждение намеренно не отключено. Переход
+на CKEditor 5 либо поддерживаемый CKEditor 4 LTS нужно выполнить отдельной
+задачей после проверки совместимости редакционных данных и условий лицензии.
+
 ## Публикация
 
 На сервере после получения коммита выполните:
@@ -59,6 +67,7 @@ python manage.py collectstatic --noinput
 
 ```bash
 pip install -r requirements-dev.txt
+python -m pip check
 python manage.py check
 python manage.py makemigrations --check --dry-run
 python manage.py test

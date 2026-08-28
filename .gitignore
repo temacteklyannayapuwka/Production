@@ -2,6 +2,7 @@
 __pycache__/
 *.py[cod]
 .venv/
+.venv-py312-django6/
 venv/
 
 # Django runtime files

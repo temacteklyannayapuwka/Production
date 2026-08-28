@@ -1,4 +1,4 @@
-Django==4.2.30
+Django==6.0.6
 django-ckeditor==6.7.3
 django-unfold==0.67.0
 Pillow==11.3.0
