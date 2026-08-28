@@ -185,7 +185,8 @@ class FeaturedNewsTests(TestCase):
                 date_start=timezone.now() - timedelta(minutes=number),
             )
 
-        response = self.client.get('/')
+        with self.assertNumQueries(6):
+            response = self.client.get('/')
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.context['card_news']), 4)

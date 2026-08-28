@@ -149,7 +149,7 @@ def active_advertisements():
 
 def shared_context(**extra):
     context = {
-        "navigation_categories": navigation_categories(),
+        "navigation_categories": list(navigation_categories()),
         "advertisements": active_advertisements(),
     }
     context.update(extra)
@@ -162,18 +162,18 @@ def paginate(request, queryset, per_page=20):
 
 
 def index(request):
-    news = published_news()
+    news = list(published_news())
     return render(
         request,
         "index.html",
         shared_context(
-            hero_news=news.first(),
+            hero_news=news[0] if news else None,
             card_news=news[1:5],
             # The lead story and four visual cards occupy the first five
             # positions. Everything else continues in the compact feed so
             # published materials do not disappear from the homepage.
             headline_news=news[5:],
-            popular_news=news.order_by("-views", "-date_start")[:8],
+            popular_news=published_news().order_by("-views", "-date_start")[:8],
         ),
     )
 
