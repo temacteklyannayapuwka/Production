@@ -60,6 +60,7 @@ class Command(BaseCommand):
                     'excerpt': 'Демонстрационный материал для локальной проверки нового дизайна.',
                     'category': categories[category_slug],
                     'is_published': True,
+                    'editorial_status': News.EditorialStatus.PUBLISHED,
                     'date_start': now - timedelta(minutes=index * 12),
                     'views': 25000 - index * 750,
                 },

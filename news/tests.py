@@ -1,10 +1,11 @@
 from datetime import timedelta
+from tempfile import TemporaryDirectory
 
 from django.contrib import admin
 from django.core.management import call_command
 from django.urls import reverse
 from django.template.loader import get_template
-from django.test import SimpleTestCase, TestCase
+from django.test import SimpleTestCase, TestCase, override_settings
 from django.utils import timezone
 
 from .admin import NewsAdmin, NewsAdminForm
@@ -204,6 +205,16 @@ class LocalDemoImportTests(TestCase):
         self.assertSetEqual(
             set(text_only_news.tags.values_list('name', flat=True)),
             {'Ставрополь', 'Городская среда'},
+        )
+
+    def test_seeded_demo_news_are_visible_on_the_homepage(self):
+        with TemporaryDirectory() as media_root, override_settings(MEDIA_ROOT=media_root):
+            call_command('seed_demo_news')
+
+        self.assertEqual(News.objects.count(), 22)
+        self.assertEqual(published_news().count(), 22)
+        self.assertFalse(
+            News.objects.exclude(editorial_status=News.EditorialStatus.PUBLISHED).exists()
         )
 
 
