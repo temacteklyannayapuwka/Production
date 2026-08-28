@@ -11,6 +11,8 @@ python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
 pip install -r requirements.txt
+cp .env.example .env
+# Replace DJANGO_SECRET_KEY in .env before continuing.
 python manage.py migrate
 python manage.py runserver
 ```
@@ -36,6 +38,9 @@ python manage.py seed_demo_news
 - `DJANGO_ALLOWED_HOSTS=stavplus.ru,www.stavplus.ru` — домены сайта.
 
 `.env`, база `db.sqlite3`, пользовательские загрузки `media/`, собранная статика и виртуальное окружение намеренно исключены из Git.
+
+Для опционального PostgreSQL установите системные клиентские библиотеки и
+используйте `pip install -r requirements-postgres.txt` вместо базового списка.
 
 ## Публикация
 

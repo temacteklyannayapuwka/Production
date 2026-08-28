@@ -1,0 +1,4 @@
+-r requirements.txt
+
+# Requires PostgreSQL client headers and pg_config on the deployment host.
+psycopg2==2.9.12

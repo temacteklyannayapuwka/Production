@@ -1,6 +1,5 @@
-asgiref==3.11.1
-Django==6.0.6
-django-unfold==0.96.0
-pillow==12.2.0
-psycopg2==2.9.12
-sqlparse==0.5.5
+Django==4.2.30
+django-ckeditor==6.7.3
+django-unfold==0.67.0
+Pillow==11.3.0
+transliterate==1.10.2
