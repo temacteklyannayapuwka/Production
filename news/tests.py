@@ -355,6 +355,65 @@ class EditorialStatusAndSearchTests(TestCase):
         self.assertEqual(response.context['advertisements']['top'], banner)
 
 
+class EditorialWorkflowRegressionTests(TestCase):
+    def setUp(self):
+        self.category = Category.objects.create(name='Общество', slug='obshchestvo')
+
+    def create_news(self, title, *, category=None, status=News.EditorialStatus.PUBLISHED):
+        return News.objects.create(
+            title=title,
+            content='<p>Первый абзац новости для автоматического анонса.</p>',
+            category=category or self.category,
+            editorial_status=status,
+            date_start=timezone.now() - timedelta(minutes=5),
+        )
+
+    def test_news_creation_populates_publication_metadata(self):
+        news = self.create_news('В городе открыли новую дорогу')
+
+        self.assertTrue(news.slug)
+        self.assertEqual(news.meta_title, news.title)
+        self.assertEqual(news.meta_description, news.excerpt)
+        self.assertIn('Первый абзац новости', news.excerpt)
+        self.assertNotIn('<p>', news.excerpt)
+
+    def test_publish_and_unpublish_cycle_controls_public_visibility(self):
+        news = self.create_news('Редакционный материал', status=News.EditorialStatus.DRAFT)
+        self.assertFalse(published_news().filter(pk=news.pk).exists())
+
+        news.editorial_status = News.EditorialStatus.PUBLISHED
+        news.save()
+        self.assertTrue(published_news().filter(pk=news.pk).exists())
+
+        news.editorial_status = News.EditorialStatus.DRAFT
+        news.save()
+        self.assertFalse(published_news().filter(pk=news.pk).exists())
+
+    def test_category_page_contains_only_its_published_news(self):
+        matching = self.create_news('Материал общества')
+        other_category = Category.objects.create(name='Спорт', slug='sport')
+        self.create_news('Спортивный материал', category=other_category)
+        self.create_news('Черновик общества', status=News.EditorialStatus.DRAFT)
+
+        response = self.client.get(reverse('category', args=(self.category.slug,)))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(list(response.context['category_news']), [matching])
+
+    def test_detail_feeds_exclude_the_current_news(self):
+        current = self.create_news('Текущий материал')
+        self.create_news('Соседний материал')
+
+        response = self.client.get(current.get_absolute_url())
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn(current, response.context['news_feed'])
+        self.assertNotIn(
+            current,
+            [item['news'] for item in response.context['continuation_articles']],
+        )
+
+
 class TagPageAndSearchTests(TestCase):
     def setUp(self):
         self.category = Category.objects.create(name='Общество', slug='obshchestvo')
