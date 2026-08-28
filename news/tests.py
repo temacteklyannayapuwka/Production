@@ -8,7 +8,7 @@ from django.template.loader import get_template
 from django.test import SimpleTestCase, TestCase, override_settings
 from django.utils import timezone
 
-from .admin import NewsAdmin, NewsAdminForm
+from .admin import CategoryAdmin, NewsAdmin, NewsAdminForm, TagAdmin
 from .models import Advertisement, Category, News, Tag
 from .views import published_news
 
@@ -191,6 +191,41 @@ class FeaturedNewsTests(TestCase):
         self.assertEqual(len(response.context['card_news']), 4)
         self.assertEqual(len(response.context['headline_news']), 13)
         self.assertEqual(len(response.context['popular_news']), 8)
+
+
+class AdminQueryTests(TestCase):
+    def test_category_and_tag_counts_do_not_add_per_row_queries(self):
+        categories = [
+            Category.objects.create(name=f'Раздел {number}', slug=f'category-{number}')
+            for number in range(3)
+        ]
+        tags = [Tag.objects.create(name=f'Тег {number}') for number in range(3)]
+        for number, category in enumerate(categories):
+            news = News.objects.create(
+                title=f'Новость {number}',
+                slug=f'news-{number}',
+                content='<p>Текст</p>',
+                category=category,
+                editorial_status=News.EditorialStatus.PUBLISHED,
+            )
+            news.tags.add(tags[number])
+
+        category_admin = CategoryAdmin(Category, admin.site)
+        with self.assertNumQueries(1):
+            category_counts = [
+                category_admin.news_count(category)
+                for category in category_admin.get_queryset(request=None)
+            ]
+
+        tag_admin = TagAdmin(Tag, admin.site)
+        with self.assertNumQueries(1):
+            tag_counts = [
+                tag_admin.news_count(tag)
+                for tag in tag_admin.get_queryset(request=None)
+            ]
+
+        self.assertEqual(category_counts, [1, 1, 1])
+        self.assertEqual(tag_counts, [1, 1, 1])
 
 
 class LocalDemoImportTests(TestCase):
