@@ -52,3 +52,16 @@ python manage.py collectstatic --noinput
 ```
 
 Затем перезапустите процесс приложения через ISPmanager или используемый процесс-менеджер.
+
+## Проверки качества
+
+Инструменты разработки устанавливаются отдельно от production-зависимостей:
+
+```bash
+pip install -r requirements-dev.txt
+python manage.py check
+python manage.py makemigrations --check --dry-run
+python manage.py test
+ruff check .
+git diff --check
+```

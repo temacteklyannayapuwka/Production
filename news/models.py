@@ -157,7 +157,7 @@ class News(models.Model):
             try:
                 transliterated = translit(self.title, 'ru', reversed=True)
                 self.slug = slugify(transliterated)
-            except:
+            except Exception:
                 self.slug = slugify(self.title)
 
         if not self.excerpt and self.content:
