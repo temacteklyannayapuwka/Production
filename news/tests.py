@@ -1,13 +1,15 @@
 from datetime import timedelta
+from pathlib import Path
+from tempfile import TemporaryDirectory
 
 from django.contrib import admin
 from django.core.management import call_command
 from django.urls import reverse
 from django.template.loader import get_template
-from django.test import SimpleTestCase, TestCase
+from django.test import SimpleTestCase, TestCase, override_settings
 from django.utils import timezone
 
-from .admin import NewsAdmin, NewsAdminForm
+from .admin import CategoryAdmin, NewsAdmin, NewsAdminForm, TagAdmin
 from .models import Advertisement, Category, News, Tag
 from .views import published_news
 
@@ -184,7 +186,8 @@ class FeaturedNewsTests(TestCase):
                 date_start=timezone.now() - timedelta(minutes=number),
             )
 
-        response = self.client.get('/')
+        with self.assertNumQueries(6):
+            response = self.client.get('/')
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.context['card_news']), 4)
@@ -192,9 +195,52 @@ class FeaturedNewsTests(TestCase):
         self.assertEqual(len(response.context['popular_news']), 8)
 
 
+class AdminQueryTests(TestCase):
+    def test_category_and_tag_counts_do_not_add_per_row_queries(self):
+        categories = [
+            Category.objects.create(name=f'Раздел {number}', slug=f'category-{number}')
+            for number in range(3)
+        ]
+        tags = [Tag.objects.create(name=f'Тег {number}') for number in range(3)]
+        for number, category in enumerate(categories):
+            news = News.objects.create(
+                title=f'Новость {number}',
+                slug=f'news-{number}',
+                content='<p>Текст</p>',
+                category=category,
+                editorial_status=News.EditorialStatus.PUBLISHED,
+            )
+            news.tags.add(tags[number])
+
+        category_admin = CategoryAdmin(Category, admin.site)
+        with self.assertNumQueries(1):
+            category_counts = [
+                category_admin.news_count(category)
+                for category in category_admin.get_queryset(request=None)
+            ]
+
+        tag_admin = TagAdmin(Tag, admin.site)
+        with self.assertNumQueries(1):
+            tag_counts = [
+                tag_admin.news_count(tag)
+                for tag in tag_admin.get_queryset(request=None)
+            ]
+
+        self.assertEqual(category_counts, [1, 1, 1])
+        self.assertEqual(tag_counts, [1, 1, 1])
+
+
 class LocalDemoImportTests(TestCase):
     def test_local_demo_import_parses_fixture_dates_and_creates_text_only_news(self):
-        call_command('import_local_demo')
+        with TemporaryDirectory() as media_root, override_settings(MEDIA_ROOT=media_root):
+            call_command('import_local_demo')
+
+            bundled_photo = News.objects.get(slug='stavropol-public-garden').main_photo
+            missing_photo = News.objects.get(slug='preview-1').main_photo
+
+            self.assertTrue(bundled_photo)
+            self.assertTrue((Path(media_root) / bundled_photo.name).is_file())
+            self.assertFalse(missing_photo)
 
         self.assertEqual(News.objects.count(), 33)
         text_only_news = News.objects.get(slug='stavropol-community-sports-space')
@@ -204,6 +250,16 @@ class LocalDemoImportTests(TestCase):
         self.assertSetEqual(
             set(text_only_news.tags.values_list('name', flat=True)),
             {'Ставрополь', 'Городская среда'},
+        )
+
+    def test_seeded_demo_news_are_visible_on_the_homepage(self):
+        with TemporaryDirectory() as media_root, override_settings(MEDIA_ROOT=media_root):
+            call_command('seed_demo_news')
+
+        self.assertEqual(News.objects.count(), 22)
+        self.assertEqual(published_news().count(), 22)
+        self.assertFalse(
+            News.objects.exclude(editorial_status=News.EditorialStatus.PUBLISHED).exists()
         )
 
 
@@ -307,6 +363,65 @@ class EditorialStatusAndSearchTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context['advertisements']['top'], banner)
+
+
+class EditorialWorkflowRegressionTests(TestCase):
+    def setUp(self):
+        self.category = Category.objects.create(name='Общество', slug='obshchestvo')
+
+    def create_news(self, title, *, category=None, status=News.EditorialStatus.PUBLISHED):
+        return News.objects.create(
+            title=title,
+            content='<p>Первый абзац новости для автоматического анонса.</p>',
+            category=category or self.category,
+            editorial_status=status,
+            date_start=timezone.now() - timedelta(minutes=5),
+        )
+
+    def test_news_creation_populates_publication_metadata(self):
+        news = self.create_news('В городе открыли новую дорогу')
+
+        self.assertTrue(news.slug)
+        self.assertEqual(news.meta_title, news.title)
+        self.assertEqual(news.meta_description, news.excerpt)
+        self.assertIn('Первый абзац новости', news.excerpt)
+        self.assertNotIn('<p>', news.excerpt)
+
+    def test_publish_and_unpublish_cycle_controls_public_visibility(self):
+        news = self.create_news('Редакционный материал', status=News.EditorialStatus.DRAFT)
+        self.assertFalse(published_news().filter(pk=news.pk).exists())
+
+        news.editorial_status = News.EditorialStatus.PUBLISHED
+        news.save()
+        self.assertTrue(published_news().filter(pk=news.pk).exists())
+
+        news.editorial_status = News.EditorialStatus.DRAFT
+        news.save()
+        self.assertFalse(published_news().filter(pk=news.pk).exists())
+
+    def test_category_page_contains_only_its_published_news(self):
+        matching = self.create_news('Материал общества')
+        other_category = Category.objects.create(name='Спорт', slug='sport')
+        self.create_news('Спортивный материал', category=other_category)
+        self.create_news('Черновик общества', status=News.EditorialStatus.DRAFT)
+
+        response = self.client.get(reverse('category', args=(self.category.slug,)))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(list(response.context['category_news']), [matching])
+
+    def test_detail_feeds_exclude_the_current_news(self):
+        current = self.create_news('Текущий материал')
+        self.create_news('Соседний материал')
+
+        response = self.client.get(current.get_absolute_url())
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn(current, response.context['news_feed'])
+        self.assertNotIn(
+            current,
+            [item['news'] for item in response.context['continuation_articles']],
+        )
 
 
 class TagPageAndSearchTests(TestCase):

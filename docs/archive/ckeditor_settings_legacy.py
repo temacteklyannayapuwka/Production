@@ -1,4 +1,6 @@
-# Настройки CKEditor для добавления в settings.py
+"""Устаревший справочный сниппет; приложение этот модуль не импортирует."""
+
+# Актуальные настройки CKEditor находятся в stavplus/settings.py.
 
 INSTALLED_APPS_CKEDITOR = [
     'ckeditor',

@@ -1,5 +1,6 @@
 from django import forms
 from django.contrib import admin, messages
+from django.db.models import Count
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.html import format_html
@@ -138,9 +139,12 @@ class CategoryAdmin(admin.ModelAdmin):
         }),
     )
 
-    @admin.display(description='Новостей')
+    def get_queryset(self, request):
+        return super().get_queryset(request).annotate(news_total=Count('news'))
+
+    @admin.display(description='Новостей', ordering='news_total')
     def news_count(self, obj):
-        return obj.news.count()
+        return obj.news_total
 
 
 @admin.register(Tag)
@@ -167,9 +171,12 @@ class TagAdmin(admin.ModelAdmin):
         }),
     )
 
-    @admin.display(description='Новостей')
+    def get_queryset(self, request):
+        return super().get_queryset(request).annotate(news_total=Count('news_items'))
+
+    @admin.display(description='Новостей', ordering='news_total')
     def news_count(self, obj):
-        return obj.news_items.count()
+        return obj.news_total
 
 
 @admin.register(News)

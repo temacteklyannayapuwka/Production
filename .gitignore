@@ -2,12 +2,13 @@
 __pycache__/
 *.py[cod]
 .venv/
+.venv-*/
 venv/
 
 # Django runtime files
-media/
-staticfiles/
-db.sqlite3
+/media/
+/staticfiles/
+/db.sqlite3
 *.log
 
 # Local environment and editor files
@@ -16,4 +17,5 @@ db.sqlite3
 !.env.example
 .DS_Store
 .idea/
-.vscode/
+.vscode/*
+!.vscode/settings.json

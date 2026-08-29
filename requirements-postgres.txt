@@ -1,0 +1,5 @@
+-r requirements.txt
+
+# Optional PostgreSQL support for the Python 3.12 runtime.
+# Requires PostgreSQL client headers and pg_config on the deployment host.
+psycopg2==2.9.12
