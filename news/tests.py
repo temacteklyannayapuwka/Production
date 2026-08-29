@@ -3,6 +3,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from django.contrib import admin
+from django.contrib.staticfiles import finders
 from django.core.management import call_command
 from django.urls import reverse
 from django.template.loader import get_template
@@ -15,6 +16,26 @@ from .views import published_news
 
 
 class AdminJavascriptFallbackTests(SimpleTestCase):
+    def test_public_assets_are_available_from_source_static_directory(self):
+        asset_names = (
+            'news-site.css',
+            'news-site.js',
+            'brand/stavplus-mark.svg',
+            'social-icons/vk-icon.jpg',
+            'social-icons/telegram-icon.jpg',
+            'social-icons/ok-icon.jpg',
+            'social-icons/max-icon.jpg',
+        )
+
+        for asset_name in asset_names:
+            with self.subTest(asset_name=asset_name):
+                asset_path = finders.find(asset_name)
+                self.assertIsNotNone(asset_path)
+                self.assertEqual(
+                    Path(asset_path),
+                    Path(__file__).resolve().parents[1] / 'static' / asset_name,
+                )
+
     def test_public_site_script_is_available_through_django(self):
         response = self.client.get('/static/news-site.js')
 
