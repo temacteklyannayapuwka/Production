@@ -11,6 +11,13 @@ from .image_processing import convert_pending_upload_to_webp
 
 
 class Category(models.Model):
+    legacy_k2_id = models.PositiveBigIntegerField(
+        'ID в старом K2',
+        null=True,
+        blank=True,
+        unique=True,
+        editable=False,
+    )
     name = models.CharField('Название', max_length=100, unique=True)
     slug = models.SlugField('URL', unique=True, max_length=100)
     description = models.TextField('Описание', blank=True)
@@ -30,6 +37,13 @@ class Category(models.Model):
 class Tag(models.Model):
     """A reusable, editor-managed topic label for one or more news items."""
 
+    legacy_k2_id = models.PositiveBigIntegerField(
+        'ID в старом K2',
+        null=True,
+        blank=True,
+        unique=True,
+        editable=False,
+    )
     name = models.CharField('Название тега', max_length=80, unique=True)
     slug = models.SlugField('URL', unique=True, max_length=100, blank=True)
     description = models.TextField('Описание', blank=True)
@@ -69,6 +83,13 @@ class News(models.Model):
         SCHEDULED = 'scheduled', 'Запланирована'
         PUBLISHED = 'published', 'На сайте'
 
+    legacy_k2_id = models.PositiveBigIntegerField(
+        'ID в старом K2',
+        null=True,
+        blank=True,
+        unique=True,
+        editable=False,
+    )
     title = models.CharField('Заголовок', max_length=255)
     slug = models.SlugField('URL', unique=True, max_length=255, blank=True)
     content = RichTextUploadingField('Содержание')
