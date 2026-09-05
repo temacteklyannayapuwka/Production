@@ -10,6 +10,7 @@ venv/
 /staticfiles/
 /db.sqlite3
 *.log
+/var/k2-import/
 
 # Local environment and editor files
 .env

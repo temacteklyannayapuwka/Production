@@ -1,0 +1,4 @@
+-r requirements.txt
+
+# Optional, isolated dependency for read-only Joomla MySQL/MariaDB access.
+PyMySQL==1.1.2
