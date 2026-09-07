@@ -221,6 +221,34 @@ class K2ImporterTests(TestCase):
         self.assertEqual(Category.objects.get().legacy_k2_id, 10)
         self.assertEqual(Tag.objects.get().legacy_k2_id, 20)
 
+    def test_duplicate_legacy_names_are_merged_and_keep_relations(self):
+        duplicate_category = LegacyCategory(legacy_id=11, name=self.category.name)
+        duplicate_tag = LegacyTag(legacy_id=21, name=self.tag.name)
+        source = FakeK2Source(
+            categories=[self.category, duplicate_category],
+            tags=[self.tag, duplicate_tag],
+            tag_links=[(1, duplicate_tag.legacy_id)],
+            items=[self.item(category_id=duplicate_category.legacy_id)],
+        )
+
+        with TemporaryDirectory() as root, TemporaryDirectory() as media_root:
+            with override_settings(MEDIA_ROOT=media_root):
+                first_report = self.run_import(source, legacy_root=root)
+                second_report = self.run_import(source, legacy_root=root)
+
+        news = News.objects.get(legacy_k2_id=1)
+        self.assertEqual(Category.objects.count(), 1)
+        self.assertEqual(Tag.objects.count(), 1)
+        self.assertEqual(news.category.legacy_k2_id, self.category.legacy_id)
+        self.assertEqual(
+            list(news.tags.values_list("legacy_k2_id", flat=True)),
+            [self.tag.legacy_id],
+        )
+        self.assertEqual(first_report.counts.get("errors", 0), 0)
+        self.assertEqual(second_report.counts.get("errors", 0), 0)
+        self.assertEqual(first_report.counts["categories_merged"], 1)
+        self.assertEqual(first_report.counts["tags_merged"], 1)
+
     def test_missing_image_on_update_preserves_existing_main_photo(self):
         with TemporaryDirectory() as root, TemporaryDirectory() as media_root:
             with override_settings(MEDIA_ROOT=media_root):

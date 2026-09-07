@@ -108,6 +108,7 @@ class K2Importer:
 
     def _sync_categories(self, categories: list[LegacyCategory]) -> dict[int, Category]:
         mapped: dict[int, Category] = {}
+        name_owners: dict[str, int] = {}
         allocator = SlugAllocator(Category, 100)
         for record in categories:
             try:
@@ -120,12 +121,32 @@ class K2Importer:
                 )
                 if not name:
                     raise ValueError("category name is empty")
+                owner_id = name_owners.get(name)
+                if owner_id is not None:
+                    self._merge_duplicate_name(
+                        "category",
+                        record.legacy_id,
+                        name,
+                        owner_id,
+                    )
+                    if self.apply and owner_id in mapped:
+                        mapped[record.legacy_id] = mapped[owner_id]
+                    continue
+                name_owners[name] = record.legacy_id
+
                 obj = Category.objects.filter(legacy_k2_id=record.legacy_id).first()
                 if obj is None:
-                    obj = Category.objects.filter(
-                        legacy_k2_id__isnull=True,
-                        name=name,
-                    ).first()
+                    obj = Category.objects.filter(name=name).first()
+                    if obj is not None and obj.legacy_k2_id is not None:
+                        self._merge_duplicate_name(
+                            "category",
+                            record.legacy_id,
+                            name,
+                            obj.legacy_k2_id,
+                        )
+                        if self.apply:
+                            mapped[record.legacy_id] = obj
+                        continue
                 creating = obj is None
                 if creating:
                     slug, collided = allocator.allocate(record.alias or name, record.legacy_id)
@@ -165,6 +186,7 @@ class K2Importer:
 
     def _sync_tags(self, tags: list[LegacyTag]) -> dict[int, Tag]:
         mapped: dict[int, Tag] = {}
+        name_owners: dict[str, int] = {}
         allocator = SlugAllocator(Tag, 100)
         for record in tags:
             try:
@@ -177,12 +199,32 @@ class K2Importer:
                 )
                 if not name:
                     raise ValueError("tag name is empty")
+                owner_id = name_owners.get(name)
+                if owner_id is not None:
+                    self._merge_duplicate_name(
+                        "tag",
+                        record.legacy_id,
+                        name,
+                        owner_id,
+                    )
+                    if self.apply and owner_id in mapped:
+                        mapped[record.legacy_id] = mapped[owner_id]
+                    continue
+                name_owners[name] = record.legacy_id
+
                 obj = Tag.objects.filter(legacy_k2_id=record.legacy_id).first()
                 if obj is None:
-                    obj = Tag.objects.filter(
-                        legacy_k2_id__isnull=True,
-                        name=name,
-                    ).first()
+                    obj = Tag.objects.filter(name=name).first()
+                    if obj is not None and obj.legacy_k2_id is not None:
+                        self._merge_duplicate_name(
+                            "tag",
+                            record.legacy_id,
+                            name,
+                            obj.legacy_k2_id,
+                        )
+                        if self.apply:
+                            mapped[record.legacy_id] = obj
+                        continue
                 creating = obj is None
                 if creating:
                     slug, collided = allocator.allocate(record.alias or name, record.legacy_id)
@@ -215,6 +257,23 @@ class K2Importer:
             except Exception as error:
                 self.report.error("tag", record.legacy_id, error)
         return mapped
+
+    def _merge_duplicate_name(
+        self,
+        entity: str,
+        legacy_id: int,
+        name: str,
+        owner_id: int,
+    ) -> None:
+        self.report.issue(
+            f"duplicate_{entity}_names",
+            f"name {name!r} duplicates legacy {entity} {owner_id}; "
+            "both records use one target object",
+            entity=entity,
+            legacy_id=legacy_id,
+        )
+        merged_count = "categories_merged" if entity == "category" else "tags_merged"
+        self.report.increment(merged_count)
 
     def _sync_item(
         self,
