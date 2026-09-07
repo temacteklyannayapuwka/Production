@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+from collections import defaultdict
 from html import escape
 from html.parser import HTMLParser
 from pathlib import Path
@@ -22,37 +23,54 @@ def k2_image_hash(legacy_id: int) -> str:
 
 def find_k2_main_image(legacy_root: Path, legacy_id: int) -> Path | None:
     """Find the best available K2 image without assuming one extension."""
-    image_hash = k2_image_hash(legacy_id)
-    src_dir = legacy_root / "media" / "k2" / "items" / "src"
-    cache_dir = legacy_root / "media" / "k2" / "items" / "cache"
-
-    src_candidates = _matching_files(src_dir, image_hash)
-    if src_candidates:
-        return src_candidates[0]
-
-    cache_candidates = _matching_files(cache_dir, image_hash, prefix=True)
-    preferred_suffixes = ("_xl", "_l", "_generic")
-    for suffix in preferred_suffixes:
-        match = next(
-            (path for path in cache_candidates if path.stem.casefold() == f"{image_hash}{suffix}"),
-            None,
-        )
-        if match:
-            return match
-    return cache_candidates[0] if cache_candidates else None
+    return _K2MainImageIndex(legacy_root).find(legacy_id)
 
 
-def _matching_files(directory: Path, stem: str, *, prefix: bool = False) -> list[Path]:
+class _K2MainImageIndex:
+    """Index K2 image directories once instead of scanning them per item."""
+
+    def __init__(self, legacy_root: Path):
+        item_root = legacy_root / "media" / "k2" / "items"
+        self.src_by_hash = _index_image_files(item_root / "src")
+        self.cache_by_hash = _index_image_files(item_root / "cache", cache=True)
+
+    def find(self, legacy_id: int) -> Path | None:
+        image_hash = k2_image_hash(legacy_id)
+        src_candidates = self.src_by_hash.get(image_hash, ())
+        if src_candidates:
+            return src_candidates[0]
+
+        cache_candidates = self.cache_by_hash.get(image_hash, ())
+        preferred_suffixes = ("_xl", "_l", "_generic")
+        for suffix in preferred_suffixes:
+            match = next(
+                (
+                    path
+                    for path in cache_candidates
+                    if path.stem.casefold() == f"{image_hash}{suffix}"
+                ),
+                None,
+            )
+            if match:
+                return match
+        return cache_candidates[0] if cache_candidates else None
+
+
+def _index_image_files(directory: Path, *, cache: bool = False) -> dict[str, list[Path]]:
     if not directory.is_dir():
-        return []
-    target = stem.casefold()
-    matches = []
+        return {}
+
+    indexed: dict[str, list[Path]] = defaultdict(list)
     for path in directory.iterdir():
-        candidate = path.stem.casefold()
-        stem_matches = candidate.startswith(f"{target}_") if prefix else candidate == target
-        if path.is_file() and stem_matches and path.suffix.casefold() in IMAGE_EXTENSIONS:
-            matches.append(path)
-    return sorted(matches, key=lambda path: path.name.casefold())
+        if not path.is_file() or path.suffix.casefold() not in IMAGE_EXTENSIONS:
+            continue
+        stem = path.stem.casefold()
+        key = stem.split("_", 1)[0] if cache else stem
+        indexed[key].append(path)
+    return {
+        key: sorted(paths, key=lambda path: path.name.casefold())
+        for key, paths in indexed.items()
+    }
 
 
 class K2AssetMigrator:
@@ -68,11 +86,15 @@ class K2AssetMigrator:
         self.report = report
         self.apply = apply
         self.storage = storage
+        self._main_image_index: _K2MainImageIndex | None = None
+        self._digest_cache: dict[Path, str] = {}
         self._seen_inline_found: set[Path] = set()
         self._seen_inline_missing: set[str] = set()
 
     def main_image_name(self, legacy_id: int) -> str | None:
-        source = find_k2_main_image(self.legacy_root, legacy_id)
+        if self._main_image_index is None:
+            self._main_image_index = _K2MainImageIndex(self.legacy_root)
+        source = self._main_image_index.find(legacy_id)
         if source is None:
             self.report.increment("news_without_image")
             return None
@@ -131,11 +153,14 @@ class K2AssetMigrator:
         return f"{rewritten}#{parsed.fragment}" if parsed.fragment else rewritten
 
     def _hashed_destination(self, source: Path, parent: str) -> str:
-        digest_builder = hashlib.sha256()
-        with source.open("rb") as source_file:
-            while chunk := source_file.read(1024 * 1024):
-                digest_builder.update(chunk)
-        digest = digest_builder.hexdigest()[:12]
+        digest = self._digest_cache.get(source)
+        if digest is None:
+            digest_builder = hashlib.sha256()
+            with source.open("rb") as source_file:
+                while chunk := source_file.read(1024 * 1024):
+                    digest_builder.update(chunk)
+            digest = digest_builder.hexdigest()[:12]
+            self._digest_cache[source] = digest
         safe_stem = source.stem[:100] or "asset"
         return f"{parent}/{safe_stem}-{digest}{source.suffix.casefold()}"
 

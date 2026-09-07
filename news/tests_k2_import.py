@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 from datetime import datetime, timedelta
 from io import StringIO
 from pathlib import Path
@@ -11,8 +12,9 @@ from django.core.management import call_command
 from django.test import TestCase, override_settings
 from django.utils import timezone
 
-from news.k2_import.domain import LegacyCategory, LegacyItem, LegacyTag
-from news.k2_import.media import find_k2_main_image, k2_image_hash
+from news.k2_import import media as k2_media
+from news.k2_import.domain import ImportReport, LegacyCategory, LegacyItem, LegacyTag
+from news.k2_import.media import K2AssetMigrator, find_k2_main_image, k2_image_hash
 from news.k2_import.service import K2Importer
 from news.k2_import.transform import parse_legacy_datetime, publication_values
 from news.models import Category, News, Tag
@@ -300,6 +302,52 @@ class K2ImporterTests(TestCase):
         self.assertIn('/images/missing.jpg', content)
         self.assertEqual(report.counts["inline_assets_copied"], 1)
         self.assertEqual(report.counts["inline_assets_missing"], 1)
+
+    def test_repeated_inline_asset_is_hashed_once(self):
+        with TemporaryDirectory() as root:
+            legacy_root = Path(root)
+            images = legacy_root / "images"
+            images.mkdir()
+            (images / "repeated.jpg").write_bytes(b"inline-image")
+            migrator = K2AssetMigrator(
+                legacy_root,
+                ImportReport(dry_run=True),
+                apply=False,
+            )
+
+            with patch(
+                "news.k2_import.media.hashlib.sha256",
+                wraps=hashlib.sha256,
+            ) as sha256:
+                first = migrator.rewrite_url("/images/repeated.jpg", entity_id=1)
+                second = migrator.rewrite_url("/images/repeated.jpg", entity_id=2)
+
+        self.assertEqual(first, second)
+        self.assertEqual(sha256.call_count, 1)
+
+    def test_main_image_directories_are_indexed_once_per_import(self):
+        with TemporaryDirectory() as root:
+            legacy_root = Path(root)
+            image_dir = legacy_root / "media" / "k2" / "items" / "src"
+            image_dir.mkdir(parents=True)
+            for legacy_id in (1, 2):
+                (image_dir / f"{k2_image_hash(legacy_id)}.jpg").write_bytes(
+                    f"image-{legacy_id}".encode()
+                )
+            migrator = K2AssetMigrator(
+                legacy_root,
+                ImportReport(dry_run=True),
+                apply=False,
+            )
+
+            with patch(
+                "news.k2_import.media._K2MainImageIndex",
+                wraps=k2_media._K2MainImageIndex,
+            ) as image_index:
+                self.assertIsNotNone(migrator.main_image_name(1))
+                self.assertIsNotNone(migrator.main_image_name(2))
+
+        self.assertEqual(image_index.call_count, 1)
 
     def test_missing_main_image_does_not_fail_import(self):
         with TemporaryDirectory() as root, TemporaryDirectory() as media_root:
