@@ -97,7 +97,14 @@ def published_news():
 
 
 def navigation_categories():
-    return Category.objects.filter(is_active=True).order_by("order", "name")
+    visible_category_ids = published_news().order_by().values("category_id")
+    return (
+        Category.objects.filter(
+            is_active=True,
+            pk__in=visible_category_ids,
+        )
+        .order_by("order", "name")
+    )
 
 
 def article_category_flow():

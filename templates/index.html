@@ -4,7 +4,7 @@
 <main class="site-shell page">
   {% include 'components/ad_slot.html' with ad=advertisements.top css_class='ad--leader' slot_size='970 × 90' slot_label='верх сайта' %}
   <section class="home-layout">
-    <aside class="popular popular--sticky popular--feed-scroll" aria-label="Лента новостей"><div class="section-title"><h2>Лента новостей</h2></div><div class="popular__surface"><ol>{% for news in headline_news %}<li><b>{{ forloop.counter }}</b><span><a href="{% url 'news_detail' news.slug %}">{{ news.title }}</a><small>{{ news.date_start|date:'H:i' }}</small></span></li>{% empty %}<li class="empty-state">Лента обновляется.</li>{% endfor %}</ol></div></aside>
+    <aside class="popular popular--sticky popular--feed-scroll" aria-label="Лента новостей"><div class="section-title"><h2>Лента новостей</h2></div><div class="popular__surface"><ol>{% for news in headline_news %}<li><b>{{ forloop.counter }}</b><span><a href="{% url 'news_detail' news.slug %}">{{ news.title }}</a><small><time datetime="{{ news.date_start|date:'c' }}">{{ news.date_start|date:'j E Y · H:i' }}</time></small></span></li>{% empty %}<li class="empty-state">Лента обновляется.</li>{% endfor %}</ol></div></aside>
 
     <div class="home-main">
       <section class="front-grid">
@@ -12,7 +12,7 @@
           <article class="hero">
             {% if hero_news.main_photo %}<img src="{{ hero_news.main_photo.url }}" alt="{{ hero_news.title }}" fetchpriority="high">{% else %}<div class="hero__fallback"></div>{% endif %}
             <div class="hero__overlay"></div>
-            <div class="hero__content"><span class="tag">{{ hero_news.category.name|default:'Главное' }}</span><p class="hero__meta">{{ hero_news.date_start|date:'Сегодня · H:i' }}</p><h1>{{ hero_news.title }}</h1><p class="hero__lead">{{ hero_news.excerpt|default:hero_news.content|striptags|truncatewords:38 }}</p><a href="{% url 'news_detail' hero_news.slug %}">Читать материал <b>→</b></a></div>
+            <div class="hero__content"><span class="tag">{{ hero_news.category.name|default:'Главное' }}</span><p class="hero__meta"><time datetime="{{ hero_news.date_start|date:'c' }}">{{ hero_news.date_start|date:'j E Y · H:i' }}</time></p><h1>{{ hero_news.title }}</h1><p class="hero__lead">{{ hero_news.excerpt|default:hero_news.content|striptags|truncatewords:38 }}</p><a href="{% url 'news_detail' hero_news.slug %}">Читать материал <b>→</b></a></div>
           </article>
         {% else %}
           <article class="hero hero--empty"><div class="hero__content"><span class="tag">Ставрополь+</span><h1>Новые материалы скоро появятся на главной странице.</h1></div></article>
@@ -26,7 +26,7 @@
       {% for news in popular_news %}<article><b>{{ forloop.counter|stringformat:'02d' }}</b><div><h3><a href="{% url 'news_detail' news.slug %}">{{ news.title }}</a></h3><p class="headline-list__excerpt">{{ news.excerpt|default:news.content|striptags|truncatewords:20 }}</p><p class="headline-list__views">◉ {{ news.views|default:0 }}</p></div></article>{% empty %}<div class="empty-state">Популярные материалы появятся здесь.</div>{% endfor %}
         </div></div>
         <aside class="latest latest--feed" aria-label="Категории"><div class="section-title"><h2>Категории</h2></div><div class="cards">
-          {% for news in card_news %}<article class="card"><a href="{% url 'news_detail' news.slug %}"><div>{% if news.main_photo %}<img src="{{ news.main_photo.url }}" alt="{{ news.title }}" loading="lazy">{% else %}<div class="card__fallback"></div>{% endif %}<span class="tag">{{ news.category.name|default:'Новости' }}</span></div><h3>{{ news.title }}</h3><p>{{ news.date_start|date:'Сегодня · H:i' }}</p></a></article>{% endfor %}
+          {% for news in card_news %}<article class="card"><a href="{% url 'news_detail' news.slug %}"><div>{% if news.main_photo %}<img src="{{ news.main_photo.url }}" alt="{{ news.title }}" loading="lazy" decoding="async">{% else %}<div class="card__fallback"></div>{% endif %}<span class="tag">{{ news.category.name|default:'Новости' }}</span></div><h3>{{ news.title }}</h3><p><time datetime="{{ news.date_start|date:'c' }}">{{ news.date_start|date:'j E Y · H:i' }}</time></p></a></article>{% endfor %}
         </div></aside>
       </section>
     </div>

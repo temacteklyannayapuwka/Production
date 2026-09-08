@@ -16,7 +16,11 @@ from news.k2_import import media as k2_media
 from news.k2_import.domain import ImportReport, LegacyCategory, LegacyItem, LegacyTag
 from news.k2_import.media import K2AssetMigrator, find_k2_main_image, k2_image_hash
 from news.k2_import.service import K2Importer
-from news.k2_import.transform import parse_legacy_datetime, publication_values
+from news.k2_import.transform import (
+    parse_legacy_datetime,
+    publication_values,
+    split_legacy_content,
+)
 from news.models import Category, News, Tag
 
 
@@ -118,6 +122,21 @@ class K2TransformTests(TestCase):
         self.assertEqual(parsed.hour, 10)
         self.assertEqual(parsed.utcoffset(), timedelta(hours=3))
         self.assertIsNone(parse_legacy_datetime("0000-00-00 00:00:00", MOSCOW))
+
+    def test_k2_intro_and_body_are_not_duplicated(self):
+        content, excerpt = split_legacy_content(
+            "<p>Короткий <b>анонс</b></p>",
+            "<p>Основной текст</p>",
+        )
+
+        self.assertEqual(content, "<p>Основной текст</p>")
+        self.assertEqual(excerpt, "Короткий анонс")
+
+    def test_intro_only_item_is_rendered_once_as_content(self):
+        content, excerpt = split_legacy_content("<p>Весь материал</p>", "")
+
+        self.assertEqual(content, "<p>Весь материал</p>")
+        self.assertEqual(excerpt, "")
 
 
 class K2ImporterTests(TestCase):
@@ -317,7 +336,7 @@ class K2ImporterTests(TestCase):
             images.mkdir()
             (images / "inside.jpg").write_bytes(b"inline-image")
             item = self.item(
-                introtext=(
+                fulltext=(
                     '<p><img src="/images/inside.jpg">'
                     '<img src="/images/missing.jpg"></p>'
                 )

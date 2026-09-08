@@ -46,7 +46,7 @@ class AdminJavascriptFallbackTests(SimpleTestCase):
     def test_public_page_uses_the_current_menu_script(self):
         response = get_template('base.html').render({})
 
-        self.assertIn('/static/news-site.css?v=42', response)
+        self.assertIn('/static/news-site.css?v=43', response)
         self.assertIn('family=Merriweather', response)
         self.assertIn('content="#151515"', response)
         self.assertNotIn('family=Playfair+Display', response)
@@ -81,8 +81,10 @@ class EditorialAdminTests(SimpleTestCase):
         form = NewsAdminForm()
 
         self.assertEqual(form.fields['editorial_status'].initial, News.EditorialStatus.DRAFT)
-        self.assertEqual(form.fields['main_photo'].label, 'Главное фото')
+        self.assertEqual(form.fields['main_photo'].label, 'Главное изображение')
         self.assertIn('WebP', form.fields['main_photo'].help_text)
+        self.assertEqual(form.fields['excerpt'].label, 'Лид — краткое вступление')
+        self.assertIn('без повтора лида', form.fields['content'].help_text)
         self.assertIn('весь экран', form.fields['content'].help_text)
         self.assertEqual(form.fields['is_featured'].label, 'Главная новость')
         self.assertEqual(form.fields['tags'].label, 'Теги темы')
@@ -158,6 +160,28 @@ class EditorialAdminTests(SimpleTestCase):
         self.assertNotIn('<span>Сейчас</span>', article_source)
         self.assertIsNotNone(get_template('components/ad_slot.html'))
 
+    def test_article_template_uses_semantic_dates_and_honest_image_markup(self):
+        article_source = get_template('article.html').template.source
+
+        self.assertIn('<header class="article-header">', article_source)
+        self.assertIn('<time datetime=', article_source)
+        self.assertIn('aria-label="Текст материала"', article_source)
+        self.assertIn('decoding="async" fetchpriority="high"', article_source)
+        self.assertIn('Архивный материал', article_source)
+        self.assertNotIn('Фото: Ставрополь+', article_source)
+        self.assertNotIn("date:'H:i'", article_source)
+
+    def test_article_images_are_not_upscaled_or_cropped(self):
+        css_path = Path(__file__).resolve().parents[1] / 'static' / 'news-site.css'
+        css = css_path.read_text(encoding='utf-8')
+        image_rule = css.split('.article-photo img {', 1)[1].split('}', 1)[0]
+
+        self.assertIn('width: auto', image_rule)
+        self.assertIn('max-width: 100%', image_rule)
+        self.assertIn('height: auto', image_rule)
+        self.assertIn('object-fit: contain', image_rule)
+        self.assertNotIn('max-height:', image_rule)
+
 
 class FeaturedNewsTests(TestCase):
     def setUp(self):
@@ -214,6 +238,25 @@ class FeaturedNewsTests(TestCase):
         self.assertEqual(len(response.context['card_news']), 4)
         self.assertEqual(len(response.context['headline_news']), 13)
         self.assertEqual(len(response.context['popular_news']), 8)
+
+    def test_navigation_contains_only_categories_with_public_news(self):
+        visible = self.category
+        empty = Category.objects.create(name='Пустой раздел', slug='empty')
+        draft_only = Category.objects.create(name='Черновики', slug='drafts')
+        self.create_news('visible')
+        News.objects.create(
+            title='Неопубликованный материал',
+            slug='draft',
+            content='<p>Черновик</p>',
+            category=draft_only,
+            editorial_status=News.EditorialStatus.DRAFT,
+        )
+
+        response = self.client.get('/')
+
+        self.assertEqual(list(response.context['navigation_categories']), [visible])
+        self.assertNotIn(empty, response.context['navigation_categories'])
+        self.assertNotIn(draft_only, response.context['navigation_categories'])
 
 
 class AdminQueryTests(TestCase):

@@ -12,7 +12,7 @@ from news.models import Category, News, Tag
 
 from .domain import ImportReport, LegacyCategory, LegacyItem, LegacyTag
 from .media import K2AssetMigrator
-from .transform import SlugAllocator, clean_excerpt, combine_content, publication_values
+from .transform import SlugAllocator, split_legacy_content, publication_values
 
 
 class K2Importer:
@@ -350,7 +350,7 @@ class K2Importer:
             )
         mapped_tags = [tag_map[tag_id] for tag_id in item_tag_ids if tag_id in tag_map]
 
-        raw_content = combine_content(item.introtext, item.fulltext)
+        raw_content, excerpt = split_legacy_content(item.introtext, item.fulltext)
         content = self.assets.rewrite_html(raw_content, entity_id=item.legacy_id)
         main_image = self.assets.main_image_name(item.legacy_id)
         existing = News.objects.filter(legacy_k2_id=item.legacy_id).first()
@@ -366,7 +366,7 @@ class K2Importer:
             "legacy_k2_id": item.legacy_id,
             "title": title,
             "content": content,
-            "excerpt": clean_excerpt(item.introtext),
+            "excerpt": excerpt,
             "category": category,
             "is_published": publication.is_published,
             "editorial_status": publication.editorial_status,

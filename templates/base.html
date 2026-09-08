@@ -5,12 +5,12 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#151515">
-    <meta name="description" content="Ставрополь+ — новости Ставропольского края и Северного Кавказа.">
+    <meta name="description" content="{% block meta_description %}Ставрополь+ — новости Ставропольского края и Северного Кавказа.{% endblock %}">
     <title>{% block title %}Ставрополь+ — новости без лишнего{% endblock %}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@300;400;500;600;700;800;900&amp;display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{% static 'news-site.css' %}?v=42">
+    <link rel="stylesheet" href="{% static 'news-site.css' %}?v=43">
   </head>
   <body>
     <header class="masthead">

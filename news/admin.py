@@ -31,16 +31,16 @@ class NewsAdminForm(forms.ModelForm):
                 'Выбери от 1 до 5 уточняющих тем: например «Транспорт», «Ставрополь», «Благоустройство». Новые теги создаются в разделе «Теги» слева.',
             ),
             'main_photo': (
-                'Главное фото',
-                'Картинка для карточки новости и шапки статьи. JPG и PNG сайт сам превратит в быструю WebP-версию.',
+                'Главное изображение',
+                'Изображение для карточки и страницы статьи. Маленькие файлы на странице не растягиваются выше исходного размера; JPG и PNG при новой загрузке преобразуются в WebP.',
             ),
             'excerpt': (
-                'Короткий анонс',
-                'Короткое описание для карточек и поиска. Можно оставить пустым — сайт возьмёт начало основной статьи.',
+                'Лид — краткое вступление',
+                'Показывается между заголовком и изображением, а также в карточках. Не повторяй этот абзац в основном тексте.',
             ),
             'content': (
-                'Основной текст — сюда вписывается вся статья',
-                'Здесь находится весь текст новости. Редактор можно развернуть на весь экран кнопкой ⛶; фото в тексте добавляй через кнопку изображения, а подборку фото после статьи — в блоке «Фотогалерея».',
+                'Основной текст',
+                'Продолжение материала без повтора лида. Редактор можно развернуть на весь экран кнопкой ⛶; изображения внутри текста добавляй через кнопку изображения, а подборку — в блоке «Фотогалерея».',
             ),
             'editorial_status': (
                 'Статус материала',
@@ -203,7 +203,13 @@ class NewsAdmin(admin.ModelAdmin):
     date_hierarchy = 'date_start'
     list_per_page = 25
     list_before_template = 'admin/news/news/news_list_actions.html'
-    readonly_fields = ('views', 'created_at', 'updated_at', 'photo_display')
+    readonly_fields = (
+        'views',
+        'created_at',
+        'updated_at',
+        'photo_display',
+        'import_source',
+    )
     inlines = [NewsGalleryInline]
     actions = (
         'make_selected_featured',
@@ -235,6 +241,12 @@ class NewsAdmin(admin.ModelAdmin):
             )
         return 'Загрузи главное фото и сохрани новость — здесь появится предпросмотр.'
 
+    @admin.display(description='Источник материала')
+    def import_source(self, obj):
+        if obj and obj.legacy_k2_id:
+            return f'Архив Joomla K2 · ID {obj.legacy_k2_id}'
+        return 'Создано в редакции StavPlus'
+
     def get_queryset(self, request):
         return super().get_queryset(request).select_related('category')
 
@@ -249,8 +261,8 @@ class NewsAdmin(admin.ModelAdmin):
                 'fields': tuple(card_fields),
             }),
             ('2. Текст материала', {
-                'description': 'Сначала впиши всю статью в большой редактор. Ниже добавь короткий анонс для карточек или оставь его пустым — сайт составит анонс сам.',
-                'fields': ('content', 'excerpt'),
+                'description': 'Лид и основной текст — разные части статьи. Лид показывается отдельно, поэтому не нужно повторять его в редакторе основного текста.',
+                'fields': ('excerpt', 'content'),
             }),
             ('3. Публикация', {
                 'description': 'Выбери статус, отметь главную новость при необходимости и задай время. Главной может быть только одна новость — новая отметка заменит прежнюю.',
@@ -263,7 +275,7 @@ class NewsAdmin(admin.ModelAdmin):
             }),
             ('Служебная информация', {
                 'classes': ('collapse',),
-                'fields': ('views', 'created_at', 'updated_at'),
+                'fields': ('import_source', 'views', 'created_at', 'updated_at'),
             }),
         )
 

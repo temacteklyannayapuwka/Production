@@ -71,9 +71,19 @@ def clean_excerpt(value: str, max_length: int = 500) -> str:
     return text[:max_length]
 
 
-def combine_content(introtext: str, fulltext: str) -> str:
-    parts = [part for part in ((introtext or "").strip(), (fulltext or "").strip()) if part]
-    return "\n".join(parts)
+def split_legacy_content(introtext: str, fulltext: str) -> tuple[str, str]:
+    """Map K2's lead/body fields without rendering the lead twice.
+
+    K2 renders ``introtext`` before ``fulltext``. StavPlus stores that lead in
+    ``excerpt`` and renders it separately, so only ``fulltext`` belongs in the
+    article body. Items without a separate body keep their intro as content and
+    leave the excerpt empty, which still renders the text exactly once.
+    """
+    intro = (introtext or "").strip()
+    body = (fulltext or "").strip()
+    if body:
+        return body, clean_excerpt(intro)
+    return intro, ""
 
 
 def slug_base(value: str, fallback: str) -> str:

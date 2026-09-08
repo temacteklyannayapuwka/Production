@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% block title %}{{ article.meta_title|default:article.title }} — Ставрополь+{% endblock %}
+{% block meta_description %}{{ article.meta_description|default:article.excerpt|default:article.title|striptags|truncatechars:160 }}{% endblock %}
 {% block content %}
 <main class="site-shell article-page">
   {% include 'components/ad_slot.html' with ad=advertisements.top css_class='ad--leader' slot_size='970 × 90' slot_label='верх сайта' %}
@@ -7,23 +8,25 @@
     <aside class="article-sidebar" aria-label="Лента новостей">
       <section class="popular rubric-popular rubric-feed-scroll article-news-feed">
         <div class="section-title"><h2>Лента новостей</h2></div>
-        <div class="popular__surface"><ol>{% for news in news_feed %}<li><b>{{ forloop.counter }}</b><span><a href="{% url 'news_detail' news.slug %}">{{ news.title }}</a><small>{{ news.date_start|date:'H:i' }}</small></span></li>{% empty %}<li class="empty-state">Лента обновляется.</li>{% endfor %}</ol></div>
+        <div class="popular__surface"><ol>{% for news in news_feed %}<li><b>{{ forloop.counter }}</b><span><a href="{% url 'news_detail' news.slug %}">{{ news.title }}</a><small><time datetime="{{ news.date_start|date:'c' }}">{{ news.date_start|date:'j E Y · H:i' }}</time></small></span></li>{% empty %}<li class="empty-state">Лента обновляется.</li>{% endfor %}</ol></div>
       </section>
       {% include 'components/ad_slot.html' with ad=advertisements.article_sidebar css_class='ad--article-side' slot_size='240 × 400' slot_label='статья · слева' %}
     </aside>
     <article class="article-content">
-      <nav class="breadcrumbs" aria-label="Навигация"><a href="{% url 'index' %}">Главная</a>{% if article.category %}<span>·</span><a href="{% url 'category' article.category.slug %}">{{ article.category.name }}</a>{% endif %}</nav>
-      <span class="article-tag">{{ article.category.name|default:'Новости' }}</span>
-      {% if article.tags.all %}<nav class="article-topic-tags" aria-label="Теги материала">{% for tag in article.tags.all %}<a href="{% url 'tag' tag.slug %}">#{{ tag.name }}</a>{% endfor %}</nav>{% endif %}
-      {% if article_sequence_number %}<span class="article-sequence-number">Материал №{{ article_sequence_number|stringformat:'02d' }}</span>{% endif %}
-      <h1>{{ article.title }}</h1>
-      {% if article.excerpt %}<p class="article-lead">{{ article.excerpt }}</p>{% endif %}
-      <div class="article-meta"><span>{{ article.date_start|date:'j E Y, H:i' }}</span><span>Новости региона</span></div>
-      {% if article.main_photo %}<figure class="article-photo"><img src="{{ article.main_photo.url }}" alt="{{ article.title }}">{% if article.main_photo.name %}<figcaption>Фото: Ставрополь+</figcaption>{% endif %}</figure>{% endif %}
-      <div class="article-body">{{ article.content|safe }}</div>
-      {% if article.gallery.all %}<section class="article-gallery" aria-label="Фотогалерея материала">{% for photo in article.gallery.all %}<figure><img src="{{ photo.image.url }}" alt="{{ photo.caption|default:article.title }}" loading="lazy">{% if photo.caption %}<figcaption>{{ photo.caption }}</figcaption>{% endif %}</figure>{% endfor %}</section>{% endif %}
+      <header class="article-header">
+        <nav class="breadcrumbs" aria-label="Навигация"><a href="{% url 'index' %}">Главная</a>{% if article.category %}<span>·</span><a href="{% url 'category' article.category.slug %}">{{ article.category.name }}</a>{% endif %}</nav>
+        {% if article.category %}<a class="article-tag" href="{% url 'category' article.category.slug %}">{{ article.category.name }}</a>{% else %}<span class="article-tag">Новости</span>{% endif %}
+        {% if article.tags.all %}<nav class="article-topic-tags" aria-label="Темы материала">{% for tag in article.tags.all %}<a href="{% url 'tag' tag.slug %}">#{{ tag.name }}</a>{% endfor %}</nav>{% endif %}
+        {% if article_sequence_number %}<span class="article-sequence-number">Материал №{{ article_sequence_number|stringformat:'02d' }}</span>{% endif %}
+        <h1>{{ article.title }}</h1>
+        {% if article.excerpt %}<p class="article-lead">{{ article.excerpt }}</p>{% endif %}
+        <p class="article-meta"><time datetime="{{ article.date_start|date:'c' }}">{{ article.date_start|date:'j E Y, H:i' }}</time></p>
+      </header>
+      {% if article.main_photo %}<figure class="article-photo"><img src="{{ article.main_photo.url }}" alt="{{ article.title }}" decoding="async" fetchpriority="high"></figure>{% endif %}
+      <section class="article-body" aria-label="Текст материала">{{ article.content|safe }}</section>
+      {% if article.gallery.all %}<section class="article-gallery" aria-label="Фотогалерея материала">{% for photo in article.gallery.all %}<figure><img src="{{ photo.image.url }}" alt="{{ photo.caption|default:article.title }}" loading="lazy" decoding="async">{% if photo.caption %}<figcaption>{{ photo.caption }}</figcaption>{% endif %}</figure>{% endfor %}</section>{% endif %}
       {% include 'components/ad_slot.html' with ad=advertisements.article_inline css_class='ad--article-inline' slot_size='680 × 120' slot_label='статья · внутри текста' %}
-      <div class="article-author"><b>Ставрополь+</b><span>Редакция · Новости региона</span></div>
+      <div class="article-author"><b>Ставрополь+</b><span>{% if article.legacy_k2_id %}Архивный материал{% else %}Редакция · Новости региона{% endif %}</span></div>
 
       {% if continuation_articles %}
         <section class="article-continuation" aria-labelledby="article-continuation-title">
@@ -34,15 +37,15 @@
           {% for item in continuation_articles %}
             <article class="article-continuation__item" id="material-{{ item.position }}">
               <p class="article-continuation__position">Материал №{{ item.position|stringformat:'02d' }}</p>
-              <span class="article-tag">{{ item.news.category.name|default:'Новости' }}</span>
+              {% if item.news.category %}<a class="article-tag" href="{% url 'category' item.news.category.slug %}">{{ item.news.category.name }}</a>{% else %}<span class="article-tag">Новости</span>{% endif %}
               {% if item.news.tags.all %}<nav class="article-topic-tags article-topic-tags--continuation" aria-label="Теги материала">{% for tag in item.news.tags.all %}<a href="{% url 'tag' tag.slug %}">#{{ tag.name }}</a>{% endfor %}</nav>{% endif %}
               <h3>{{ item.news.title }}</h3>
               {% if item.news.excerpt %}<p class="article-lead">{{ item.news.excerpt }}</p>{% endif %}
-              <div class="article-meta"><span>{{ item.news.date_start|date:'j E Y, H:i' }}</span><span>Новости региона</span></div>
-              {% if item.news.main_photo %}<figure class="article-photo"><img src="{{ item.news.main_photo.url }}" alt="{{ item.news.title }}" loading="lazy"><figcaption>Фото: Ставрополь+</figcaption></figure>{% endif %}
-              <div class="article-body">{{ item.news.content|safe }}</div>
-              {% if item.news.gallery.all %}<section class="article-gallery" aria-label="Фотогалерея материала «{{ item.news.title }}»">{% for photo in item.news.gallery.all %}<figure><img src="{{ photo.image.url }}" alt="{{ photo.caption|default:item.news.title }}" loading="lazy">{% if photo.caption %}<figcaption>{{ photo.caption }}</figcaption>{% endif %}</figure>{% endfor %}</section>{% endif %}
-              <div class="article-author"><b>Ставрополь+</b><span>Редакция · Новости региона</span></div>
+              <p class="article-meta"><time datetime="{{ item.news.date_start|date:'c' }}">{{ item.news.date_start|date:'j E Y, H:i' }}</time></p>
+              {% if item.news.main_photo %}<figure class="article-photo"><img src="{{ item.news.main_photo.url }}" alt="{{ item.news.title }}" loading="lazy" decoding="async"></figure>{% endif %}
+              <section class="article-body" aria-label="Текст материала">{{ item.news.content|safe }}</section>
+              {% if item.news.gallery.all %}<section class="article-gallery" aria-label="Фотогалерея материала «{{ item.news.title }}»">{% for photo in item.news.gallery.all %}<figure><img src="{{ photo.image.url }}" alt="{{ photo.caption|default:item.news.title }}" loading="lazy" decoding="async">{% if photo.caption %}<figcaption>{{ photo.caption }}</figcaption>{% endif %}</figure>{% endfor %}</section>{% endif %}
+              <div class="article-author"><b>Ставрополь+</b><span>{% if item.news.legacy_k2_id %}Архивный материал{% else %}Редакция · Новости региона{% endif %}</span></div>
             </article>
           {% endfor %}
         </section>
