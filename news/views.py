@@ -92,7 +92,7 @@ def published_news():
         )
         .filter(is_published=True, date_start__lte=now)
         .filter(Q(date_end__isnull=True) | Q(date_end__gte=now))
-        .order_by("-is_featured", "-date_start", "-created_at")
+        .order_by("-is_featured", "-date_start", "-created_at", "-pk")
     )
 
 
@@ -169,7 +169,10 @@ def paginate(request, queryset, per_page=20):
 
 
 def index(request):
-    news = list(published_news())
+    # Only the lead story and the twelve-item feed are rendered.  Keeping the
+    # slice in SQL is important for the imported archive, where News contains
+    # tens of thousands of large HTML documents.
+    news = list(published_news()[:13])
     return render(
         request,
         "index.html",
@@ -248,24 +251,46 @@ def news_detail(request, slug):
     article_sequence_number = None
     continuation_articles = []
     if article.category_id:
-        category_sequence = list(
-            published_news()
-            .filter(category_id=article.category_id)
-            .prefetch_related("gallery")
+        category_news = published_news().filter(category_id=article.category_id)
+        newer_in_same_group = (
+            Q(date_start__gt=article.date_start)
+            | Q(
+                date_start=article.date_start,
+                created_at__gt=article.created_at,
+            )
+            | Q(
+                date_start=article.date_start,
+                created_at=article.created_at,
+                pk__gt=article.pk,
+            )
         )
-        article_sequence_number = next(
-            (
-                position
-                for position, candidate in enumerate(category_sequence, start=1)
-                if candidate.pk == article.pk
-            ),
-            None,
+        if article.is_featured:
+            preceding_news = category_news.filter(is_featured=True).filter(
+                newer_in_same_group
+            )
+        else:
+            preceding_news = category_news.filter(
+                Q(is_featured=True)
+                | (Q(is_featured=False) & newer_in_same_group)
+            )
+        article_sequence_number = preceding_news.count() + 1
+
+        # Preserve the original positions while loading only the nine articles
+        # that are actually rendered below the current one.
+        continuation_news = list(
+            category_news.exclude(pk=article.pk).prefetch_related("gallery")[:9]
         )
         continuation_articles = [
-            {"news": candidate, "position": position}
-            for position, candidate in enumerate(category_sequence, start=1)
-            if candidate.pk != article.pk
-        ][:9]
+            {
+                "news": candidate,
+                "position": (
+                    offset
+                    if offset < article_sequence_number
+                    else offset + 1
+                ),
+            }
+            for offset, candidate in enumerate(continuation_news, start=1)
+        ]
 
     news_feed = published_news().exclude(pk=article.pk).order_by(
         "-date_start", "-created_at"

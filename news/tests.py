@@ -6,6 +6,8 @@ from types import SimpleNamespace
 from django.contrib import admin
 from django.contrib.staticfiles import finders
 from django.core.management import call_command
+from django.db import connection
+from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from django.template.loader import get_template
 from django.test import SimpleTestCase, TestCase, override_settings
@@ -353,6 +355,30 @@ class FeaturedNewsTests(TestCase):
             response.context['card_news'],
         )
         self.assertEqual(len(response.context['popular_news']), 8)
+
+    def test_homepage_limits_the_primary_news_query_in_the_database(self):
+        for number in range(18):
+            self.create_news(
+                f'bounded-feed-{number}',
+                date_start=timezone.now() - timedelta(minutes=number),
+            )
+
+        with CaptureQueriesContext(connection) as queries:
+            response = self.client.get('/')
+
+        self.assertEqual(response.status_code, 200)
+        primary_news_queries = [
+            query['sql']
+            for query in queries.captured_queries
+            if 'FROM "news_news"' in query['sql']
+            and '"news_news"."content"' in query['sql']
+            and '"news_news"."is_featured" DESC' in query['sql']
+        ]
+        self.assertTrue(primary_news_queries)
+        self.assertTrue(
+            any('LIMIT 13' in query for query in primary_news_queries),
+            primary_news_queries,
+        )
 
     def test_navigation_contains_only_categories_with_public_news(self):
         visible = self.category
