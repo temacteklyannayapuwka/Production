@@ -1,6 +1,7 @@
 from datetime import timedelta
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from types import SimpleNamespace
 
 from django.contrib import admin
 from django.contrib.staticfiles import finders
@@ -9,8 +10,24 @@ from django.urls import reverse
 from django.template.loader import get_template
 from django.test import SimpleTestCase, TestCase, override_settings
 from django.utils import timezone
+from unfold.admin import ModelAdmin as UnfoldModelAdmin
+from unfold.admin import StackedInline as UnfoldStackedInline
+from unfold.widgets import (
+    UnfoldAdminSelectWidget,
+    UnfoldAdminSplitDateTimeWidget,
+    UnfoldBooleanSwitchWidget,
+)
 
-from .admin import CategoryAdmin, NewsAdmin, NewsAdminForm, TagAdmin
+from .admin import (
+    AdvertisementAdmin,
+    CategoryAdmin,
+    CategoryAdminForm,
+    NewsAdmin,
+    NewsAdminForm,
+    NewsGalleryAdmin,
+    NewsGalleryInline,
+    TagAdmin,
+)
 from .models import Advertisement, Category, News, Tag
 from .views import published_news
 
@@ -77,6 +94,74 @@ class AdminJavascriptFallbackTests(SimpleTestCase):
 
 
 class EditorialAdminTests(SimpleTestCase):
+    def test_editorial_admins_use_unfold_widgets_and_filter_drawers(self):
+        for model_admin_class in (
+            CategoryAdmin,
+            TagAdmin,
+            NewsAdmin,
+            NewsGalleryAdmin,
+            AdvertisementAdmin,
+        ):
+            with self.subTest(model_admin=model_admin_class.__name__):
+                self.assertTrue(issubclass(model_admin_class, UnfoldModelAdmin))
+                self.assertTrue(model_admin_class.list_filter_sheet)
+
+        self.assertTrue(issubclass(NewsGalleryInline, UnfoldStackedInline))
+
+    def test_category_form_uses_full_width_description_and_clear_labels(self):
+        form = CategoryAdminForm()
+        model_admin = CategoryAdmin(Category, admin.site)
+        visible_fields = {
+            field
+            for _, options in model_admin.fieldsets
+            for field in options['fields']
+        }
+
+        self.assertEqual(form.fields['description'].label, 'Описание раздела')
+        self.assertEqual(form.fields['description'].widget.attrs['rows'], 12)
+        self.assertIn(
+            'editorial-description-field',
+            form.fields['description'].widget.attrs['class'],
+        )
+        self.assertEqual(form.fields['order'].label, 'Позиция в меню')
+        self.assertEqual(form.fields['is_active'].label, 'Показывать раздел на сайте')
+        self.assertNotIn('icon', visible_fields)
+
+    def test_news_form_uses_compact_unfold_relation_status_date_and_toggle_widgets(self):
+        request = SimpleNamespace(
+            user=SimpleNamespace(has_perm=lambda *args, **kwargs: True),
+        )
+        form_class = NewsAdmin(News, admin.site).get_form(request)
+
+        self.assertIsInstance(
+            form_class.base_fields['category'].widget.widget,
+            UnfoldAdminSelectWidget,
+        )
+        self.assertEqual(
+            form_class.base_fields['category'].widget.template_name,
+            'unfold/widgets/related_widget_wrapper.html',
+        )
+        self.assertIsInstance(
+            form_class.base_fields['editorial_status'].widget,
+            UnfoldAdminSelectWidget,
+        )
+        self.assertIsInstance(
+            form_class.base_fields['is_featured'].widget,
+            UnfoldBooleanSwitchWidget,
+        )
+        self.assertIsInstance(
+            form_class.base_fields['date_start'].widget,
+            UnfoldAdminSplitDateTimeWidget,
+        )
+
+    def test_admin_styles_align_related_controls_and_split_datetimes(self):
+        css_path = Path(__file__).resolve().parents[1] / 'static' / 'admin-editorial.css'
+        css = css_path.read_text(encoding='utf-8')
+
+        self.assertIn('textarea.editorial-description-field', css)
+        self.assertIn('.related-widget-wrapper-link', css)
+        self.assertIn('#content-main .datetime', css)
+
     def test_new_news_form_starts_as_a_draft_with_editorial_help(self):
         form = NewsAdminForm()
 

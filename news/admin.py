@@ -4,8 +4,34 @@ from django.db.models import Count
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.html import format_html
+from unfold.admin import ModelAdmin, StackedInline
 
 from .models import Advertisement, Category, News, NewsGallery, Tag
+
+
+class CategoryAdminForm(forms.ModelForm):
+    """Keep section editing focused on labels readers actually see."""
+
+    class Meta:
+        model = Category
+        fields = '__all__'
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['description'].label = 'Описание раздела'
+        self.fields['description'].help_text = (
+            'Текст страницы раздела. Поле можно растянуть по высоте за нижний правый угол.'
+        )
+        self.fields['description'].widget.attrs.update({
+            'rows': 12,
+            'class': 'editorial-description-field',
+        })
+        self.fields['order'].label = 'Позиция в меню'
+        self.fields['order'].help_text = 'Меньшее число показывает раздел выше.'
+        self.fields['is_active'].label = 'Показывать раздел на сайте'
+        self.fields['is_active'].help_text = (
+            'Выключи, чтобы скрыть раздел от читателей без удаления.'
+        )
 
 
 class NewsAdminForm(forms.ModelForm):
@@ -106,7 +132,7 @@ class NewsGalleryInlineForm(forms.ModelForm):
         self.fields['order'].help_text = 'Меньшее число покажет фото раньше.'
 
 
-class NewsGalleryInline(admin.StackedInline):
+class NewsGalleryInline(StackedInline):
     model = NewsGallery
     form = NewsGalleryInlineForm
     extra = 1
@@ -116,7 +142,8 @@ class NewsGalleryInline(admin.StackedInline):
 
 
 @admin.register(Category)
-class CategoryAdmin(admin.ModelAdmin):
+class CategoryAdmin(ModelAdmin):
+    form = CategoryAdminForm
     list_display = ('name', 'order', 'is_active', 'news_count')
     list_display_links = ('name',)
     list_filter = ('is_active',)
@@ -124,10 +151,11 @@ class CategoryAdmin(admin.ModelAdmin):
     prepopulated_fields = {'slug': ('name',)}
     ordering = ('order', 'name')
     list_editable = ('order', 'is_active')
+    list_filter_sheet = True
     fieldsets = (
         ('Раздел сайта', {
             'description': 'Название увидят читатели в меню и на странице раздела.',
-            'fields': ('name', 'description', 'icon'),
+            'fields': ('name', 'description'),
         }),
         ('Порядок и отображение', {
             'description': 'Меньшее число показывает раздел выше в меню. Отключённый раздел не виден читателям.',
@@ -148,11 +176,12 @@ class CategoryAdmin(admin.ModelAdmin):
 
 
 @admin.register(Tag)
-class TagAdmin(admin.ModelAdmin):
+class TagAdmin(ModelAdmin):
     list_display = ('name', 'slug', 'is_active', 'news_count')
     list_display_links = ('name',)
     list_editable = ('is_active',)
     list_filter = ('is_active',)
+    list_filter_sheet = True
     search_fields = ('name', 'slug', 'description')
     prepopulated_fields = {'slug': ('name',)}
     ordering = ('name',)
@@ -180,7 +209,7 @@ class TagAdmin(admin.ModelAdmin):
 
 
 @admin.register(News)
-class NewsAdmin(admin.ModelAdmin):
+class NewsAdmin(ModelAdmin):
     form = NewsAdminForm
     change_form_template = 'admin/news/news/change_form.html'
     change_list_template = 'admin/news/news/change_list.html'
@@ -196,6 +225,7 @@ class NewsAdmin(admin.ModelAdmin):
     list_display_links = ('title_short',)
     list_editable = ('editorial_status', 'is_featured')
     list_filter = ('editorial_status', 'is_featured', 'category', 'date_start', 'created_at')
+    list_filter_sheet = True
     search_fields = ('title', 'content', 'excerpt', 'meta_keywords', 'tags__name')
     autocomplete_fields = ('tags',)
     prepopulated_fields = {'slug': ('title',)}
@@ -327,10 +357,11 @@ class NewsAdmin(admin.ModelAdmin):
 
 
 @admin.register(NewsGallery)
-class NewsGalleryAdmin(admin.ModelAdmin):
+class NewsGalleryAdmin(ModelAdmin):
     list_display = ('news', 'image_preview', 'caption', 'order')
     list_display_links = ('news',)
     list_filter = ('news',)
+    list_filter_sheet = True
     search_fields = ('news__title', 'caption')
     ordering = ('news', 'order')
 
@@ -371,7 +402,7 @@ class AdvertisementAdminForm(forms.ModelForm):
 
 
 @admin.register(Advertisement)
-class AdvertisementAdmin(admin.ModelAdmin):
+class AdvertisementAdmin(ModelAdmin):
     form = AdvertisementAdminForm
     change_form_template = 'admin/news/advertisement/change_form.html'
     change_list_template = 'admin/news/advertisement/change_list.html'
@@ -379,6 +410,7 @@ class AdvertisementAdmin(admin.ModelAdmin):
     list_display_links = ('name',)
     list_editable = ('is_enabled',)
     list_filter = ('placement', 'is_enabled', 'date_start')
+    list_filter_sheet = True
     search_fields = ('name', 'alt_text', 'link')
     ordering = ('placement', 'name')
     list_per_page = 25
