@@ -176,10 +176,9 @@ def index(request):
         shared_context(
             hero_news=news[0] if news else None,
             card_news=news[1:5],
-            # The lead story and four visual cards occupy the first five
-            # positions. Everything else continues in the compact feed so
-            # published materials do not disappear from the homepage.
-            headline_news=news[5:],
+            # The compact feed is an independent chronology. It excludes only
+            # the lead story and may repeat news used by visual cards below.
+            headline_news=news[1:13],
             popular_news=published_news().order_by("-views", "-date_start")[:8],
         ),
     )

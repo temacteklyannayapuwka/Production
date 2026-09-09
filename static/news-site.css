@@ -397,7 +397,7 @@ img { display: block; max-width: 100%; }
 .article-continuation__item { margin-top: 68px; border-top: 1px solid var(--line); padding-top: 24px; }
 .article-continuation__item:first-of-type { margin-top: 0; }
 .article-continuation__item .article-tag { margin-bottom: 13px; }
-.article-continuation__item h3 { max-width: 750px; margin: 0; font-family: var(--serif); font-size: clamp(34px, 4vw, 54px); font-weight: 400; letter-spacing: -1.5px; line-height: 1.08; }
+.article-continuation__item h3 { max-width: 700px; margin: 0; overflow-wrap: anywhere; font-family: var(--serif); font-size: clamp(26px, 2.7vw, 40px); font-weight: 400; letter-spacing: -1px; line-height: 1.12; }
 .article-continuation__item .article-author { margin-top: 36px; }
 .article-next { margin-top: 40px; border: 1px solid var(--line); border-radius: 14px; padding: 21px 22px; background: var(--surface-hover); }
 .article-next p { margin: 0 0 8px; color: var(--lime-deep); font-size: 11px; font-weight: 750; letter-spacing: .02em; }

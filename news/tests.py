@@ -46,7 +46,7 @@ class AdminJavascriptFallbackTests(SimpleTestCase):
     def test_public_page_uses_the_current_menu_script(self):
         response = get_template('base.html').render({})
 
-        self.assertIn('/static/news-site.css?v=45', response)
+        self.assertIn('/static/news-site.css?v=46', response)
         self.assertIn('family=Merriweather', response)
         self.assertIn('content="#151515"', response)
         self.assertNotIn('family=Playfair+Display', response)
@@ -240,7 +240,7 @@ class FeaturedNewsTests(TestCase):
         self.assertIn('editorial_status', model_admin.list_editable)
         self.assertIn('is_featured', model_admin.list_editable)
 
-    def test_homepage_feed_contains_every_news_after_lead_and_cards(self):
+    def test_homepage_feed_is_an_independent_twelve_item_chronology(self):
         for number in range(18):
             self.create_news(
                 f'feed-{number}',
@@ -252,7 +252,12 @@ class FeaturedNewsTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.context['card_news']), 4)
-        self.assertEqual(len(response.context['headline_news']), 13)
+        self.assertEqual(len(response.context['headline_news']), 12)
+        self.assertNotIn(response.context['hero_news'], response.context['headline_news'])
+        self.assertEqual(
+            response.context['headline_news'][:4],
+            response.context['card_news'],
+        )
         self.assertEqual(len(response.context['popular_news']), 8)
 
     def test_navigation_contains_only_categories_with_public_news(self):
