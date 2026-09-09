@@ -15,6 +15,22 @@ from .domain import ImportReport
 
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
 LOCAL_ASSET_PREFIXES = ("/media/k2/", "/images/")
+VOID_HTML_TAGS = {
+    "area",
+    "base",
+    "br",
+    "col",
+    "embed",
+    "hr",
+    "img",
+    "input",
+    "link",
+    "meta",
+    "param",
+    "source",
+    "track",
+    "wbr",
+}
 
 
 def k2_image_hash(legacy_id: int) -> str:
@@ -180,10 +196,12 @@ class _AssetHTMLRewriter(HTMLParser):
         self.migrator = migrator
         self.entity_id = entity_id
         self.parts: list[str] = []
+        self.open_tags: list[str] = []
 
     @property
     def output(self) -> str:
-        return "".join(self.parts)
+        closing_tags = (f"</{tag}>" for tag in reversed(self.open_tags))
+        return "".join((*self.parts, *closing_tags))
 
     def handle_starttag(self, tag, attrs):
         self._handle_tag(tag, attrs, self_closing=False)
@@ -192,6 +210,7 @@ class _AssetHTMLRewriter(HTMLParser):
         self._handle_tag(tag, attrs, self_closing=True)
 
     def _handle_tag(self, tag, attrs, *, self_closing):
+        normalized_tag = tag.casefold()
         rewritten_attrs = []
         changed = False
         for name, value in attrs:
@@ -203,20 +222,29 @@ class _AssetHTMLRewriter(HTMLParser):
 
         if not changed and self.get_starttag_text():
             self.parts.append(self.get_starttag_text())
-            return
+        else:
+            rendered_attrs = []
+            for name, value in rewritten_attrs:
+                if value is None:
+                    rendered_attrs.append(name)
+                else:
+                    rendered_attrs.append(f'{name}="{escape(value, quote=True)}"')
+            suffix = " /" if self_closing else ""
+            attributes = f" {' '.join(rendered_attrs)}" if rendered_attrs else ""
+            self.parts.append(f"<{tag}{attributes}{suffix}>")
 
-        rendered_attrs = []
-        for name, value in rewritten_attrs:
-            if value is None:
-                rendered_attrs.append(name)
-            else:
-                rendered_attrs.append(f'{name}="{escape(value, quote=True)}"')
-        suffix = " /" if self_closing else ""
-        attributes = f" {' '.join(rendered_attrs)}" if rendered_attrs else ""
-        self.parts.append(f"<{tag}{attributes}{suffix}>")
+        if not self_closing and normalized_tag not in VOID_HTML_TAGS:
+            self.open_tags.append(normalized_tag)
 
     def handle_endtag(self, tag):
-        self.parts.append(f"</{tag}>")
+        normalized_tag = tag.casefold()
+        if normalized_tag not in self.open_tags:
+            return
+
+        matching_index = len(self.open_tags) - 1 - self.open_tags[::-1].index(normalized_tag)
+        for open_tag in reversed(self.open_tags[matching_index:]):
+            self.parts.append(f"</{open_tag}>")
+        del self.open_tags[matching_index:]
 
     def handle_data(self, data):
         self.parts.append(data)

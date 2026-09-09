@@ -46,7 +46,7 @@ class AdminJavascriptFallbackTests(SimpleTestCase):
     def test_public_page_uses_the_current_menu_script(self):
         response = get_template('base.html').render({})
 
-        self.assertIn('/static/news-site.css?v=43', response)
+        self.assertIn('/static/news-site.css?v=44', response)
         self.assertIn('family=Merriweather', response)
         self.assertIn('content="#151515"', response)
         self.assertNotIn('family=Playfair+Display', response)
@@ -169,7 +169,8 @@ class EditorialAdminTests(SimpleTestCase):
         self.assertIn('decoding="async" fetchpriority="high"', article_source)
         self.assertIn('Архивный материал', article_source)
         self.assertNotIn('Фото: Ставрополь+', article_source)
-        self.assertNotIn("date:'H:i'", article_source)
+        self.assertIn("news.date_start|date:'H:i'", article_source)
+        self.assertIn('<div class="article-body"', article_source)
 
     def test_article_images_are_not_upscaled_or_cropped(self):
         css_path = Path(__file__).resolve().parents[1] / 'static' / 'news-site.css'
@@ -181,6 +182,9 @@ class EditorialAdminTests(SimpleTestCase):
         self.assertIn('height: auto', image_rule)
         self.assertIn('object-fit: contain', image_rule)
         self.assertNotIn('max-height:', image_rule)
+
+        body_rule = css.split('.article-body {', 1)[1].split('}', 1)[0]
+        self.assertIn('width: min(100%, 680px)', body_rule)
 
 
 class FeaturedNewsTests(TestCase):

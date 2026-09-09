@@ -372,6 +372,21 @@ class K2ImporterTests(TestCase):
         self.assertEqual(first, second)
         self.assertEqual(sha256.call_count, 1)
 
+    def test_malformed_legacy_html_cannot_close_the_article_layout(self):
+        with TemporaryDirectory() as root:
+            migrator = K2AssetMigrator(
+                Path(root),
+                ImportReport(dry_run=True),
+                apply=False,
+            )
+
+            rewritten = migrator.rewrite_html(
+                '</div><p>Текст <strong>материала</p></article>',
+                entity_id=1,
+            )
+
+        self.assertEqual(rewritten, '<p>Текст <strong>материала</strong></p>')
+
     def test_main_image_directories_are_indexed_once_per_import(self):
         with TemporaryDirectory() as root:
             legacy_root = Path(root)
