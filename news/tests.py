@@ -17,6 +17,7 @@ from unfold.widgets import (
     UnfoldAdminSplitDateTimeWidget,
     UnfoldBooleanSwitchWidget,
 )
+from ckeditor_uploader.widgets import CKEditorUploadingWidget
 
 from .admin import (
     AdvertisementAdmin,
@@ -24,11 +25,10 @@ from .admin import (
     CategoryAdminForm,
     NewsAdmin,
     NewsAdminForm,
-    NewsGalleryAdmin,
     NewsGalleryInline,
     TagAdmin,
 )
-from .models import Advertisement, Category, News, Tag
+from .models import Advertisement, Category, News, NewsGallery, Tag
 from .views import published_news
 
 
@@ -99,7 +99,6 @@ class EditorialAdminTests(SimpleTestCase):
             CategoryAdmin,
             TagAdmin,
             NewsAdmin,
-            NewsGalleryAdmin,
             AdvertisementAdmin,
         ):
             with self.subTest(model_admin=model_admin_class.__name__):
@@ -107,6 +106,16 @@ class EditorialAdminTests(SimpleTestCase):
                 self.assertTrue(model_admin_class.list_filter_sheet)
 
         self.assertTrue(issubclass(NewsGalleryInline, UnfoldStackedInline))
+
+    def test_main_text_uses_visual_editor_and_gallery_is_managed_inside_news(self):
+        form = NewsAdminForm()
+
+        self.assertIsInstance(form.fields['content'].widget, CKEditorUploadingWidget)
+        self.assertFalse(admin.site.is_registered(NewsGallery))
+        self.assertEqual(
+            NewsGalleryInline.verbose_name_plural,
+            '4. Дополнительные фотографии',
+        )
 
     def test_category_form_uses_full_width_description_and_clear_labels(self):
         form = CategoryAdminForm()

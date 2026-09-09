@@ -4,6 +4,7 @@ from django.db.models import Count
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.html import format_html
+from ckeditor_uploader.widgets import CKEditorUploadingWidget
 from unfold.admin import ModelAdmin, StackedInline
 
 from .models import Advertisement, Category, News, NewsGallery, Tag
@@ -36,6 +37,11 @@ class CategoryAdminForm(forms.ModelForm):
 
 class NewsAdminForm(forms.ModelForm):
     """Present a clear editorial workflow instead of technical field names."""
+
+    content = forms.CharField(
+        label='Основной текст',
+        widget=CKEditorUploadingWidget(config_name='default'),
+    )
 
     class Meta:
         model = News
@@ -137,8 +143,8 @@ class NewsGalleryInline(StackedInline):
     form = NewsGalleryInlineForm
     extra = 1
     fields = ('image', 'caption', 'order')
-    verbose_name = 'Фото для галереи'
-    verbose_name_plural = '4. Фотогалерея материала'
+    verbose_name = 'Дополнительная фотография'
+    verbose_name_plural = '4. Дополнительные фотографии'
 
 
 @admin.register(Category)
@@ -354,25 +360,6 @@ class NewsAdmin(ModelAdmin):
             is_published=False,
         )
         self.message_user(request, 'Выбранные новости переведены в черновики.')
-
-
-@admin.register(NewsGallery)
-class NewsGalleryAdmin(ModelAdmin):
-    list_display = ('news', 'image_preview', 'caption', 'order')
-    list_display_links = ('news',)
-    list_filter = ('news',)
-    list_filter_sheet = True
-    search_fields = ('news__title', 'caption')
-    ordering = ('news', 'order')
-
-    @admin.display(description='Фото')
-    def image_preview(self, obj):
-        if obj.image:
-            return format_html(
-                '<img src="{}" width="80" height="80" style="object-fit: cover; border-radius: 8px;" alt="" />',
-                obj.image.url,
-            )
-        return '—'
 
 
 class AdvertisementAdminForm(forms.ModelForm):
