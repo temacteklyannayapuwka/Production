@@ -46,7 +46,7 @@ class AdminJavascriptFallbackTests(SimpleTestCase):
     def test_public_page_uses_the_current_menu_script(self):
         response = get_template('base.html').render({})
 
-        self.assertIn('/static/news-site.css?v=44', response)
+        self.assertIn('/static/news-site.css?v=45', response)
         self.assertIn('family=Merriweather', response)
         self.assertIn('content="#151515"', response)
         self.assertNotIn('family=Playfair+Display', response)
@@ -183,8 +183,20 @@ class EditorialAdminTests(SimpleTestCase):
         self.assertIn('object-fit: contain', image_rule)
         self.assertNotIn('max-height:', image_rule)
 
+        photo_rule = css.split('.article-photo {', 1)[1].split('}', 1)[0]
+        self.assertIn('justify-items: start', photo_rule)
+
         body_rule = css.split('.article-body {', 1)[1].split('}', 1)[0]
         self.assertIn('width: min(100%, 680px)', body_rule)
+
+        for selector in (
+            '.article-tag {',
+            '.article-sequence-number {',
+            '.article-continuation__intro p, .article-continuation__position {',
+            '.article-next p {',
+        ):
+            rule = css.split(selector, 1)[1].split('}', 1)[0]
+            self.assertNotIn('text-transform: uppercase', rule)
 
 
 class FeaturedNewsTests(TestCase):
