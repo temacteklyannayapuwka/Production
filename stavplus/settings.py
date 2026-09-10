@@ -31,7 +31,8 @@ if not SECRET_KEY:
 
 DEBUG = os.getenv('DJANGO_DEBUG', 'false').lower() in {'1', 'true', 'yes'}
 ALLOWED_HOSTS = [host.strip() for host in os.getenv(
-    'DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1,stavplus.ru,www.stavplus.ru'
+    'DJANGO_ALLOWED_HOSTS',
+    'localhost,127.0.0.1,new.stavplus.ru,stavplus.ru,www.stavplus.ru',
 ).split(',') if host.strip()]
 
 INSTALLED_APPS = [

@@ -4,21 +4,26 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#151515">
+    <meta name="theme-color" content="#071b2d">
     <meta name="description" content="Ставрополь+ — новости Ставропольского края и Северного Кавказа.">
     <title>{% block title %}Ставрополь+ — новости без лишнего{% endblock %}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@300;400;500;600;700;800;900&amp;display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;family=Merriweather:wght@300;400;500;600;700;800;900&amp;display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'news-site.css' %}?v=42">
+    <link rel="stylesheet" href="{% static 'stavplus-redesign.css' %}?v=2">
   </head>
-  <body>
+  <body class="{% block body_class %}{% endblock %}">
     <header class="masthead">
-      <div class="site-shell masthead__inner">
-        <a class="brand" href="{% url 'index' %}" aria-label="Ставрополь+, на главную"><span class="brand__mark" aria-hidden="true"><img src="{% static 'brand/stavplus-mark.svg' %}" alt=""></span><span><strong>Ставрополь+</strong><small>Город. Люди. События.</small></span></a>
+      <div class="masthead__inner">
+        <a class="brand brand--wordmark" href="{% url 'index' %}" aria-label="Ставрополь+, на главную"><strong>СТАВРОПОЛЬ<span>+</span></strong></a>
+        <nav class="header-nav" aria-label="Основные разделы">
+          <a href="{% url 'index' %}">Новости</a>
+          {% for category in navigation_categories|slice:':4' %}<a href="{% url 'category' category.slug %}">{{ category.name }}</a>{% endfor %}
+        </nav>
         <div class="header-actions">
-          <form class="search search--header" action="{% url 'search' %}" method="get"><label class="sr-only" for="header-search">Поиск новостей</label><input id="header-search" name="q" value="{{ query|default:'' }}" placeholder="Поиск"><button type="submit" aria-label="Найти">⌕</button></form>
-          <button class="menu-button" type="button" data-menu-trigger aria-controls="site-menu" aria-expanded="false"><i></i><span>Меню</span></button>
+          <form class="search search--header" action="{% url 'search' %}" method="get"><label class="sr-only" for="header-search">Поиск новостей</label><button type="submit" aria-label="Найти"><img src="{% static 'hero/search.svg' %}" alt=""></button><input id="header-search" name="q" value="{{ query|default:'' }}" placeholder="Поиск по новостям"></form>
+          <button class="menu-button" type="button" data-menu-trigger aria-controls="site-menu" aria-expanded="false"><span>Меню</span><img src="{% static 'hero/menu.svg' %}" alt="" aria-hidden="true"></button>
         </div>
       </div>
     </header>

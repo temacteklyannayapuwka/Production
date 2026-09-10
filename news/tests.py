@@ -19,8 +19,15 @@ class AdminJavascriptFallbackTests(SimpleTestCase):
     def test_public_assets_are_available_from_source_static_directory(self):
         asset_names = (
             'news-site.css',
+            'stavplus-redesign.css',
             'news-site.js',
             'brand/stavplus-mark.svg',
+            'hero/stavropol-aerial.jpg',
+            'hero/search.svg',
+            'hero/menu.svg',
+            'hero/sun.svg',
+            'hero/crosshair.svg',
+            'hero/stav-mask.svg',
             'social-icons/vk-icon.jpg',
             'social-icons/telegram-icon.jpg',
             'social-icons/ok-icon.jpg',
@@ -47,15 +54,17 @@ class AdminJavascriptFallbackTests(SimpleTestCase):
         response = get_template('base.html').render({})
 
         self.assertIn('/static/news-site.css?v=42', response)
+        self.assertIn('/static/stavplus-redesign.css?v=2', response)
+        self.assertIn('family=Inter', response)
         self.assertIn('family=Merriweather', response)
-        self.assertIn('content="#151515"', response)
+        self.assertIn('content="#071b2d"', response)
         self.assertNotIn('family=Playfair+Display', response)
         self.assertNotIn('family=Golos+Text', response)
         self.assertNotIn('family=Prata', response)
         self.assertIn('/static/brand/stavplus-mark.svg', response)
         self.assertIn('/static/news-site.js?v=2', response)
         self.assertIn('>Меню</span>', response)
-        self.assertNotIn('class="header-nav"', response)
+        self.assertIn('class="header-nav"', response)
 
     def test_unfold_script_is_available_through_django(self):
         response = self.client.get('/static/unfold/js/app.js')
