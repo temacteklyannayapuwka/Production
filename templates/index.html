@@ -1,11 +1,12 @@
 {% extends 'base.html' %}
 {% load static %}
 {% block body_class %}home-page-body{% endblock %}
+{% block extra_head %}<link rel="preload" as="image" href="{% static 'hero/stavropol-aerial.webp' %}" type="image/webp" fetchpriority="high">{% endblock %}
 
 {% block content %}
 <main>
   <section class="city-hero" aria-labelledby="city-hero-title">
-    <img class="city-hero__map" src="{% static 'hero/stavropol-aerial.jpg' %}" alt="Вид Ставрополя с высоты" fetchpriority="high">
+    <picture><source srcset="{% static 'hero/stavropol-aerial.webp' %}" type="image/webp"><img class="city-hero__map" src="{% static 'hero/stavropol-aerial.jpg' %}" alt="Вид Ставрополя с высоты" width="1600" height="1064" fetchpriority="high" decoding="async"></picture>
     <div class="city-hero__photo-tone" aria-hidden="true"></div>
     <div class="city-hero__left" aria-hidden="true"></div>
     <div class="city-hero__split" aria-hidden="true"></div>
@@ -56,9 +57,9 @@
         <section class="front-grid">
           {% if hero_news %}
             <article class="hero editorial-feature">
-              {% if hero_news.main_photo %}<img src="{{ hero_news.main_photo.url }}" alt="{{ hero_news.title }}" fetchpriority="high">{% else %}<div class="hero__fallback"></div>{% endif %}
+              {% if hero_news.main_photo %}<img src="{{ hero_news.main_photo.url }}" alt="{{ hero_news.title }}" loading="lazy" decoding="async">{% else %}<div class="hero__fallback"></div>{% endif %}
               <div class="hero__overlay"></div>
-              <div class="hero__content"><span class="tag">{{ hero_news.category.name|default:'Главное' }}</span><p class="hero__meta"><time datetime="{{ hero_news.date_start|date:'c' }}">{{ hero_news.date_start|date:'j E Y · H:i' }}</time></p><h3>{{ hero_news.title }}</h3><p class="hero__lead">{{ hero_news.excerpt|default:hero_news.content|striptags|truncatewords:38 }}</p><a href="{% url 'news_detail' hero_news.slug %}">Читать материал <b>→</b></a></div>
+              <div class="hero__content"><span class="tag">{{ hero_news.category.name|default:'Главное' }}</span><p class="hero__meta"><time datetime="{{ hero_news.date_start|date:'c' }}">{{ hero_news.date_start|date:'j E Y · H:i' }}</time></p><h3>{{ hero_news.title }}</h3><p class="hero__lead">{{ hero_news.excerpt|default:'Материал редакции Ставрополь+'|truncatewords:38 }}</p><a href="{% url 'news_detail' hero_news.slug %}">Читать материал <b>→</b></a></div>
             </article>
           {% else %}
             <article class="hero hero--empty editorial-feature"><div class="hero__content"><span class="tag">Ставрополь+</span><h3>Новые материалы скоро появятся на главной странице.</h3></div></article>
@@ -69,7 +70,7 @@
 
         <section class="home-main__feed">
           <div><div class="section-title section-title--indexed"><span>04</span><h2>Читают сейчас</h2><i></i></div><div class="headline-list">
-        {% for news in popular_news %}<article><b>{{ forloop.counter|stringformat:'02d' }}</b><div><p class="headline-list__meta">{{ news.category.name|default:'Новости' }} · <time datetime="{{ news.date_start|date:'c' }}">{{ news.date_start|date:'j E' }}</time></p><h3><a href="{% url 'news_detail' news.slug %}">{{ news.title }}</a></h3><p class="headline-list__excerpt">{{ news.excerpt|default:news.content|striptags|truncatewords:20 }}</p><p class="headline-list__views">{{ news.views|default:0 }} просмотров</p></div></article>{% empty %}<div class="empty-state">Популярные материалы появятся здесь.</div>{% endfor %}
+        {% for news in popular_news %}<article><b>{{ forloop.counter|stringformat:'02d' }}</b><div><p class="headline-list__meta">{{ news.category.name|default:'Новости' }} · <time datetime="{{ news.date_start|date:'c' }}">{{ news.date_start|date:'j E' }}</time></p><h3><a href="{% url 'news_detail' news.slug %}">{{ news.title }}</a></h3><p class="headline-list__excerpt">{{ news.excerpt|default:'Материал редакции Ставрополь+'|truncatewords:20 }}</p><p class="headline-list__views">{{ news.views|default:0 }} просмотров</p></div></article>{% empty %}<div class="empty-state">Популярные материалы появятся здесь.</div>{% endfor %}
           </div></div>
           <aside class="latest latest--feed" aria-label="Новые материалы"><div class="section-title section-title--indexed"><span>05</span><h2>Новые материалы</h2><i></i></div><div class="cards">
             {% for news in card_news %}<article class="card"><a href="{% url 'news_detail' news.slug %}"><div>{% if news.main_photo %}<img src="{{ news.main_photo.url }}" alt="{{ news.title }}" loading="lazy" decoding="async">{% else %}<div class="card__fallback"></div>{% endif %}<span class="tag">{{ news.category.name|default:'Новости' }}</span></div><h3>{{ news.title }}</h3><p><time datetime="{{ news.date_start|date:'c' }}">{{ news.date_start|date:'j E Y · H:i' }}</time></p></a></article>{% empty %}<div class="empty-state">Новые материалы скоро появятся.</div>{% endfor %}

@@ -79,17 +79,19 @@ def serve_public_javascript(request):
     return _serve_javascript_asset("", "news-site.js")
 
 
-def published_news():
+def published_news(*, with_tags=True):
     """News that may be shown publicly at the current moment."""
     now = timezone.now()
-    return (
-        News.objects.select_related("category")
-        .prefetch_related(
+    queryset = News.objects.select_related("category")
+    if with_tags:
+        queryset = queryset.prefetch_related(
             Prefetch(
                 "tags",
                 queryset=Tag.objects.filter(is_active=True).order_by("name"),
             )
         )
+    return (
+        queryset
         .filter(is_published=True, date_start__lte=now)
         .filter(Q(date_end__isnull=True) | Q(date_end__gte=now))
         .order_by("-is_featured", "-date_start", "-created_at", "-pk")
@@ -97,7 +99,7 @@ def published_news():
 
 
 def navigation_categories():
-    visible_category_ids = published_news().order_by().values("category_id")
+    visible_category_ids = published_news(with_tags=False).order_by().values("category_id")
     return (
         Category.objects.filter(
             is_active=True,
@@ -172,7 +174,16 @@ def index(request):
     # Only the lead story and the twelve-item feed are rendered.  Keeping the
     # slice in SQL is important for the imported archive, where News contains
     # tens of thousands of large HTML documents.
-    news = list(published_news()[:13])
+    # Listing cards never render full article HTML or topic relations. Avoid
+    # loading both for the imported archive: some legacy documents and photos
+    # are several megabytes each.
+    homepage_news = published_news(with_tags=False).defer(
+        "content",
+        "meta_title",
+        "meta_description",
+        "meta_keywords",
+    )
+    news = list(homepage_news[:13])
     return render(
         request,
         "index.html",
@@ -182,7 +193,7 @@ def index(request):
             # The compact feed is an independent chronology. It excludes only
             # the lead story and may repeat news used by visual cards below.
             headline_news=news[1:13],
-            popular_news=published_news().order_by("-views", "-date_start")[:8],
+            popular_news=homepage_news.order_by("-views", "-date_start")[:8],
         ),
     )
 

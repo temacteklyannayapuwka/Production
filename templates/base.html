@@ -7,11 +7,14 @@
     <meta name="theme-color" content="#071b2d">
     <meta name="description" content="{% block meta_description %}Ставрополь+ — новости Ставропольского края и Северного Кавказа.{% endblock %}">
     <title>{% block title %}Ставрополь+ — новости без лишнего{% endblock %}</title>
+    {% block extra_head %}{% endblock %}
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;family=Merriweather:wght@300;400;500;600;700;800;900&amp;display=swap" rel="stylesheet">
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@300..800&amp;display=swap">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..800&amp;display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..800&amp;display=swap" rel="stylesheet"></noscript>
     <link rel="stylesheet" href="{% static 'news-site.css' %}?v=47">
-    <link rel="stylesheet" href="{% static 'stavplus-redesign.css' %}?v=3">
+    <link rel="stylesheet" href="{% static 'stavplus-redesign.css' %}?v=4">
   </head>
   <body class="{% block body_class %}{% endblock %}">
     <header class="masthead">

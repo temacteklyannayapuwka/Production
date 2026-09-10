@@ -130,7 +130,7 @@ body { background: #f2f3f1; font-family: var(--ui); }
   left: 3.49%;
   width: min(35.702vw, 685.485px);
   height: min(13.2687vw, 254.759px);
-  background: url("hero/stavropol-aerial.jpg") center / cover no-repeat;
+  background: url("hero/stavropol-aerial.webp") center / cover no-repeat;
   -webkit-mask: url("hero/stav-mask.svg") 0 0 / 100% 100% no-repeat;
   mask: url("hero/stav-mask.svg") 0 0 / 100% 100% no-repeat;
   filter: saturate(.62) brightness(.93);

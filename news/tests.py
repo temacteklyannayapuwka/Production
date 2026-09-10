@@ -42,6 +42,7 @@ class AdminJavascriptFallbackTests(SimpleTestCase):
             'news-site.js',
             'brand/stavplus-mark.svg',
             'hero/stavropol-aerial.jpg',
+            'hero/stavropol-aerial.webp',
             'hero/search.svg',
             'hero/menu.svg',
             'hero/sun.svg',
@@ -73,9 +74,10 @@ class AdminJavascriptFallbackTests(SimpleTestCase):
         response = get_template('base.html').render({})
 
         self.assertIn('/static/news-site.css?v=47', response)
-        self.assertIn('/static/stavplus-redesign.css?v=3', response)
+        self.assertIn('/static/stavplus-redesign.css?v=4', response)
         self.assertIn('family=Inter', response)
-        self.assertIn('family=Merriweather', response)
+        self.assertNotIn('family=Merriweather', response)
+        self.assertIn('media="print"', response)
         self.assertIn('content="#071b2d"', response)
         self.assertNotIn('family=Playfair+Display', response)
         self.assertNotIn('family=Golos+Text', response)
@@ -228,7 +230,7 @@ class EditorialAdminTests(SimpleTestCase):
             'city-hero',
             'city-hero__word-start',
             'city-hero__word-end',
-            "hero/stavropol-aerial.jpg",
+            "hero/stavropol-aerial.webp",
             'city-hero__coordinates',
             'city-hero__date',
             'city-hero__cta',
@@ -252,6 +254,7 @@ class EditorialAdminTests(SimpleTestCase):
 
         self.assertIn('Desktop hero, measured from the 1920 x 1080 Figma frame.', css)
         self.assertIn('hero/stav-mask.svg', css)
+        self.assertIn('hero/stavropol-aerial.webp', css)
         self.assertIn('@media (max-width: 1040px)', css)
         self.assertIn('@media (min-width: 721px) and (max-width: 820px)', css)
         self.assertIn('@media (max-width: 720px)', css)
@@ -398,7 +401,7 @@ class FeaturedNewsTests(TestCase):
                 date_start=timezone.now() - timedelta(minutes=number),
             )
 
-        with self.assertNumQueries(6):
+        with self.assertNumQueries(4):
             response = self.client.get('/')
 
         self.assertEqual(response.status_code, 200)
@@ -426,10 +429,13 @@ class FeaturedNewsTests(TestCase):
             query['sql']
             for query in queries.captured_queries
             if 'FROM "news_news"' in query['sql']
-            and '"news_news"."content"' in query['sql']
             and '"news_news"."is_featured" DESC' in query['sql']
         ]
         self.assertTrue(primary_news_queries)
+        self.assertTrue(
+            all('"news_news"."content"' not in query for query in primary_news_queries),
+            primary_news_queries,
+        )
         self.assertTrue(
             any('LIMIT 13' in query for query in primary_news_queries),
             primary_news_queries,
