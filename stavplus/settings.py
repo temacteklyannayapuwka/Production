@@ -131,6 +131,7 @@ CKEDITOR_CONFIGS = {
         'height': 520,
         'width': '100%',
         'resize_enabled': True,
+        'resize_dir': 'both',
         'removePlugins': 'elementspath',
     },
 }
@@ -140,7 +141,7 @@ UNFOLD = {
     'SITE_HEADER': 'Ставрополь+',
     'SITE_TITLE': 'Ставрополь+ · редакция',
     'SITE_SUBHEADER': 'Новости и материалы',
-    'STYLES': ['/static/admin-symbols.css', '/static/admin-editorial.css?v=6'],
+    'STYLES': ['/static/admin-symbols.css', '/static/admin-editorial.css?v=7'],
     'COLORS': {
         'primary': {
             '50': '#f7f7f6',

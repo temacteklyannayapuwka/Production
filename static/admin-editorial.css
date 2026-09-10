@@ -71,6 +71,22 @@
     resize: vertical;
 }
 
+#content-main .field-content,
+#content-main .field-content > div,
+#content-main .field-content .django-ckeditor-widget {
+    width: 100% !important;
+    max-width: none !important;
+}
+
+#content-main textarea[name="content"] {
+    display: block;
+    min-width: min(100%, 42rem);
+    min-height: 420px;
+    width: 100% !important;
+    max-width: none !important;
+    resize: both;
+}
+
 /* Long editorial copy belongs to the full form column, not a narrow legacy box. */
 #content-main textarea.editorial-description-field,
 #content-main .field-description textarea {
@@ -128,6 +144,13 @@
 .cke {
     max-width: 100% !important;
     width: 100% !important;
+}
+
+.django-ckeditor-widget {
+    display: block !important;
+    min-height: 420px;
+    overflow: auto;
+    resize: both;
 }
 
 .cke {

@@ -74,8 +74,8 @@ class AdminJavascriptFallbackTests(SimpleTestCase):
     def test_public_page_uses_the_current_menu_script(self):
         response = get_template('base.html').render({})
 
-        self.assertIn('/static/news-site.css?v=48', response)
-        self.assertIn('/static/stavplus-redesign.css?v=6', response)
+        self.assertIn('/static/news-site.css?v=49', response)
+        self.assertIn('/static/stavplus-redesign.css?v=7', response)
         self.assertIn('family=Inter', response)
         self.assertNotIn('family=Merriweather', response)
         self.assertIn('media="print"', response)
@@ -184,6 +184,8 @@ class EditorialAdminTests(SimpleTestCase):
         css = css_path.read_text(encoding='utf-8')
 
         self.assertIn('textarea.editorial-description-field', css)
+        self.assertIn('textarea[name="content"]', css)
+        self.assertIn('resize: both', css)
         self.assertIn('.related-widget-wrapper-link', css)
         self.assertIn('#content-main .datetime', css)
 
@@ -193,9 +195,11 @@ class EditorialAdminTests(SimpleTestCase):
         self.assertEqual(form.fields['editorial_status'].initial, News.EditorialStatus.DRAFT)
         self.assertEqual(form.fields['main_photo'].label, 'Главное изображение')
         self.assertIn('WebP', form.fields['main_photo'].help_text)
+        self.assertIn('заполняет ширину блока', form.fields['main_photo'].help_text)
         self.assertEqual(form.fields['excerpt'].label, 'Лид — краткое вступление')
         self.assertIn('без повтора лида', form.fields['content'].help_text)
         self.assertIn('весь экран', form.fields['content'].help_text)
+        self.assertIn('по ширине и высоте', form.fields['content'].help_text)
         self.assertEqual(form.fields['is_featured'].label, 'Главная новость')
         self.assertEqual(form.fields['tags'].label, 'Теги темы')
 
