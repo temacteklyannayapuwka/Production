@@ -71,6 +71,59 @@
     resize: vertical;
 }
 
+/* Long editorial copy belongs to the full form column, not a narrow legacy box. */
+#content-main textarea.editorial-description-field,
+#content-main .field-description textarea {
+    display: block;
+    min-height: 280px;
+    width: 100% !important;
+    max-width: none !important;
+    resize: vertical;
+}
+
+/* Keep related-object actions compact and aligned with their select field. */
+#content-main .related-widget-wrapper {
+    align-items: center;
+    width: 100%;
+}
+
+#content-main .related-widget-wrapper > select,
+#content-main .related-widget-wrapper > .select2-container {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+#content-main .related-widget-wrapper-link {
+    align-items: center !important;
+    display: inline-flex !important;
+    flex: 0 0 38px !important;
+    height: 38px !important;
+    justify-content: center !important;
+    margin-left: .5rem !important;
+    width: 38px !important;
+}
+
+#content-main .related-widget-wrapper-link .material-symbols-outlined {
+    font-size: 18px !important;
+    line-height: 1 !important;
+}
+
+/* Date and time are one control: give both halves the same footprint. */
+#content-main .datetime {
+    align-items: stretch;
+    width: min(100%, 42rem);
+}
+
+#content-main .datetime > div,
+#content-main .datetime input {
+    min-width: 0;
+    width: 100% !important;
+}
+
+#content-main .datetime input {
+    min-height: 46px;
+}
+
 .django-ckeditor-widget,
 .cke {
     max-width: 100% !important;

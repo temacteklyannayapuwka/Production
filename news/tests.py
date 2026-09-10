@@ -1,17 +1,36 @@
 from datetime import timedelta
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from types import SimpleNamespace
 
 from django.contrib import admin
 from django.contrib.staticfiles import finders
 from django.core.management import call_command
+from django.db import connection
+from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from django.template.loader import get_template
 from django.test import SimpleTestCase, TestCase, override_settings
 from django.utils import timezone
+from unfold.admin import ModelAdmin as UnfoldModelAdmin
+from unfold.admin import StackedInline as UnfoldStackedInline
+from unfold.widgets import (
+    UnfoldAdminSelectWidget,
+    UnfoldAdminSplitDateTimeWidget,
+    UnfoldBooleanSwitchWidget,
+)
+from ckeditor_uploader.widgets import CKEditorUploadingWidget
 
-from .admin import CategoryAdmin, NewsAdmin, NewsAdminForm, TagAdmin
-from .models import Advertisement, Category, News, Tag
+from .admin import (
+    AdvertisementAdmin,
+    CategoryAdmin,
+    CategoryAdminForm,
+    NewsAdmin,
+    NewsAdminForm,
+    NewsGalleryInline,
+    TagAdmin,
+)
+from .models import Advertisement, Category, News, NewsGallery, Tag
 from .views import published_news
 
 
@@ -53,8 +72,8 @@ class AdminJavascriptFallbackTests(SimpleTestCase):
     def test_public_page_uses_the_current_menu_script(self):
         response = get_template('base.html').render({})
 
-        self.assertIn('/static/news-site.css?v=42', response)
-        self.assertIn('/static/stavplus-redesign.css?v=2', response)
+        self.assertIn('/static/news-site.css?v=47', response)
+        self.assertIn('/static/stavplus-redesign.css?v=3', response)
         self.assertIn('family=Inter', response)
         self.assertIn('family=Merriweather', response)
         self.assertIn('content="#071b2d"', response)
@@ -86,12 +105,91 @@ class AdminJavascriptFallbackTests(SimpleTestCase):
 
 
 class EditorialAdminTests(SimpleTestCase):
+    def test_editorial_admins_use_unfold_widgets_and_filter_drawers(self):
+        for model_admin_class in (
+            CategoryAdmin,
+            TagAdmin,
+            NewsAdmin,
+            AdvertisementAdmin,
+        ):
+            with self.subTest(model_admin=model_admin_class.__name__):
+                self.assertTrue(issubclass(model_admin_class, UnfoldModelAdmin))
+                self.assertTrue(model_admin_class.list_filter_sheet)
+
+        self.assertTrue(issubclass(NewsGalleryInline, UnfoldStackedInline))
+
+    def test_main_text_uses_visual_editor_and_gallery_is_managed_inside_news(self):
+        form = NewsAdminForm()
+
+        self.assertIsInstance(form.fields['content'].widget, CKEditorUploadingWidget)
+        self.assertFalse(admin.site.is_registered(NewsGallery))
+        self.assertEqual(
+            NewsGalleryInline.verbose_name_plural,
+            '4. Дополнительные фотографии',
+        )
+
+    def test_category_form_uses_full_width_description_and_clear_labels(self):
+        form = CategoryAdminForm()
+        model_admin = CategoryAdmin(Category, admin.site)
+        visible_fields = {
+            field
+            for _, options in model_admin.fieldsets
+            for field in options['fields']
+        }
+
+        self.assertEqual(form.fields['description'].label, 'Описание раздела')
+        self.assertEqual(form.fields['description'].widget.attrs['rows'], 12)
+        self.assertIn(
+            'editorial-description-field',
+            form.fields['description'].widget.attrs['class'],
+        )
+        self.assertEqual(form.fields['order'].label, 'Позиция в меню')
+        self.assertEqual(form.fields['is_active'].label, 'Показывать раздел на сайте')
+        self.assertNotIn('icon', visible_fields)
+
+    def test_news_form_uses_compact_unfold_relation_status_date_and_toggle_widgets(self):
+        request = SimpleNamespace(
+            user=SimpleNamespace(has_perm=lambda *args, **kwargs: True),
+        )
+        form_class = NewsAdmin(News, admin.site).get_form(request)
+
+        self.assertIsInstance(
+            form_class.base_fields['category'].widget.widget,
+            UnfoldAdminSelectWidget,
+        )
+        self.assertEqual(
+            form_class.base_fields['category'].widget.template_name,
+            'unfold/widgets/related_widget_wrapper.html',
+        )
+        self.assertIsInstance(
+            form_class.base_fields['editorial_status'].widget,
+            UnfoldAdminSelectWidget,
+        )
+        self.assertIsInstance(
+            form_class.base_fields['is_featured'].widget,
+            UnfoldBooleanSwitchWidget,
+        )
+        self.assertIsInstance(
+            form_class.base_fields['date_start'].widget,
+            UnfoldAdminSplitDateTimeWidget,
+        )
+
+    def test_admin_styles_align_related_controls_and_split_datetimes(self):
+        css_path = Path(__file__).resolve().parents[1] / 'static' / 'admin-editorial.css'
+        css = css_path.read_text(encoding='utf-8')
+
+        self.assertIn('textarea.editorial-description-field', css)
+        self.assertIn('.related-widget-wrapper-link', css)
+        self.assertIn('#content-main .datetime', css)
+
     def test_new_news_form_starts_as_a_draft_with_editorial_help(self):
         form = NewsAdminForm()
 
         self.assertEqual(form.fields['editorial_status'].initial, News.EditorialStatus.DRAFT)
-        self.assertEqual(form.fields['main_photo'].label, 'Главное фото')
+        self.assertEqual(form.fields['main_photo'].label, 'Главное изображение')
         self.assertIn('WebP', form.fields['main_photo'].help_text)
+        self.assertEqual(form.fields['excerpt'].label, 'Лид — краткое вступление')
+        self.assertIn('без повтора лида', form.fields['content'].help_text)
         self.assertIn('весь экран', form.fields['content'].help_text)
         self.assertEqual(form.fields['is_featured'].label, 'Главная новость')
         self.assertEqual(form.fields['tags'].label, 'Теги темы')
@@ -123,6 +221,42 @@ class EditorialAdminTests(SimpleTestCase):
         self.assertGreater(source.index('latest--feed'), source.index('home-main__feed'))
         self.assertIn('Погода · Ставрополь', source)
 
+    def test_homepage_keeps_the_reference_hero_and_real_editorial_blocks(self):
+        source = get_template('index.html').template.source
+
+        for marker in (
+            'city-hero',
+            'city-hero__word-start',
+            'city-hero__word-end',
+            "hero/stavropol-aerial.jpg",
+            'city-hero__coordinates',
+            'city-hero__date',
+            'city-hero__cta',
+            'headline_news',
+            'hero_news',
+            'popular_news',
+            'card_news',
+            'home-edition-header',
+        ):
+            with self.subTest(marker=marker):
+                self.assertIn(marker, source)
+
+        self.assertIn('События, которыми живёт Ставрополь', source)
+        self.assertIn('Главный материал', source)
+        self.assertIn('Читают сейчас', source)
+        self.assertIn('Новые материалы', source)
+
+    def test_reference_hero_has_explicit_desktop_tablet_and_mobile_layouts(self):
+        css_path = Path(__file__).resolve().parents[1] / 'static' / 'stavplus-redesign.css'
+        css = css_path.read_text(encoding='utf-8')
+
+        self.assertIn('Desktop hero, measured from the 1920 x 1080 Figma frame.', css)
+        self.assertIn('hero/stav-mask.svg', css)
+        self.assertIn('@media (max-width: 1040px)', css)
+        self.assertIn('@media (min-width: 721px) and (max-width: 820px)', css)
+        self.assertIn('@media (max-width: 720px)', css)
+        self.assertNotIn('transform: scale(', css)
+
     def test_category_page_uses_a_sticky_news_feed_without_lower_advertisements(self):
         source = get_template('category.html').template.source
 
@@ -141,10 +275,10 @@ class EditorialAdminTests(SimpleTestCase):
 
         self.assertEqual(index_source.count('news.views'), 1)
         self.assertIn('popular_news', index_source)
-        self.assertIn('Топ по просмотрам', index_source)
+        self.assertIn('Читают сейчас', index_source)
         self.assertIn('headline-list__excerpt', index_source)
         self.assertIn('Лента новостей', index_source)
-        self.assertIn('Категории', index_source)
+        self.assertIn('Новые материалы', index_source)
         category_source = get_template('category.html').template.source
         self.assertEqual(category_source.count('news.views'), 0)
         self.assertIn('latest_news', category_source)
@@ -166,6 +300,44 @@ class EditorialAdminTests(SimpleTestCase):
         self.assertIn('next_category_article', article_source)
         self.assertNotIn('<span>Сейчас</span>', article_source)
         self.assertIsNotNone(get_template('components/ad_slot.html'))
+
+    def test_article_template_uses_semantic_dates_and_honest_image_markup(self):
+        article_source = get_template('article.html').template.source
+
+        self.assertIn('<header class="article-header">', article_source)
+        self.assertIn('<time datetime=', article_source)
+        self.assertIn('aria-label="Текст материала"', article_source)
+        self.assertIn('decoding="async" fetchpriority="high"', article_source)
+        self.assertIn('Архивный материал', article_source)
+        self.assertNotIn('Фото: Ставрополь+', article_source)
+        self.assertIn("news.date_start|date:'H:i'", article_source)
+        self.assertIn('<div class="article-body"', article_source)
+
+    def test_article_images_are_not_upscaled_or_cropped(self):
+        css_path = Path(__file__).resolve().parents[1] / 'static' / 'news-site.css'
+        css = css_path.read_text(encoding='utf-8')
+        image_rule = css.split('.article-photo img {', 1)[1].split('}', 1)[0]
+
+        self.assertIn('width: auto', image_rule)
+        self.assertIn('max-width: 100%', image_rule)
+        self.assertIn('height: auto', image_rule)
+        self.assertIn('object-fit: contain', image_rule)
+        self.assertNotIn('max-height:', image_rule)
+
+        photo_rule = css.split('.article-photo {', 1)[1].split('}', 1)[0]
+        self.assertIn('justify-items: start', photo_rule)
+
+        body_rule = css.split('.article-body {', 1)[1].split('}', 1)[0]
+        self.assertIn('width: min(100%, 680px)', body_rule)
+
+        for selector in (
+            '.article-tag {',
+            '.article-sequence-number {',
+            '.article-continuation__intro p, .article-continuation__position {',
+            '.article-next p {',
+        ):
+            rule = css.split(selector, 1)[1].split('}', 1)[0]
+            self.assertNotIn('text-transform: uppercase', rule)
 
 
 class FeaturedNewsTests(TestCase):
@@ -209,7 +381,7 @@ class FeaturedNewsTests(TestCase):
         self.assertIn('editorial_status', model_admin.list_editable)
         self.assertIn('is_featured', model_admin.list_editable)
 
-    def test_homepage_feed_contains_every_news_after_lead_and_cards(self):
+    def test_homepage_feed_is_an_independent_twelve_item_chronology(self):
         for number in range(18):
             self.create_news(
                 f'feed-{number}',
@@ -221,8 +393,56 @@ class FeaturedNewsTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.context['card_news']), 4)
-        self.assertEqual(len(response.context['headline_news']), 13)
+        self.assertEqual(len(response.context['headline_news']), 12)
+        self.assertNotIn(response.context['hero_news'], response.context['headline_news'])
+        self.assertEqual(
+            response.context['headline_news'][:4],
+            response.context['card_news'],
+        )
         self.assertEqual(len(response.context['popular_news']), 8)
+
+    def test_homepage_limits_the_primary_news_query_in_the_database(self):
+        for number in range(18):
+            self.create_news(
+                f'bounded-feed-{number}',
+                date_start=timezone.now() - timedelta(minutes=number),
+            )
+
+        with CaptureQueriesContext(connection) as queries:
+            response = self.client.get('/')
+
+        self.assertEqual(response.status_code, 200)
+        primary_news_queries = [
+            query['sql']
+            for query in queries.captured_queries
+            if 'FROM "news_news"' in query['sql']
+            and '"news_news"."content"' in query['sql']
+            and '"news_news"."is_featured" DESC' in query['sql']
+        ]
+        self.assertTrue(primary_news_queries)
+        self.assertTrue(
+            any('LIMIT 13' in query for query in primary_news_queries),
+            primary_news_queries,
+        )
+
+    def test_navigation_contains_only_categories_with_public_news(self):
+        visible = self.category
+        empty = Category.objects.create(name='Пустой раздел', slug='empty')
+        draft_only = Category.objects.create(name='Черновики', slug='drafts')
+        self.create_news('visible')
+        News.objects.create(
+            title='Неопубликованный материал',
+            slug='draft',
+            content='<p>Черновик</p>',
+            category=draft_only,
+            editorial_status=News.EditorialStatus.DRAFT,
+        )
+
+        response = self.client.get('/')
+
+        self.assertEqual(list(response.context['navigation_categories']), [visible])
+        self.assertNotIn(empty, response.context['navigation_categories'])
+        self.assertNotIn(draft_only, response.context['navigation_categories'])
 
 
 class AdminQueryTests(TestCase):

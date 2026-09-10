@@ -48,9 +48,12 @@ ISPmanager или в конфигурации процесса. Не испол�
 
 Для опционального PostgreSQL установите системные клиентские библиотеки и
 используйте `pip install -r requirements-postgres.txt` вместо базового списка.
+Для одноразовой миграции Joomla K2 используйте `requirements-k2.txt` и
+[безопасный runbook](docs/K2_IMPORT.md). Импортёр предназначен для локального и
+тестового контура; без `--apply` он не изменяет БД и media.
 
 Транзитивные версии, проверенные для Python 3.12, закреплены в
-`constraints.txt`. Все три requirements-файла используют один базовый runtime,
+`constraints.txt`. Все requirements-файлы используют один базовый runtime,
 поэтому локальное, development- и PostgreSQL-окружения не расходятся.
 
 ## Известный долг CKEditor

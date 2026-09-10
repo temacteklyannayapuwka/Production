@@ -1,77 +1,157 @@
-"""Safely import a structured Joomla K2 JSON export."""
+from __future__ import annotations
 
+import os
 from pathlib import Path
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
+from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
-from django.db import transaction
 
-from news.importers.k2 import K2Dataset, K2Importer, K2ImportError
+from news.k2_import import K2Importer, MySQLK2Source, MySQLK2SourceConfig
 
 
 class Command(BaseCommand):
-    help = "Импортирует Joomla K2 из JSON-выгрузки phpMyAdmin без дублей."
+    help = "Safely analyze or import Joomla K2 content into StavPlus."
 
     def add_arguments(self, parser):
-        parser.add_argument("--source", required=True, help="Путь к JSON-выгрузке K2.")
-        parser.add_argument(
-            "--media-root",
-            help="Путь к распакованному каталогу media/k2 для поиска изображений.",
+        mode = parser.add_mutually_exclusive_group()
+        mode.add_argument(
+            "--apply",
+            action="store_true",
+            help="Write Django records and copy media. Without this flag the command is read-only.",
         )
-        parser.add_argument("--limit", type=int, help="Импортировать только первые N новостей.")
-        mode = parser.add_mutually_exclusive_group(required=True)
-        mode.add_argument("--dry-run", action="store_true", help="Проверить и откатить БД.")
-        mode.add_argument("--apply", action="store_true", help="Применить импорт.")
+        mode.add_argument(
+            "--dry-run",
+            action="store_true",
+            help="Explicitly select the default read-only analysis mode.",
+        )
+        parser.add_argument("--limit", type=int, help="Analyze or import at most this many items.")
+        parser.add_argument(
+            "--resume-from-id",
+            type=int,
+            help="Resume inclusively from this K2 item ID; reruns are idempotent.",
+        )
+        parser.add_argument(
+            "--exclude-category",
+            action="append",
+            type=int,
+            default=[],
+            metavar="K2_ID",
+            help="Exclude a legacy K2 category ID. Repeat for multiple categories.",
+        )
+        parser.add_argument(
+            "--legacy-root",
+            help="Path to the Joomla root containing media/k2/ and images/.",
+        )
+        parser.add_argument(
+            "--legacy-timezone",
+            help="IANA timezone used by Joomla, for example Europe/Moscow.",
+        )
+        parser.add_argument(
+            "--report-dir",
+            help="Directory for the JSON report and sanitized error log.",
+        )
 
     def handle(self, *args, **options):
-        source = Path(options["source"]).expanduser().resolve()
-        if not source.is_file():
-            raise CommandError(f"JSON-выгрузка не найдена: {source}")
+        self._validate_options(options)
+        apply = options["apply"]
+        legacy_root_value = options["legacy_root"] or os.getenv("K2_MEDIA_ROOT")
+        if not legacy_root_value:
+            raise CommandError(
+                "Provide an existing Joomla root with --legacy-root or K2_MEDIA_ROOT."
+            )
+        legacy_root = Path(legacy_root_value).expanduser()
+        if not legacy_root.is_dir():
+            raise CommandError(
+                "Provide an existing Joomla root with --legacy-root or K2_MEDIA_ROOT."
+            )
 
-        media_root = None
-        if options["media_root"]:
-            media_root = Path(options["media_root"]).expanduser().resolve()
-            if not media_root.is_dir():
-                raise CommandError(f"Каталог media/k2 не найден: {media_root}")
+        timezone_name = options["legacy_timezone"] or os.getenv("K2_TIME_ZONE")
+        if not timezone_name:
+            raise CommandError(
+                "Set --legacy-timezone or K2_TIME_ZONE explicitly; the importer will not guess."
+            )
+        try:
+            legacy_timezone = ZoneInfo(timezone_name)
+        except ZoneInfoNotFoundError as error:
+            raise CommandError(f"Unknown legacy timezone: {timezone_name}") from error
 
-        limit = options["limit"]
-        if limit is not None and limit <= 0:
-            raise CommandError("--limit должен быть положительным числом.")
+        report_dir = Path(
+            options["report_dir"]
+            or os.getenv("K2_REPORT_DIR", "")
+            or Path(settings.BASE_DIR) / "var" / "k2-import"
+        ).expanduser()
+        config = MySQLK2SourceConfig.from_environment()
+
+        mode = "APPLY" if apply else "DRY RUN"
+        self.stdout.write(f"K2 import mode: {mode}")
+        if not apply:
+            self.stdout.write("Database records and MEDIA storage will not be changed.")
 
         try:
-            dataset = K2Dataset.from_json(source)
-            importer = K2Importer(
-                dataset,
-                media_root=media_root,
-                copy_images=options["apply"],
-                limit=limit,
+            with MySQLK2Source(config) as source:
+                report = K2Importer(
+                    source,
+                    legacy_root=legacy_root,
+                    legacy_timezone=legacy_timezone,
+                    apply=apply,
+                ).run(
+                    limit=options["limit"],
+                    resume_from_id=options["resume_from_id"],
+                    exclude_category_ids=set(options["exclude_category"]),
+                )
+        except CommandError:
+            raise
+        except Exception as error:
+            message = str(error)
+            if config.password:
+                message = message.replace(config.password, "[REDACTED]")
+            raise CommandError(
+                f"K2 source could not be read ({type(error).__name__}: {message[:300]})."
+            ) from error
+
+        report_path, errors_path = report.write(report_dir)
+        self._print_report(report, report_path, errors_path)
+
+    @staticmethod
+    def _validate_options(options):
+        if options["limit"] is not None and options["limit"] < 1:
+            raise CommandError("--limit must be greater than zero.")
+        if options["resume_from_id"] is not None and options["resume_from_id"] < 0:
+            raise CommandError("--resume-from-id cannot be negative.")
+
+    def _print_report(self, report, report_path: Path, errors_path: Path) -> None:
+        counts = report.counts
+        rows = (
+            ("Найдено новостей", counts.get("news_found", 0)),
+            ("Импортировано", counts.get("news_imported", 0)),
+            ("Обновлено", counts.get("news_updated", 0)),
+            ("Пропущено", counts.get("news_skipped", 0)),
+            ("Категорий создано", counts.get("categories_created", 0)),
+            ("Категорий обновлено", counts.get("categories_updated", 0)),
+            ("Тегов создано", counts.get("tags_created", 0)),
+            ("Тегов обновлено", counts.get("tags_updated", 0)),
+            ("Изображений найдено", counts.get("main_images_found", 0)),
+            ("Изображений скопировано", counts.get("main_images_copied", 0)),
+            ("Новостей без изображения", counts.get("news_without_image", 0)),
+            ("Inline assets скопировано", counts.get("inline_assets_copied", 0)),
+            ("Inline assets отсутствует", counts.get("inline_assets_missing", 0)),
+            ("Ошибок", counts.get("errors", 0)),
+        )
+        for label, value in rows:
+            self.stdout.write(f"{label}: {value}")
+        if report.dry_run:
+            self.stdout.write(
+                f"Будет создано/обновлено новостей: "
+                f"{counts.get('news_would_create', 0)}/{counts.get('news_would_update', 0)}"
             )
-            try:
-                with transaction.atomic():
-                    stats = importer.run()
-                    if options["dry_run"]:
-                        transaction.set_rollback(True)
-            except Exception:
-                importer.cleanup_written_files()
-                raise
-        except K2ImportError as error:
-            raise CommandError(str(error)) from error
-
-        mode = "DRY RUN — изменения отменены" if options["dry_run"] else "IMPORT APPLIED"
-        self.stdout.write(self.style.SUCCESS(mode))
-        for key in (
-            "categories_created",
-            "categories_updated",
-            "tags_created",
-            "tags_updated",
-            "news_created",
-            "news_updated",
-            "news_skipped_trash",
-            "images_found",
-            "images_copied",
-            "images_existing",
-            "images_missing",
-            "missing_category_links",
-            "missing_tag_links",
-        ):
-            self.stdout.write(f"{key}: {stats[key]}")
-
+        if report.selected_featured_legacy_id is not None:
+            self.stdout.write(
+                f"Выбрана главная legacy news: {report.selected_featured_legacy_id}"
+            )
+        if report.last_successful_legacy_id is not None:
+            self.stdout.write(
+                f"Последний успешно обработанный ID: {report.last_successful_legacy_id}"
+            )
+        self.stdout.write(self.style.SUCCESS(f"JSON report: {report_path}"))
+        self.stdout.write(f"Error log: {errors_path}")

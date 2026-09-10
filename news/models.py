@@ -12,7 +12,6 @@ from .image_processing import convert_pending_upload_to_webp
 
 class Category(models.Model):
     legacy_k2_id = models.PositiveBigIntegerField(
-        'ID в старом K2',
         null=True,
         blank=True,
         unique=True,
@@ -38,7 +37,6 @@ class Tag(models.Model):
     """A reusable, editor-managed topic label for one or more news items."""
 
     legacy_k2_id = models.PositiveBigIntegerField(
-        'ID в старом K2',
         null=True,
         blank=True,
         unique=True,
@@ -84,7 +82,6 @@ class News(models.Model):
         PUBLISHED = 'published', 'На сайте'
 
     legacy_k2_id = models.PositiveBigIntegerField(
-        'ID в старом K2',
         null=True,
         blank=True,
         unique=True,

@@ -4,12 +4,44 @@ from django.db.models import Count
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.html import format_html
+from ckeditor_uploader.widgets import CKEditorUploadingWidget
+from unfold.admin import ModelAdmin, StackedInline
 
 from .models import Advertisement, Category, News, NewsGallery, Tag
 
 
+class CategoryAdminForm(forms.ModelForm):
+    """Keep section editing focused on labels readers actually see."""
+
+    class Meta:
+        model = Category
+        fields = '__all__'
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['description'].label = 'Описание раздела'
+        self.fields['description'].help_text = (
+            'Текст страницы раздела. Поле можно растянуть по высоте за нижний правый угол.'
+        )
+        self.fields['description'].widget.attrs.update({
+            'rows': 12,
+            'class': 'editorial-description-field',
+        })
+        self.fields['order'].label = 'Позиция в меню'
+        self.fields['order'].help_text = 'Меньшее число показывает раздел выше.'
+        self.fields['is_active'].label = 'Показывать раздел на сайте'
+        self.fields['is_active'].help_text = (
+            'Выключи, чтобы скрыть раздел от читателей без удаления.'
+        )
+
+
 class NewsAdminForm(forms.ModelForm):
     """Present a clear editorial workflow instead of technical field names."""
+
+    content = forms.CharField(
+        label='Основной текст',
+        widget=CKEditorUploadingWidget(config_name='default'),
+    )
 
     class Meta:
         model = News
@@ -31,16 +63,16 @@ class NewsAdminForm(forms.ModelForm):
                 'Выбери от 1 до 5 уточняющих тем: например «Транспорт», «Ставрополь», «Благоустройство». Новые теги создаются в разделе «Теги» слева.',
             ),
             'main_photo': (
-                'Главное фото',
-                'Картинка для карточки новости и шапки статьи. JPG и PNG сайт сам превратит в быструю WebP-версию.',
+                'Главное изображение',
+                'Изображение для карточки и страницы статьи. Маленькие файлы на странице не растягиваются выше исходного размера; JPG и PNG при новой загрузке преобразуются в WebP.',
             ),
             'excerpt': (
-                'Короткий анонс',
-                'Короткое описание для карточек и поиска. Можно оставить пустым — сайт возьмёт начало основной статьи.',
+                'Лид — краткое вступление',
+                'Показывается между заголовком и изображением, а также в карточках. Не повторяй этот абзац в основном тексте.',
             ),
             'content': (
-                'Основной текст — сюда вписывается вся статья',
-                'Здесь находится весь текст новости. Редактор можно развернуть на весь экран кнопкой ⛶; фото в тексте добавляй через кнопку изображения, а подборку фото после статьи — в блоке «Фотогалерея».',
+                'Основной текст',
+                'Продолжение материала без повтора лида. Редактор можно развернуть на весь экран кнопкой ⛶; изображения внутри текста добавляй через кнопку изображения, а подборку — в блоке «Фотогалерея».',
             ),
             'editorial_status': (
                 'Статус материала',
@@ -106,17 +138,18 @@ class NewsGalleryInlineForm(forms.ModelForm):
         self.fields['order'].help_text = 'Меньшее число покажет фото раньше.'
 
 
-class NewsGalleryInline(admin.StackedInline):
+class NewsGalleryInline(StackedInline):
     model = NewsGallery
     form = NewsGalleryInlineForm
     extra = 1
     fields = ('image', 'caption', 'order')
-    verbose_name = 'Фото для галереи'
-    verbose_name_plural = '4. Фотогалерея материала'
+    verbose_name = 'Дополнительная фотография'
+    verbose_name_plural = '4. Дополнительные фотографии'
 
 
 @admin.register(Category)
-class CategoryAdmin(admin.ModelAdmin):
+class CategoryAdmin(ModelAdmin):
+    form = CategoryAdminForm
     list_display = ('name', 'order', 'is_active', 'news_count')
     list_display_links = ('name',)
     list_filter = ('is_active',)
@@ -124,10 +157,11 @@ class CategoryAdmin(admin.ModelAdmin):
     prepopulated_fields = {'slug': ('name',)}
     ordering = ('order', 'name')
     list_editable = ('order', 'is_active')
+    list_filter_sheet = True
     fieldsets = (
         ('Раздел сайта', {
             'description': 'Название увидят читатели в меню и на странице раздела.',
-            'fields': ('name', 'description', 'icon'),
+            'fields': ('name', 'description'),
         }),
         ('Порядок и отображение', {
             'description': 'Меньшее число показывает раздел выше в меню. Отключённый раздел не виден читателям.',
@@ -148,11 +182,12 @@ class CategoryAdmin(admin.ModelAdmin):
 
 
 @admin.register(Tag)
-class TagAdmin(admin.ModelAdmin):
+class TagAdmin(ModelAdmin):
     list_display = ('name', 'slug', 'is_active', 'news_count')
     list_display_links = ('name',)
     list_editable = ('is_active',)
     list_filter = ('is_active',)
+    list_filter_sheet = True
     search_fields = ('name', 'slug', 'description')
     prepopulated_fields = {'slug': ('name',)}
     ordering = ('name',)
@@ -180,7 +215,7 @@ class TagAdmin(admin.ModelAdmin):
 
 
 @admin.register(News)
-class NewsAdmin(admin.ModelAdmin):
+class NewsAdmin(ModelAdmin):
     form = NewsAdminForm
     change_form_template = 'admin/news/news/change_form.html'
     change_list_template = 'admin/news/news/change_list.html'
@@ -196,6 +231,7 @@ class NewsAdmin(admin.ModelAdmin):
     list_display_links = ('title_short',)
     list_editable = ('editorial_status', 'is_featured')
     list_filter = ('editorial_status', 'is_featured', 'category', 'date_start', 'created_at')
+    list_filter_sheet = True
     search_fields = ('title', 'content', 'excerpt', 'meta_keywords', 'tags__name')
     autocomplete_fields = ('tags',)
     prepopulated_fields = {'slug': ('title',)}
@@ -203,7 +239,13 @@ class NewsAdmin(admin.ModelAdmin):
     date_hierarchy = 'date_start'
     list_per_page = 25
     list_before_template = 'admin/news/news/news_list_actions.html'
-    readonly_fields = ('views', 'created_at', 'updated_at', 'photo_display')
+    readonly_fields = (
+        'views',
+        'created_at',
+        'updated_at',
+        'photo_display',
+        'import_source',
+    )
     inlines = [NewsGalleryInline]
     actions = (
         'make_selected_featured',
@@ -235,6 +277,12 @@ class NewsAdmin(admin.ModelAdmin):
             )
         return 'Загрузи главное фото и сохрани новость — здесь появится предпросмотр.'
 
+    @admin.display(description='Источник материала')
+    def import_source(self, obj):
+        if obj and obj.legacy_k2_id:
+            return f'Архив Joomla K2 · ID {obj.legacy_k2_id}'
+        return 'Создано в редакции StavPlus'
+
     def get_queryset(self, request):
         return super().get_queryset(request).select_related('category')
 
@@ -249,8 +297,8 @@ class NewsAdmin(admin.ModelAdmin):
                 'fields': tuple(card_fields),
             }),
             ('2. Текст материала', {
-                'description': 'Сначала впиши всю статью в большой редактор. Ниже добавь короткий анонс для карточек или оставь его пустым — сайт составит анонс сам.',
-                'fields': ('content', 'excerpt'),
+                'description': 'Лид и основной текст — разные части статьи. Лид показывается отдельно, поэтому не нужно повторять его в редакторе основного текста.',
+                'fields': ('excerpt', 'content'),
             }),
             ('3. Публикация', {
                 'description': 'Выбери статус, отметь главную новость при необходимости и задай время. Главной может быть только одна новость — новая отметка заменит прежнюю.',
@@ -263,7 +311,7 @@ class NewsAdmin(admin.ModelAdmin):
             }),
             ('Служебная информация', {
                 'classes': ('collapse',),
-                'fields': ('views', 'created_at', 'updated_at'),
+                'fields': ('import_source', 'views', 'created_at', 'updated_at'),
             }),
         )
 
@@ -314,24 +362,6 @@ class NewsAdmin(admin.ModelAdmin):
         self.message_user(request, 'Выбранные новости переведены в черновики.')
 
 
-@admin.register(NewsGallery)
-class NewsGalleryAdmin(admin.ModelAdmin):
-    list_display = ('news', 'image_preview', 'caption', 'order')
-    list_display_links = ('news',)
-    list_filter = ('news',)
-    search_fields = ('news__title', 'caption')
-    ordering = ('news', 'order')
-
-    @admin.display(description='Фото')
-    def image_preview(self, obj):
-        if obj.image:
-            return format_html(
-                '<img src="{}" width="80" height="80" style="object-fit: cover; border-radius: 8px;" alt="" />',
-                obj.image.url,
-            )
-        return '—'
-
-
 class AdvertisementAdminForm(forms.ModelForm):
     """A concise banner workflow for editors rather than technical ad settings."""
 
@@ -359,7 +389,7 @@ class AdvertisementAdminForm(forms.ModelForm):
 
 
 @admin.register(Advertisement)
-class AdvertisementAdmin(admin.ModelAdmin):
+class AdvertisementAdmin(ModelAdmin):
     form = AdvertisementAdminForm
     change_form_template = 'admin/news/advertisement/change_form.html'
     change_list_template = 'admin/news/advertisement/change_list.html'
@@ -367,6 +397,7 @@ class AdvertisementAdmin(admin.ModelAdmin):
     list_display_links = ('name',)
     list_editable = ('is_enabled',)
     list_filter = ('placement', 'is_enabled', 'date_start')
+    list_filter_sheet = True
     search_fields = ('name', 'alt_text', 'link')
     ordering = ('placement', 'name')
     list_per_page = 25
