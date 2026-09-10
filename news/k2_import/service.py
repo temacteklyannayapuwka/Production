@@ -8,6 +8,7 @@ from zoneinfo import ZoneInfo
 from django.db import transaction
 from django.utils import timezone
 
+from news.content import clean_legacy_markup
 from news.models import Category, News, Tag
 
 from .domain import ImportReport, LegacyCategory, LegacyItem, LegacyTag
@@ -351,6 +352,7 @@ class K2Importer:
         mapped_tags = [tag_map[tag_id] for tag_id in item_tag_ids if tag_id in tag_map]
 
         raw_content, excerpt = split_legacy_content(item.introtext, item.fulltext)
+        raw_content = clean_legacy_markup(raw_content)
         content = self.assets.rewrite_html(raw_content, entity_id=item.legacy_id)
         main_image = self.assets.main_image_name(item.legacy_id)
         existing = News.objects.filter(legacy_k2_id=item.legacy_id).first()

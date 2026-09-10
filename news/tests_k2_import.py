@@ -350,6 +350,20 @@ class K2ImporterTests(TestCase):
         self.assertEqual(report.counts["inline_assets_copied"], 1)
         self.assertEqual(report.counts["inline_assets_missing"], 1)
 
+    def test_legacy_lightbox_shortcode_is_removed_during_import(self):
+        item = self.item(
+            fulltext=(
+                '<p>[lightbox src="images/shortcode/a12.jpg" width="310" '
+                'lightbox="off"]&amp;nbsp;Читаемый текст</p>'
+            )
+        )
+        with TemporaryDirectory() as root, TemporaryDirectory() as media_root:
+            with override_settings(MEDIA_ROOT=media_root):
+                self.run_import(self.source(items=[item]), legacy_root=root)
+
+        content = News.objects.get(legacy_k2_id=1).content
+        self.assertEqual(content, '<p> Читаемый текст</p>')
+
     def test_repeated_inline_asset_is_hashed_once(self):
         with TemporaryDirectory() as root:
             legacy_root = Path(root)

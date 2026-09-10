@@ -277,8 +277,8 @@ body { background: #f2f3f1; font-family: var(--ui); }
 .home-main .hero { min-height: 620px; }
 .card { border-radius: 0; background: transparent; }
 .card > a > div { height: 190px; }
-.card h3 { padding: 15px 0 7px; font-size: 15px; font-weight: 600; line-height: 1.28; }
-.card p { padding: 0 0 16px; font-size: 10px; }
+.card h3 { padding: 18px 18px 8px; font-size: 15px; font-weight: 600; line-height: 1.28; }
+.card p { padding: 0 18px 18px; font-size: 10px; }
 .tag, .article-tag { border-radius: 0; background: var(--carbon); color: #fff; letter-spacing: .12em; }
 .editorial-feature { border-radius: 0; box-shadow: 0 24px 60px rgba(7, 27, 45, .2); }
 .editorial-feature .hero__overlay { background: linear-gradient(180deg, rgba(7, 27, 45, .03), rgba(7, 27, 45, .94)); }

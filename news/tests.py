@@ -30,6 +30,7 @@ from .admin import (
     NewsGalleryInline,
     TagAdmin,
 )
+from .content import clean_legacy_markup
 from .models import Advertisement, Category, News, NewsGallery, Tag
 from .views import published_news
 
@@ -73,8 +74,8 @@ class AdminJavascriptFallbackTests(SimpleTestCase):
     def test_public_page_uses_the_current_menu_script(self):
         response = get_template('base.html').render({})
 
-        self.assertIn('/static/news-site.css?v=47', response)
-        self.assertIn('/static/stavplus-redesign.css?v=5', response)
+        self.assertIn('/static/news-site.css?v=48', response)
+        self.assertIn('/static/stavplus-redesign.css?v=6', response)
         self.assertIn('family=Inter', response)
         self.assertNotIn('family=Merriweather', response)
         self.assertIn('media="print"', response)
@@ -333,18 +334,19 @@ class EditorialAdminTests(SimpleTestCase):
         self.assertIn("news.date_start|date:'H:i'", article_source)
         self.assertIn('<div class="article-body"', article_source)
 
-    def test_article_images_are_not_upscaled_or_cropped(self):
+    def test_article_main_images_fill_the_content_width_without_cropping(self):
         css_path = Path(__file__).resolve().parents[1] / 'static' / 'news-site.css'
         css = css_path.read_text(encoding='utf-8')
         image_rule = css.split('.article-photo img {', 1)[1].split('}', 1)[0]
 
-        self.assertIn('width: auto', image_rule)
+        self.assertIn('width: 100%', image_rule)
         self.assertIn('max-width: 100%', image_rule)
         self.assertIn('height: auto', image_rule)
         self.assertIn('object-fit: contain', image_rule)
         self.assertNotIn('max-height:', image_rule)
 
         photo_rule = css.split('.article-photo {', 1)[1].split('}', 1)[0]
+        self.assertIn('width: 100%', photo_rule)
         self.assertIn('justify-items: start', photo_rule)
 
         body_rule = css.split('.article-body {', 1)[1].split('}', 1)[0]
@@ -358,6 +360,16 @@ class EditorialAdminTests(SimpleTestCase):
         ):
             rule = css.split(selector, 1)[1].split('}', 1)[0]
             self.assertNotIn('text-transform: uppercase', rule)
+
+    def test_legacy_lightbox_markup_is_hidden_from_readers(self):
+        legacy = (
+            '[lightbox src="images/shortcode/a12.jpg" width="310" '
+            'title="Ставрополь+"]&amp;nbsp;Ставрополь Плюс'
+        )
+
+        self.assertEqual(clean_legacy_markup(legacy), ' Ставрополь Плюс')
+        article_source = get_template('article.html').template.source
+        self.assertEqual(article_source.count('|public_article_html'), 2)
 
 
 class FeaturedNewsTests(TestCase):

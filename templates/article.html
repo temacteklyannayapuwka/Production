@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load news_content %}
 {% block title %}{{ article.meta_title|default:article.title }} — Ставрополь+{% endblock %}
 {% block meta_description %}{{ article.meta_description|default:article.excerpt|default:article.title|striptags|truncatechars:160 }}{% endblock %}
 {% block content %}
@@ -23,7 +24,7 @@
         <p class="article-meta"><time datetime="{{ article.date_start|date:'c' }}">{{ article.date_start|date:'j E Y, H:i' }}</time></p>
       </header>
       {% if article.main_photo %}<figure class="article-photo"><img src="{{ article.main_photo.url }}" alt="{{ article.title }}" decoding="async" fetchpriority="high"></figure>{% endif %}
-      <div class="article-body" aria-label="Текст материала">{{ article.content|safe }}</div>
+      <div class="article-body" aria-label="Текст материала">{{ article.content|public_article_html }}</div>
       {% if article.gallery.all %}<section class="article-gallery" aria-label="Фотогалерея материала">{% for photo in article.gallery.all %}<figure><img src="{{ photo.image.url }}" alt="{{ photo.caption|default:article.title }}" loading="lazy" decoding="async">{% if photo.caption %}<figcaption>{{ photo.caption }}</figcaption>{% endif %}</figure>{% endfor %}</section>{% endif %}
       {% include 'components/ad_slot.html' with ad=advertisements.article_inline css_class='ad--article-inline' slot_size='680 × 120' slot_label='статья · внутри текста' %}
       <div class="article-author"><b>Ставрополь+</b><span>{% if article.legacy_k2_id %}Архивный материал{% else %}Редакция · Новости региона{% endif %}</span></div>
@@ -43,7 +44,7 @@
               {% if item.news.excerpt %}<p class="article-lead">{{ item.news.excerpt }}</p>{% endif %}
               <p class="article-meta"><time datetime="{{ item.news.date_start|date:'c' }}">{{ item.news.date_start|date:'j E Y, H:i' }}</time></p>
               {% if item.news.main_photo %}<figure class="article-photo"><img src="{{ item.news.main_photo.url }}" alt="{{ item.news.title }}" loading="lazy" decoding="async"></figure>{% endif %}
-              <div class="article-body" aria-label="Текст материала">{{ item.news.content|safe }}</div>
+              <div class="article-body" aria-label="Текст материала">{{ item.news.content|public_article_html }}</div>
               {% if item.news.gallery.all %}<section class="article-gallery" aria-label="Фотогалерея материала «{{ item.news.title }}»">{% for photo in item.news.gallery.all %}<figure><img src="{{ photo.image.url }}" alt="{{ photo.caption|default:item.news.title }}" loading="lazy" decoding="async">{% if photo.caption %}<figcaption>{{ photo.caption }}</figcaption>{% endif %}</figure>{% endfor %}</section>{% endif %}
               <div class="article-author"><b>Ставрополь+</b><span>{% if item.news.legacy_k2_id %}Архивный материал{% else %}Редакция · Новости региона{% endif %}</span></div>
             </article>

@@ -373,8 +373,8 @@ img { display: block; max-width: 100%; }
 .article-lead { max-width: 680px; margin: 25px 0 17px; color: var(--lime-deep); font-size: 19px; line-height: 1.43; }
 .article-meta { display: flex; flex-wrap: wrap; gap: 11px; margin: 0; padding-bottom: 27px; border-bottom: 1px solid var(--line); color: var(--muted-light); font-size: 11px; }
 .article-meta > * + *::before { margin-right: 11px; color: var(--concrete); content: "•"; }
-.article-photo { display: grid; justify-items: start; margin: 30px 0; }
-.article-photo img { display: block; width: auto; max-width: 100%; height: auto; border-radius: 16px; object-fit: contain; }
+.article-photo { display: grid; width: 100%; justify-items: start; margin: 30px 0; }
+.article-photo img { display: block; width: 100%; max-width: 100%; height: auto; border-radius: 16px; object-fit: contain; }
 .article-photo figcaption { margin-top: 8px; color: var(--muted); font-size: 10px; }
 .article-body { width: min(100%, 680px); overflow-wrap: anywhere; font-family: var(--ui); font-size: 19px; line-height: 1.72; }
 .article-body > * { max-width: 100%; }
