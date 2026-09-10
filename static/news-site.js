@@ -58,9 +58,30 @@ document.addEventListener('keydown', (event) => { if (event.key === 'Escape') se
 menuLayer?.addEventListener('keydown', keepFocusInsideMenu);
 document.addEventListener('click', (event) => { if (event.target.closest('[data-subscribe]')) showToast('Спасибо! Форма подписки появится на следующем этапе.'); });
 
-if (document.querySelector('.city-hero') && document.querySelector('#news-feed')) {
-  document.documentElement.classList.add('hero-snap-enabled');
-}
+const backToTop = document.querySelector('[data-back-to-top]');
+let scrollFramePending = false;
+
+const updateBackToTop = () => {
+  if (!backToTop) return;
+  const visible = window.scrollY > Math.max(480, window.innerHeight * 0.75);
+  backToTop.classList.toggle('is-visible', visible);
+  backToTop.setAttribute('aria-hidden', String(!visible));
+};
+
+window.addEventListener('scroll', () => {
+  if (scrollFramePending) return;
+  scrollFramePending = true;
+  window.requestAnimationFrame(() => {
+    updateBackToTop();
+    scrollFramePending = false;
+  });
+}, { passive: true });
+
+backToTop?.addEventListener('click', () => {
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  window.scrollTo({ top: 0, behavior: reducedMotion ? 'auto' : 'smooth' });
+});
+updateBackToTop();
 
 const deferredImages = document.querySelectorAll('img[data-deferred-src]');
 const loadDeferredImage = (image) => {

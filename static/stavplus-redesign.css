@@ -20,9 +20,32 @@
 
 body { background: #f2f3f1; font-family: var(--ui); }
 .site-shell { width: min(1600px, calc(100% - 96px)); }
-.hero-snap-enabled { scroll-snap-type: y mandatory; }
-.hero-snap-enabled .city-hero,
-.hero-snap-enabled #news-feed { scroll-snap-align: start; scroll-snap-stop: always; }
+
+.back-to-top {
+  position: fixed;
+  right: clamp(16px, 2vw, 32px);
+  bottom: max(18px, env(safe-area-inset-bottom));
+  z-index: 24;
+  display: grid;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  place-items: center;
+  border: 1px solid rgba(9, 25, 38, .22);
+  border-radius: 50%;
+  background: rgba(247, 248, 247, .72);
+  color: var(--ink);
+  font: 400 21px/1 var(--ui);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(8px);
+  pointer-events: none;
+  backdrop-filter: blur(10px);
+  transition: opacity .18s ease, transform .18s ease, visibility .18s ease;
+}
+.back-to-top.is-visible { opacity: .52; visibility: visible; transform: none; pointer-events: auto; }
+.back-to-top:hover,
+.back-to-top:focus-visible { opacity: 1; border-color: rgba(9, 25, 38, .5); }
 
 /* Figma-derived navigation */
 .masthead {
@@ -402,11 +425,12 @@ footer { background: #061825; }
 }
 
 @media (max-width: 440px) {
+  .back-to-top { right: 14px; bottom: max(14px, env(safe-area-inset-bottom)); width: 38px; height: 38px; font-size: 19px; }
   .city-hero__date > i, .city-hero__date > img, .city-hero__weather { display: none !important; }
   .city-hero__cta b { font-size: 12px; letter-spacing: 1.5px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .hero-snap-enabled { scroll-snap-type: none; }
+  .back-to-top { transition: none; }
   .city-hero__cta { transition: none; }
 }

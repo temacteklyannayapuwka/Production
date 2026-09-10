@@ -74,7 +74,7 @@ class AdminJavascriptFallbackTests(SimpleTestCase):
         response = get_template('base.html').render({})
 
         self.assertIn('/static/news-site.css?v=47', response)
-        self.assertIn('/static/stavplus-redesign.css?v=4', response)
+        self.assertIn('/static/stavplus-redesign.css?v=5', response)
         self.assertIn('family=Inter', response)
         self.assertNotIn('family=Merriweather', response)
         self.assertIn('media="print"', response)
@@ -83,7 +83,9 @@ class AdminJavascriptFallbackTests(SimpleTestCase):
         self.assertNotIn('family=Golos+Text', response)
         self.assertNotIn('family=Prata', response)
         self.assertIn('/static/brand/stavplus-mark.svg', response)
-        self.assertIn('/static/news-site.js?v=4', response)
+        self.assertIn('/static/news-site.js?v=5', response)
+        self.assertIn('data-back-to-top', response)
+        self.assertIn('Вернуться наверх', response)
         self.assertIn('>Меню</span>', response)
         self.assertIn('class="header-nav"', response)
 
@@ -258,17 +260,20 @@ class EditorialAdminTests(SimpleTestCase):
         self.assertIn('@media (max-width: 1040px)', css)
         self.assertIn('@media (min-width: 721px) and (max-width: 820px)', css)
         self.assertIn('@media (max-width: 720px)', css)
-        self.assertIn('scroll-snap-type: y mandatory', css)
-        self.assertIn('scroll-snap-stop: always', css)
+        self.assertNotIn('scroll-snap-type: y mandatory', css)
+        self.assertNotIn('scroll-snap-stop: always', css)
+        self.assertIn('.back-to-top', css)
         self.assertNotIn('transform: scale(', css)
 
-    def test_public_script_traps_menu_focus_and_enables_homepage_snap(self):
+    def test_public_script_traps_menu_focus_and_controls_page_utilities(self):
         script_path = Path(__file__).resolve().parents[1] / 'static' / 'news-site.js'
         script = script_path.read_text(encoding='utf-8')
 
         self.assertIn('keepFocusInsideMenu', script)
         self.assertIn('menuReturnFocus.focus()', script)
-        self.assertIn("classList.add('hero-snap-enabled')", script)
+        self.assertNotIn("classList.add('hero-snap-enabled')", script)
+        self.assertIn("window.scrollTo({ top: 0", script)
+        self.assertIn("requestAnimationFrame", script)
         self.assertIn('data-deferred-src', script)
         self.assertIn('IntersectionObserver', script)
 
