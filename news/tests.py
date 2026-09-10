@@ -81,7 +81,7 @@ class AdminJavascriptFallbackTests(SimpleTestCase):
         self.assertNotIn('family=Golos+Text', response)
         self.assertNotIn('family=Prata', response)
         self.assertIn('/static/brand/stavplus-mark.svg', response)
-        self.assertIn('/static/news-site.js?v=2', response)
+        self.assertIn('/static/news-site.js?v=3', response)
         self.assertIn('>Меню</span>', response)
         self.assertIn('class="header-nav"', response)
 
@@ -255,7 +255,17 @@ class EditorialAdminTests(SimpleTestCase):
         self.assertIn('@media (max-width: 1040px)', css)
         self.assertIn('@media (min-width: 721px) and (max-width: 820px)', css)
         self.assertIn('@media (max-width: 720px)', css)
+        self.assertIn('scroll-snap-type: y mandatory', css)
+        self.assertIn('scroll-snap-stop: always', css)
         self.assertNotIn('transform: scale(', css)
+
+    def test_public_script_traps_menu_focus_and_enables_homepage_snap(self):
+        script_path = Path(__file__).resolve().parents[1] / 'static' / 'news-site.js'
+        script = script_path.read_text(encoding='utf-8')
+
+        self.assertIn('keepFocusInsideMenu', script)
+        self.assertIn('menuReturnFocus.focus()', script)
+        self.assertIn("classList.add('hero-snap-enabled')", script)
 
     def test_category_page_uses_a_sticky_news_feed_without_lower_advertisements(self):
         source = get_template('category.html').template.source

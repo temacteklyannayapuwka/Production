@@ -15,6 +15,19 @@ from .domain import ImportReport
 
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
 LOCAL_ASSET_PREFIXES = ("/media/k2/", "/images/")
+BLOCKED_HTML_TAGS = {
+    "base",
+    "button",
+    "embed",
+    "form",
+    "input",
+    "link",
+    "meta",
+    "object",
+    "script",
+    "style",
+}
+DANGEROUS_URL_SCHEMES = {"data", "javascript", "vbscript"}
 VOID_HTML_TAGS = {
     "area",
     "base",
@@ -197,6 +210,8 @@ class _AssetHTMLRewriter(HTMLParser):
         self.entity_id = entity_id
         self.parts: list[str] = []
         self.open_tags: list[str] = []
+        self.blocked_tags: list[str] = []
+        self.reported_unsafe: set[str] = set()
 
     @property
     def output(self) -> str:
@@ -204,9 +219,28 @@ class _AssetHTMLRewriter(HTMLParser):
         return "".join((*self.parts, *closing_tags))
 
     def handle_starttag(self, tag, attrs):
+        normalized_tag = tag.casefold()
+        if self.blocked_tags:
+            if (
+                normalized_tag in BLOCKED_HTML_TAGS
+                and normalized_tag not in VOID_HTML_TAGS
+            ):
+                self.blocked_tags.append(normalized_tag)
+            return
+        if normalized_tag in BLOCKED_HTML_TAGS:
+            if normalized_tag not in VOID_HTML_TAGS:
+                self.blocked_tags.append(normalized_tag)
+            self._report_unsafe(f"tag:{normalized_tag}")
+            return
         self._handle_tag(tag, attrs, self_closing=False)
 
     def handle_startendtag(self, tag, attrs):
+        if self.blocked_tags:
+            return
+        normalized_tag = tag.casefold()
+        if normalized_tag in BLOCKED_HTML_TAGS:
+            self._report_unsafe(f"tag:{normalized_tag}")
+            return
         self._handle_tag(tag, attrs, self_closing=True)
 
     def _handle_tag(self, tag, attrs, *, self_closing):
@@ -214,8 +248,23 @@ class _AssetHTMLRewriter(HTMLParser):
         rewritten_attrs = []
         changed = False
         for name, value in attrs:
+            normalized_name = name.casefold()
+            if normalized_name.startswith("on") or normalized_name == "srcdoc":
+                changed = True
+                self._report_unsafe(f"attribute:{normalized_name}")
+                continue
             rewritten = value
-            if value is not None and name.casefold() in {"src", "href"}:
+            if value is not None and normalized_name in {"src", "href"}:
+                try:
+                    scheme = urlsplit(value.strip()).scheme.casefold()
+                except ValueError:
+                    changed = True
+                    self._report_unsafe("url:malformed")
+                    continue
+                if scheme in DANGEROUS_URL_SCHEMES:
+                    changed = True
+                    self._report_unsafe(f"url-scheme:{scheme}")
+                    continue
                 rewritten = self.migrator.rewrite_url(value, entity_id=self.entity_id)
                 changed = changed or rewritten != value
             rewritten_attrs.append((name, rewritten))
@@ -238,6 +287,10 @@ class _AssetHTMLRewriter(HTMLParser):
 
     def handle_endtag(self, tag):
         normalized_tag = tag.casefold()
+        if self.blocked_tags:
+            if normalized_tag == self.blocked_tags[-1]:
+                self.blocked_tags.pop()
+            return
         if normalized_tag not in self.open_tags:
             return
 
@@ -247,22 +300,47 @@ class _AssetHTMLRewriter(HTMLParser):
         del self.open_tags[matching_index:]
 
     def handle_data(self, data):
+        if self.blocked_tags:
+            return
         self.parts.append(data)
 
     def handle_entityref(self, name):
+        if self.blocked_tags:
+            return
         self.parts.append(f"&{name};")
 
     def handle_charref(self, name):
+        if self.blocked_tags:
+            return
         self.parts.append(f"&#{name};")
 
     def handle_comment(self, data):
+        if self.blocked_tags:
+            return
         self.parts.append(f"<!--{data}-->")
 
     def handle_decl(self, decl):
+        if self.blocked_tags:
+            return
         self.parts.append(f"<!{decl}>")
 
     def handle_pi(self, data):
+        if self.blocked_tags:
+            return
         self.parts.append(f"<?{data}>")
 
     def unknown_decl(self, data):
+        if self.blocked_tags:
+            return
         self.parts.append(f"<![{data}]>")
+
+    def _report_unsafe(self, detail: str) -> None:
+        if detail in self.reported_unsafe:
+            return
+        self.reported_unsafe.add(detail)
+        self.migrator.report.issue(
+            "unsafe_html_removed",
+            f"Removed unsafe legacy HTML ({detail})",
+            entity="news",
+            legacy_id=self.entity_id,
+        )

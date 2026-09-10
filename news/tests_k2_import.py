@@ -387,6 +387,34 @@ class K2ImporterTests(TestCase):
 
         self.assertEqual(rewritten, '<p>Текст <strong>материала</strong></p>')
 
+    def test_unsafe_legacy_html_is_removed_before_publication(self):
+        with TemporaryDirectory() as root:
+            report = ImportReport(dry_run=True)
+            migrator = K2AssetMigrator(
+                Path(root),
+                report,
+                apply=False,
+            )
+
+            rewritten = migrator.rewrite_html(
+                '<script>alert(1)</script>'
+                '<p onclick="alert(2)">Безопасный текст</p>'
+                '<a href="javascript:alert(3)">Ссылка</a>'
+                '<img src="https://example.com/photo.jpg" onerror="alert(4)">',
+                entity_id=77,
+            )
+
+        self.assertEqual(
+            rewritten,
+            '<p>Безопасный текст</p><a>Ссылка</a>'
+            '<img src="https://example.com/photo.jpg">',
+        )
+        self.assertNotIn('script', rewritten)
+        self.assertNotIn('onclick', rewritten)
+        self.assertNotIn('javascript:', rewritten)
+        self.assertNotIn('onerror', rewritten)
+        self.assertEqual(report.counts['unsafe_html_removed'], 4)
+
     def test_main_image_directories_are_indexed_once_per_import(self):
         with TemporaryDirectory() as root:
             legacy_root = Path(root)

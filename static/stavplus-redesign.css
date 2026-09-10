@@ -20,6 +20,9 @@
 
 body { background: #f2f3f1; font-family: var(--ui); }
 .site-shell { width: min(1600px, calc(100% - 96px)); }
+.hero-snap-enabled { scroll-snap-type: y mandatory; }
+.hero-snap-enabled .city-hero,
+.hero-snap-enabled #news-feed { scroll-snap-align: start; scroll-snap-stop: always; }
 
 /* Figma-derived navigation */
 .masthead {
@@ -404,5 +407,6 @@ footer { background: #061825; }
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .hero-snap-enabled { scroll-snap-type: none; }
   .city-hero__cta { transition: none; }
 }
