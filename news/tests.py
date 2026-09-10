@@ -83,7 +83,7 @@ class AdminJavascriptFallbackTests(SimpleTestCase):
         self.assertNotIn('family=Golos+Text', response)
         self.assertNotIn('family=Prata', response)
         self.assertIn('/static/brand/stavplus-mark.svg', response)
-        self.assertIn('/static/news-site.js?v=3', response)
+        self.assertIn('/static/news-site.js?v=4', response)
         self.assertIn('>Меню</span>', response)
         self.assertIn('class="header-nav"', response)
 
@@ -269,6 +269,8 @@ class EditorialAdminTests(SimpleTestCase):
         self.assertIn('keepFocusInsideMenu', script)
         self.assertIn('menuReturnFocus.focus()', script)
         self.assertIn("classList.add('hero-snap-enabled')", script)
+        self.assertIn('data-deferred-src', script)
+        self.assertIn('IntersectionObserver', script)
 
     def test_category_page_uses_a_sticky_news_feed_without_lower_advertisements(self):
         source = get_template('category.html').template.source

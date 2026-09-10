@@ -61,3 +61,22 @@ document.addEventListener('click', (event) => { if (event.target.closest('[data-
 if (document.querySelector('.city-hero') && document.querySelector('#news-feed')) {
   document.documentElement.classList.add('hero-snap-enabled');
 }
+
+const deferredImages = document.querySelectorAll('img[data-deferred-src]');
+const loadDeferredImage = (image) => {
+  image.src = image.dataset.deferredSrc;
+  image.removeAttribute('data-deferred-src');
+};
+
+if ('IntersectionObserver' in window) {
+  const imageObserver = new IntersectionObserver((entries, observer) => {
+    entries.forEach((entry) => {
+      if (!entry.isIntersecting) return;
+      loadDeferredImage(entry.target);
+      observer.unobserve(entry.target);
+    });
+  }, { rootMargin: '0px 0px 160px' });
+  deferredImages.forEach((image) => imageObserver.observe(image));
+} else {
+  deferredImages.forEach(loadDeferredImage);
+}
