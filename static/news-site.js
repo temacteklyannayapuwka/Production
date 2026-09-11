@@ -58,6 +58,10 @@ document.addEventListener('keydown', (event) => { if (event.key === 'Escape') se
 menuLayer?.addEventListener('keydown', keepFocusInsideMenu);
 document.addEventListener('click', (event) => { if (event.target.closest('[data-subscribe]')) showToast('Спасибо! Форма подписки появится на следующем этапе.'); });
 
+if (document.querySelector('.city-hero') && document.querySelector('#news-feed')) {
+  document.documentElement.classList.add('hero-snap-enabled');
+}
+
 const backToTop = document.querySelector('[data-back-to-top]');
 let scrollFramePending = false;
 
