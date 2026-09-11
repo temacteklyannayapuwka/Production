@@ -78,7 +78,7 @@ class AdminJavascriptFallbackTests(SimpleTestCase):
         response = get_template('base.html').render({})
 
         self.assertIn('/static/news-site.css?v=49', response)
-        self.assertIn('/static/stavplus-redesign.css?v=17', response)
+        self.assertIn('/static/stavplus-redesign.css?v=18', response)
         self.assertIn('family=Inter', response)
         self.assertNotIn('family=Merriweather', response)
         self.assertIn('media="print"', response)
@@ -275,6 +275,8 @@ class EditorialAdminTests(SimpleTestCase):
         self.assertIn('"top navigation"', css)
         self.assertIn('backdrop-filter: blur(24px) saturate(1.15)', css)
         self.assertIn('grid-template-columns: repeat(2, minmax(0, 1fr))', css)
+        self.assertIn('grid-template-rows: repeat(5, auto)', css)
+        self.assertIn('grid-auto-flow: column', css)
         self.assertIn('.home-page-body .header-nav', css)
         self.assertIn('transform: translateX(-1.35%)', css)
         self.assertIn('@keyframes hero-cta-sheen', css)
