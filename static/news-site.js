@@ -83,56 +83,6 @@ backToTop?.addEventListener('click', () => {
 });
 updateBackToTop();
 
-const cityHero = document.querySelector('.city-hero');
-const newsFeed = document.querySelector('#news-feed');
-let heroBoundaryTarget = null;
-let heroBoundaryReleaseTimer;
-
-const scrollToHeroBoundary = (top) => {
-  heroBoundaryTarget = top;
-  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  window.scrollTo({ top, behavior: reducedMotion ? 'auto' : 'smooth' });
-};
-
-const releaseHeroBoundary = () => {
-  window.clearTimeout(heroBoundaryReleaseTimer);
-  heroBoundaryReleaseTimer = window.setTimeout(() => {
-    heroBoundaryTarget = null;
-  }, 180);
-};
-
-const handleHeroBoundaryWheel = (event) => {
-  if (
-    !cityHero
-    || !newsFeed
-    || event.ctrlKey
-    || event.deltaY === 0
-    || document.body.classList.contains('menu-open')
-  ) return;
-
-  const feedTop = newsFeed.offsetTop;
-  const boundaryTolerance = 80;
-  const moveToFeed = event.deltaY > 0 && window.scrollY < feedTop - boundaryTolerance;
-  const moveToHero = event.deltaY < 0
-    && window.scrollY >= feedTop - boundaryTolerance
-    && window.scrollY <= feedTop + boundaryTolerance;
-
-  if (heroBoundaryTarget !== null) {
-    event.preventDefault();
-    releaseHeroBoundary();
-    return;
-  }
-  if (!moveToFeed && !moveToHero) return;
-
-  event.preventDefault();
-  scrollToHeroBoundary(moveToFeed ? feedTop : 0);
-  releaseHeroBoundary();
-};
-
-if (cityHero && newsFeed) {
-  window.addEventListener('wheel', handleHeroBoundaryWheel, { passive: false });
-}
-
 const deferredImages = document.querySelectorAll('img[data-deferred-src]');
 const loadDeferredImage = (image) => {
   image.src = image.dataset.deferredSrc;
