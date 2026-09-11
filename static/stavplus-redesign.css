@@ -140,7 +140,7 @@ body { background: #f2f3f1; font-family: var(--ui); }
   width: 40.9375%;
   background:
     radial-gradient(ellipse at 50% 20%, rgba(43, 51, 66, .9), transparent 58%),
-    radial-gradient(ellipse at 40% 52%, rgba(121, 95, 98, .34), transparent 48%),
+    radial-gradient(ellipse 105% 70% at 48% 52%, rgba(121, 95, 98, .4), transparent 72%),
     linear-gradient(180deg, rgba(7, 27, 45, .82), rgba(7, 27, 45, .98));
   box-shadow: inset -70px 0 100px rgba(7, 27, 45, .38);
   backdrop-filter: blur(24px);
@@ -154,7 +154,7 @@ body { background: #f2f3f1; font-family: var(--ui); }
   aspect-ratio: 1584 / 364;
   margin: 0;
   background: url("hero/stavropol-title-2x.png") 0 0 / contain no-repeat;
-  filter: brightness(1.2);
+  filter: brightness(1.24);
 }
 .city-hero__manifesto { position: absolute; top: 56.48%; left: 3.54%; }
 .city-hero__manifesto p, .city-hero__themes {

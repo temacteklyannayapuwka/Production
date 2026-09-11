@@ -78,7 +78,7 @@ class AdminJavascriptFallbackTests(SimpleTestCase):
         response = get_template('base.html').render({})
 
         self.assertIn('/static/news-site.css?v=49', response)
-        self.assertIn('/static/stavplus-redesign.css?v=12', response)
+        self.assertIn('/static/stavplus-redesign.css?v=13', response)
         self.assertIn('family=Inter', response)
         self.assertNotIn('family=Merriweather', response)
         self.assertIn('media="print"', response)
@@ -404,12 +404,12 @@ class FeaturedNewsTests(TestCase):
     def setUp(self):
         self.category = Category.objects.create(name='Общество', slug='obshchestvo')
 
-    def create_news(self, slug, *, is_featured=False, date_start=None):
+    def create_news(self, slug, *, category=None, is_featured=False, date_start=None):
         return News.objects.create(
             title=f'Новость {slug}',
             slug=slug,
             content='<p>Текст новости</p>',
-            category=self.category,
+            category=category or self.category,
             is_published=True,
             editorial_status=News.EditorialStatus.PUBLISHED,
             is_featured=is_featured,
@@ -490,9 +490,18 @@ class FeaturedNewsTests(TestCase):
 
     def test_navigation_contains_only_categories_with_public_news(self):
         visible = self.category
+        news_category = Category.objects.create(
+            name='Новости', slug='news-category', order=1
+        )
+        popular = Category.objects.create(
+            name='Популярный раздел', slug='popular', order=2
+        )
         empty = Category.objects.create(name='Пустой раздел', slug='empty')
         draft_only = Category.objects.create(name='Черновики', slug='drafts')
         self.create_news('visible')
+        self.create_news('news-category', category=news_category)
+        for number in range(3):
+            self.create_news(f'popular-{number}', category=popular)
         News.objects.create(
             title='Неопубликованный материал',
             slug='draft',
@@ -503,7 +512,14 @@ class FeaturedNewsTests(TestCase):
 
         response = self.client.get('/')
 
-        self.assertEqual(list(response.context['navigation_categories']), [visible])
+        self.assertEqual(
+            list(response.context['navigation_categories']),
+            [visible, news_category, popular],
+        )
+        self.assertEqual(
+            list(response.context['header_categories']),
+            [popular, visible, news_category],
+        )
         self.assertNotIn(empty, response.context['navigation_categories'])
         self.assertNotIn(draft_only, response.context['navigation_categories'])
 

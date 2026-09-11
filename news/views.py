@@ -3,7 +3,7 @@ from pathlib import PurePosixPath
 
 from django.contrib.staticfiles import finders
 from django.core.paginator import Paginator
-from django.db.models import F, Prefetch, Q
+from django.db.models import Count, F, Prefetch, Q
 from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404, render
 from django.utils.html import strip_tags
@@ -99,14 +99,41 @@ def published_news(*, with_tags=True):
 
 
 def navigation_categories():
-    visible_category_ids = published_news(with_tags=False).order_by().values("category_id")
+    now = timezone.now()
+    public_news = Q(news__is_published=True, news__date_start__lte=now) & (
+        Q(news__date_end__isnull=True) | Q(news__date_end__gte=now)
+    )
     return (
-        Category.objects.filter(
-            is_active=True,
-            pk__in=visible_category_ids,
+        Category.objects.filter(is_active=True)
+        .annotate(
+            public_news_count=Count("news", filter=public_news),
         )
+        .filter(public_news_count__gt=0)
         .order_by("order", "name")
     )
+
+
+def header_navigation_categories(categories, limit=5):
+    """Pick the busiest unique sections for the compact desktop header."""
+    selected = []
+    seen_names = set()
+    ranked_categories = sorted(
+        categories,
+        key=lambda category: (
+            -category.public_news_count,
+            category.order,
+            category.name.casefold(),
+        ),
+    )
+    for category in ranked_categories:
+        normalized_name = " ".join(category.name.casefold().split())
+        if normalized_name in seen_names:
+            continue
+        seen_names.add(normalized_name)
+        selected.append(category)
+        if len(selected) == limit:
+            break
+    return selected
 
 
 def article_category_flow():
@@ -157,8 +184,10 @@ def active_advertisements():
 
 
 def shared_context(**extra):
+    categories = list(navigation_categories())
     context = {
-        "navigation_categories": list(navigation_categories()),
+        "navigation_categories": categories,
+        "header_categories": header_navigation_categories(categories),
         "advertisements": active_advertisements(),
     }
     context.update(extra)

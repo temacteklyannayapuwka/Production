@@ -14,15 +14,14 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..800&amp;display=swap" rel="stylesheet" media="print" onload="this.media='all'">
     <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..800&amp;display=swap" rel="stylesheet"></noscript>
     <link rel="stylesheet" href="{% static 'news-site.css' %}?v=49">
-    <link rel="stylesheet" href="{% static 'stavplus-redesign.css' %}?v=12">
+    <link rel="stylesheet" href="{% static 'stavplus-redesign.css' %}?v=13">
   </head>
   <body class="{% block body_class %}{% endblock %}">
     <header class="masthead">
       <div class="masthead__inner">
         <a class="brand brand--wordmark" href="{% url 'index' %}" aria-label="Ставрополь+, на главную"><strong>СТАВРОПОЛЬ<span>+</span></strong></a>
         <nav class="header-nav" aria-label="Основные разделы">
-          <a href="{% url 'index' %}">Новости</a>
-          {% for category in navigation_categories|slice:':4' %}<a href="{% url 'category' category.slug %}">{{ category.name }}</a>{% endfor %}
+          {% for category in header_categories %}<a href="{% url 'category' category.slug %}">{{ category.name }}</a>{% endfor %}
         </nav>
         <div class="header-actions">
           <form class="search search--header" action="{% url 'search' %}" method="get"><label class="sr-only" for="header-search">Поиск новостей</label><button type="submit" aria-label="Найти"><img src="{% static 'hero/search.svg' %}" alt=""></button><input id="header-search" name="q" value="{{ query|default:'' }}" placeholder="Поиск по новостям"></form>
