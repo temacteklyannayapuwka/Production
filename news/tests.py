@@ -46,7 +46,7 @@ class AdminJavascriptFallbackTests(SimpleTestCase):
             'brand/stavplus-mark.svg',
             'hero/stavropol-aerial.jpg',
             'hero/stavropol-aerial.webp',
-            'hero/stavropol-title.png',
+            'hero/stavropol-title-2x.png',
             'hero/search.svg',
             'hero/menu.svg',
             'hero/sun.svg',
@@ -78,7 +78,7 @@ class AdminJavascriptFallbackTests(SimpleTestCase):
         response = get_template('base.html').render({})
 
         self.assertIn('/static/news-site.css?v=49', response)
-        self.assertIn('/static/stavplus-redesign.css?v=9', response)
+        self.assertIn('/static/stavplus-redesign.css?v=10', response)
         self.assertIn('family=Inter', response)
         self.assertNotIn('family=Merriweather', response)
         self.assertIn('media="print"', response)
@@ -240,7 +240,7 @@ class EditorialAdminTests(SimpleTestCase):
             'city-hero',
             'city-hero__word',
             "hero/stavropol-aerial.webp",
-            "hero/stavropol-title.png",
+            "hero/stavropol-title-2x.png",
             'city-hero__coordinates',
             'city-hero__date',
             'city-hero__cta',
@@ -264,7 +264,7 @@ class EditorialAdminTests(SimpleTestCase):
 
         self.assertIn('Desktop hero, measured from the 1920 x 1080 Figma frame.', css)
         self.assertIn('.city-hero__map', css)
-        self.assertIn('hero/stavropol-title.png', css)
+        self.assertIn('hero/stavropol-title-2x.png', css)
         self.assertIn('@media (max-width: 1040px)', css)
         self.assertIn('@media (min-width: 721px) and (max-width: 820px)', css)
         self.assertIn('@media (max-width: 720px)', css)

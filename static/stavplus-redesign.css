@@ -150,7 +150,7 @@ body { background: #f2f3f1; font-family: var(--ui); }
   width: min(82.5%, 1584px);
   aspect-ratio: 1584 / 364;
   margin: 0;
-  background: url("hero/stavropol-title.png") 0 0 / contain no-repeat;
+  background: url("hero/stavropol-title-2x.png") 0 0 / contain no-repeat;
 }
 .city-hero__manifesto { position: absolute; top: 56.48%; left: 3.54%; }
 .city-hero__manifesto p, .city-hero__themes {
