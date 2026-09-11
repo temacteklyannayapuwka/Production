@@ -1,9 +1,10 @@
 {% extends 'base.html' %}
+{% load news_content %}
 {% block title %}{{ active_category.name }} — Ставрополь+{% endblock %}
 {% block content %}
 <main class="site-shell rubric-page">
   {% include 'components/ad_slot.html' with ad=advertisements.top css_class='ad--leader' slot_size='970 × 90' slot_label='верх сайта' %}
-  <header class="rubric-intro"><p>Раздел</p><h1>{{ active_category.name }}</h1><span>{{ active_category.description|default:'Свежие материалы, события и новости региона.' }}</span></header>
+  <header class="rubric-intro"><p>Раздел</p><h1>{{ active_category.name }}</h1><span>{{ active_category.description|public_plain_text|default:'Свежие материалы, события и новости региона.' }}</span></header>
   <div class="rubric-layout">
     <section class="rubric-feed" aria-label="Лента раздела"><div class="rubric-feed__head"><span>Материалы</span><i></i><small>Свежее по времени</small></div>
       {% for news in category_news %}<article class="rubric-row"><b>{{ forloop.counter|stringformat:'02d' }}</b><a href="{% url 'news_detail' news.slug %}"><h2>{{ news.title }}</h2><p class="rubric-row__excerpt">{{ news.excerpt|default:news.content|striptags|truncatewords:24 }}</p>{% if news.tags.all %}<p class="rubric-row__tags">{% for tag in news.tags.all %}<span>#{{ tag.name }}</span>{% endfor %}</p>{% endif %}<p class="rubric-row__date"><time datetime="{{ news.date_start|date:'c' }}">{{ news.date_start|date:'j E Y · H:i' }}</time></p></a></article>{% empty %}<div class="empty-state">В этом разделе пока нет опубликованных материалов.</div>{% endfor %}

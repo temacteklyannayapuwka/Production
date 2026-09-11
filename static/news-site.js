@@ -83,6 +83,34 @@ backToTop?.addEventListener('click', () => {
 });
 updateBackToTop();
 
+const cityHero = document.querySelector('.city-hero');
+const newsFeed = document.querySelector('#news-feed');
+let heroAdvanceLocked = false;
+
+const advancePastHero = (event) => {
+  if (
+    !cityHero
+    || !newsFeed
+    || event.deltaY <= 0
+    || window.scrollY >= newsFeed.offsetTop - 2
+    || document.body.classList.contains('menu-open')
+  ) return;
+
+  event.preventDefault();
+  if (heroAdvanceLocked) return;
+  heroAdvanceLocked = true;
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  window.scrollTo({
+    top: newsFeed.offsetTop,
+    behavior: reducedMotion ? 'auto' : 'smooth',
+  });
+  window.setTimeout(() => { heroAdvanceLocked = false; }, reducedMotion ? 100 : 750);
+};
+
+if (cityHero && newsFeed) {
+  window.addEventListener('wheel', advancePastHero, { passive: false });
+}
+
 const deferredImages = document.querySelectorAll('img[data-deferred-src]');
 const loadDeferredImage = (image) => {
   image.src = image.dataset.deferredSrc;

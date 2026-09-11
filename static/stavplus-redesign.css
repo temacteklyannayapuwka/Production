@@ -150,7 +150,7 @@ body { background: #f2f3f1; font-family: var(--ui); }
 .city-hero__word-start {
   position: absolute;
   top: 28.98%;
-  left: 3.49%;
+  left: 5.24%;
   width: min(35.702vw, 685.485px);
   height: min(13.2687vw, 254.759px);
   background: url("hero/stavropol-aerial.webp") center / cover no-repeat;
@@ -337,7 +337,7 @@ footer { background: #061825; }
   .city-hero { min-height: 820px; }
   .city-hero__left { width: 48%; }
   .city-hero__split { left: 48%; }
-  .city-hero__word-start { top: 30%; left: 3.39%; width: 42vw; height: 15.61vw; }
+  .city-hero__word-start { top: 30%; left: 5.9%; width: 42vw; height: 15.61vw; }
   .city-hero__word-end { top: 36%; left: 47.9%; font-size: clamp(132px, 14.1vw, 170px); line-height: .77; }
   .city-hero__themes { display: none; }
   .city-hero__coordinates { right: 2.5%; }
@@ -356,7 +356,7 @@ footer { background: #061825; }
 @media (min-width: 721px) and (max-width: 820px) {
   .city-hero__left { width: 46%; }
   .city-hero__split { left: 46%; }
-  .city-hero__word-start { left: 3%; width: 40vw; height: 14.9vw; }
+  .city-hero__word-start { left: 5.8%; width: 40vw; height: 14.9vw; }
   .city-hero__word-end { left: 45.8%; font-size: clamp(112px, 16vw, 132px); }
   .city-hero__pager { display: none; }
   .city-hero__manifesto { top: 53%; }

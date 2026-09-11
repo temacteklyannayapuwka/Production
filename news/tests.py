@@ -32,6 +32,7 @@ from .admin import (
 )
 from .content import clean_legacy_markup
 from .models import Advertisement, Category, News, NewsGallery, Tag
+from .templatetags.news_content import public_plain_text
 from .views import published_news
 
 
@@ -41,6 +42,7 @@ class AdminJavascriptFallbackTests(SimpleTestCase):
             'news-site.css',
             'stavplus-redesign.css',
             'news-site.js',
+            'admin-featured.js',
             'brand/stavplus-mark.svg',
             'hero/stavropol-aerial.jpg',
             'hero/stavropol-aerial.webp',
@@ -75,7 +77,7 @@ class AdminJavascriptFallbackTests(SimpleTestCase):
         response = get_template('base.html').render({})
 
         self.assertIn('/static/news-site.css?v=49', response)
-        self.assertIn('/static/stavplus-redesign.css?v=7', response)
+        self.assertIn('/static/stavplus-redesign.css?v=8', response)
         self.assertIn('family=Inter', response)
         self.assertNotIn('family=Merriweather', response)
         self.assertIn('media="print"', response)
@@ -84,7 +86,7 @@ class AdminJavascriptFallbackTests(SimpleTestCase):
         self.assertNotIn('family=Golos+Text', response)
         self.assertNotIn('family=Prata', response)
         self.assertIn('/static/brand/stavplus-mark.svg', response)
-        self.assertIn('/static/news-site.js?v=5', response)
+        self.assertIn('/static/news-site.js?v=6', response)
         self.assertIn('data-back-to-top', response)
         self.assertIn('Вернуться наверх', response)
         self.assertIn('>Меню</span>', response)
@@ -268,6 +270,7 @@ class EditorialAdminTests(SimpleTestCase):
         self.assertNotIn('scroll-snap-type: y mandatory', css)
         self.assertNotIn('scroll-snap-stop: always', css)
         self.assertIn('.back-to-top', css)
+        self.assertIn('left: 5.24%', css)
         self.assertNotIn('transform: scale(', css)
 
     def test_public_script_traps_menu_focus_and_controls_page_utilities(self):
@@ -277,10 +280,26 @@ class EditorialAdminTests(SimpleTestCase):
         self.assertIn('keepFocusInsideMenu', script)
         self.assertIn('menuReturnFocus.focus()', script)
         self.assertNotIn("classList.add('hero-snap-enabled')", script)
+        self.assertIn("window.addEventListener('wheel', advancePastHero", script)
+        self.assertIn("behavior: reducedMotion ? 'auto' : 'smooth'", script)
         self.assertIn("window.scrollTo({ top: 0", script)
         self.assertIn("requestAnimationFrame", script)
         self.assertIn('data-deferred-src', script)
         self.assertIn('IntersectionObserver', script)
+
+    def test_admin_featured_switches_are_mutually_exclusive_in_the_list(self):
+        source = get_template('admin/news/news/change_list.html').template.source
+        script_path = Path(__file__).resolve().parents[1] / 'static' / 'admin-featured.js'
+        script = script_path.read_text(encoding='utf-8')
+
+        self.assertIn('admin-featured.js', source)
+        self.assertIn('name$="-is_featured"', script)
+        self.assertIn('field.checked = false', script)
+
+    def test_legacy_section_description_is_presented_as_plain_text(self):
+        legacy = '<p style="font-size:14px"><strong>Раздел</strong>&nbsp; города</p>'
+
+        self.assertEqual(public_plain_text(legacy), 'Раздел города')
 
     def test_category_page_uses_a_sticky_news_feed_without_lower_advertisements(self):
         source = get_template('category.html').template.source
@@ -294,6 +313,7 @@ class EditorialAdminTests(SimpleTestCase):
         self.assertNotIn('section_rail', source)
         self.assertNotIn('section_bottom', source)
         self.assertNotIn('Главное за день — в одном письме', source)
+        self.assertIn('active_category.description|public_plain_text', source)
 
     def test_view_counts_are_only_visible_in_the_homepage_top_block(self):
         index_source = get_template('index.html').template.source
