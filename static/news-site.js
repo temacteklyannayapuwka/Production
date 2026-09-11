@@ -58,6 +58,44 @@ document.addEventListener('keydown', (event) => { if (event.key === 'Escape') se
 menuLayer?.addEventListener('keydown', keepFocusInsideMenu);
 document.addEventListener('click', (event) => { if (event.target.closest('[data-subscribe]')) showToast('Спасибо! Форма подписки появится на следующем этапе.'); });
 
+const homeHeaderNav = document.querySelector('.home-page-body .header-nav');
+const homeHeaderLinks = homeHeaderNav ? [...homeHeaderNav.querySelectorAll('a')] : [];
+let headerFitFramePending = false;
+
+function fitHeaderNavigation() {
+  if (!homeHeaderNav) return;
+  homeHeaderLinks.forEach((link) => { link.hidden = false; });
+  if (window.innerWidth <= 1040) {
+    homeHeaderNav.style.removeProperty('width');
+    homeHeaderNav.style.removeProperty('max-width');
+    return;
+  }
+
+  const darkLayerBoundary = window.innerWidth * 0.409375;
+  const navigationLeft = homeHeaderNav.getBoundingClientRect().left;
+  const availableWidth = Math.max(0, Math.floor(darkLayerBoundary - navigationLeft - 18));
+  homeHeaderNav.style.width = `${availableWidth}px`;
+  homeHeaderNav.style.maxWidth = `${availableWidth}px`;
+
+  for (let index = homeHeaderLinks.length - 1; index >= 0; index -= 1) {
+    if (homeHeaderNav.scrollWidth <= homeHeaderNav.clientWidth) break;
+    homeHeaderLinks[index].hidden = true;
+  }
+}
+
+function scheduleHeaderNavigationFit() {
+  if (headerFitFramePending) return;
+  headerFitFramePending = true;
+  window.requestAnimationFrame(() => {
+    fitHeaderNavigation();
+    headerFitFramePending = false;
+  });
+}
+
+fitHeaderNavigation();
+document.fonts?.ready.then(fitHeaderNavigation);
+window.addEventListener('resize', scheduleHeaderNavigationFit, { passive: true });
+
 if (document.querySelector('.city-hero') && document.querySelector('#news-feed')) {
   document.documentElement.classList.add('hero-snap-enabled');
 }

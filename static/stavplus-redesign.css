@@ -81,6 +81,11 @@ body { background: #f2f3f1; font-family: var(--ui); }
 }
 .brand--wordmark strong span { color: var(--lime); font-size: 24px; }
 .header-nav { justify-content: flex-start; gap: clamp(22px, 2.05vw, 40px); }
+.home-page-body .header-nav {
+  flex-wrap: nowrap;
+  gap: clamp(16px, 1.45vw, 28px);
+  overflow: hidden;
+}
 .header-nav a {
   color: rgba(255, 255, 255, .7);
   font-size: 13px;
@@ -89,6 +94,7 @@ body { background: #f2f3f1; font-family: var(--ui); }
   line-height: 22px;
   text-transform: uppercase;
 }
+.home-page-body .header-nav a { flex: none; white-space: nowrap; }
 .header-nav a::after { height: 1px; background: var(--lime); }
 .header-actions { gap: 12px; }
 .search--header {
