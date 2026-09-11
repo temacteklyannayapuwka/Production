@@ -92,33 +92,33 @@ body { background: #f2f3f1; font-family: var(--ui); }
 .header-nav a::after { height: 1px; background: var(--lime); }
 .header-actions { gap: 12px; }
 .search--header {
-  width: min(13vw, 250px);
-  min-width: 200px;
-  height: 48px;
+  width: min(11.5vw, 220px);
+  min-width: 180px;
+  height: 42px;
   margin: 0;
   border: 1px solid rgba(255, 255, 255, .13);
-  border-radius: 24px;
+  border-radius: 21px;
   background: rgba(255, 255, 255, .07);
   backdrop-filter: blur(14px);
 }
-.search--header button { order: 0; width: 40px; padding: 0 0 0 16px; background: transparent; }
-.search--header button img { width: 15px; height: 15px; }
-.search--header input { order: 1; padding: 0 12px 0 1px; color: #fff; font-size: 13px; }
+.search--header button { order: 0; width: 34px; padding: 0 0 0 13px; background: transparent; }
+.search--header button img { width: 14px; height: 14px; }
+.search--header input { order: 1; padding: 0 10px 0 1px; color: #fff; font-size: 12px; }
 .search--header input::placeholder { color: rgba(255, 255, 255, .32); }
 .menu-button {
-  min-width: 138px;
-  height: 48px;
-  gap: 14px;
+  min-width: 118px;
+  height: 42px;
+  gap: 11px;
   border-color: rgba(255, 255, 255, .15);
-  border-radius: 24px;
+  border-radius: 21px;
   background: rgba(255, 255, 255, .07);
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 400;
   letter-spacing: 0;
   text-transform: none;
   backdrop-filter: blur(14px);
 }
-.menu-button img { width: 23px; height: 17px; }
+.menu-button img { width: 20px; height: 15px; }
 .menu-button:hover { transform: none; background: rgba(255, 255, 255, .14); color: #fff; }
 
 /* Desktop hero, measured from the 1920 x 1080 Figma frame. */
@@ -154,6 +154,7 @@ body { background: #f2f3f1; font-family: var(--ui); }
   aspect-ratio: 1584 / 364;
   margin: 0;
   background: url("hero/stavropol-title-2x.png") 0 0 / contain no-repeat;
+  filter: brightness(1.2);
 }
 .city-hero__manifesto { position: absolute; top: 56.48%; left: 3.54%; }
 .city-hero__manifesto p, .city-hero__themes {
@@ -308,8 +309,8 @@ footer { background: #061825; }
   .site-shell { width: min(1600px, calc(100% - 64px)); }
   .header-nav { gap: 18px; }
   .header-nav a { font-size: 11px; letter-spacing: 1.7px; }
-  .search--header { min-width: 190px; }
-  .menu-button { min-width: 132px; }
+  .search--header { min-width: 170px; }
+  .menu-button { min-width: 114px; }
   .city-hero__manifesto span { font-size: 16px; }
   .city-hero__manifesto p, .city-hero__themes { font-size: 14px; line-height: 25px; }
 }
@@ -318,7 +319,7 @@ footer { background: #061825; }
   .site-shell { width: min(1600px, calc(100% - 48px)); }
   .masthead__inner { min-height: 102px; padding: 24px 30px; }
   .header-nav { display: none; }
-  .search--header { width: 220px; }
+  .search--header { width: 190px; }
   .city-hero { min-height: 820px; }
   .city-hero__left { width: 48%; }
   .city-hero__split { left: 48%; }
@@ -362,8 +363,8 @@ footer { background: #061825; }
   .brand--wordmark strong { font-size: 18px; }
   .brand--wordmark strong span { font-size: 20px; }
   .search--header { display: none; }
-  .menu-button { min-width: 112px; height: 48px; font-size: 15px; }
-  .menu-button img { width: 22px; height: 16px; }
+  .menu-button { min-width: 102px; height: 40px; font-size: 14px; }
+  .menu-button img { width: 19px; height: 14px; }
   .city-hero { height: 820px; min-height: 820px; }
   .city-hero__map { object-position: 61% center; }
   .city-hero__photo-tone { background: rgba(0, 24, 39, .36); }
