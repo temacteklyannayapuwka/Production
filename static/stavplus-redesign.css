@@ -302,8 +302,112 @@ body { background: #f2f3f1; font-family: var(--ui); }
 footer { background: #061825; }
 .footer__grid, .copyright { border-color: rgba(255, 255, 255, .12); }
 .footer__grid h2 { color: var(--lime); letter-spacing: .16em; text-transform: uppercase; }
-.menu-drawer { border-radius: 0; background: #eef1f2; }
-.drawer-nav a, .drawer-editorial { color: var(--carbon); font-weight: 600; }
+.menu-backdrop {
+  background: rgba(3, 14, 23, .42);
+  backdrop-filter: blur(8px);
+}
+.menu-drawer {
+  position: absolute;
+  top: 18px;
+  left: 50%;
+  display: grid;
+  grid-template-columns: 250px minmax(0, 1fr);
+  grid-template-areas:
+    "top navigation"
+    "search navigation"
+    "editorial navigation"
+    "social navigation";
+  width: min(1500px, calc(100vw - 48px));
+  height: auto;
+  max-height: calc(100svh - 36px);
+  padding: 20px 68px 22px 24px;
+  overflow-y: auto;
+  border: 1px solid rgba(255, 255, 255, .16);
+  border-radius: 18px;
+  background: rgba(7, 27, 45, .82);
+  box-shadow: 0 18px 54px rgba(0, 10, 18, .28);
+  opacity: 0;
+  transform: translate(-50%, -24px);
+  backdrop-filter: blur(24px) saturate(1.15);
+  transition: transform .28s cubic-bezier(.2, .8, .2, 1), opacity .22s ease;
+}
+.menu-layer.is-open .menu-drawer { opacity: 1; transform: translate(-50%, 0); }
+.menu-drawer__top {
+  grid-area: top;
+  color: rgba(255, 255, 255, .5);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: .18em;
+}
+.menu-close {
+  position: absolute;
+  top: 16px;
+  right: 18px;
+  width: 32px;
+  height: 32px;
+  border-color: rgba(255, 255, 255, .18);
+  background: rgba(255, 255, 255, .07);
+  color: rgba(255, 255, 255, .82);
+  font-size: 21px;
+}
+.menu-close:hover {
+  transform: none;
+  border-color: rgba(255, 255, 255, .42);
+  background: rgba(255, 255, 255, .14);
+  color: #fff;
+}
+.drawer-search {
+  grid-area: search;
+  width: 100%;
+  height: 40px;
+  margin: 15px 0 17px;
+  border-color: rgba(255, 255, 255, .16);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, .07);
+}
+.drawer-search:focus-within {
+  border-color: rgba(255, 255, 255, .4);
+  box-shadow: 0 0 0 2px rgba(239, 198, 39, .13);
+}
+.drawer-search input { padding: 0 14px; color: #fff; font-size: 13px; }
+.drawer-search input::placeholder { color: rgba(255, 255, 255, .4); }
+.drawer-search button { display: grid; width: 42px; padding: 0; place-items: center; }
+.drawer-search button img { width: 15px; height: 15px; }
+.drawer-search button:hover { background: rgba(255, 255, 255, .1); }
+.drawer-nav {
+  grid-area: navigation;
+  display: flex;
+  align-content: flex-start;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+  padding: 22px 0 0 28px;
+}
+.drawer-nav a,
+.drawer-editorial {
+  color: rgba(255, 255, 255, .78);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: .02em;
+  line-height: 1.2;
+}
+.drawer-nav a {
+  border: 1px solid rgba(255, 255, 255, .12);
+  border-radius: 999px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, .045);
+}
+.drawer-nav a:hover {
+  transform: none;
+  border-color: rgba(239, 198, 39, .5);
+  background: rgba(239, 198, 39, .1);
+  color: #fff;
+}
+.drawer-editorial { grid-area: editorial; width: max-content; margin: 0; }
+.drawer-editorial:hover { transform: none; color: var(--lime); }
+.drawer-social { grid-area: social; gap: 8px; margin: 12px 0 0; }
+.drawer-social a,
+.drawer-social a img,
+.drawer-social .drawer-social__max img { width: 25px; height: 25px; border-radius: 7px; }
 
 @media (max-width: 1320px) {
   .site-shell { width: min(1600px, calc(100% - 64px)); }
@@ -365,6 +469,28 @@ footer { background: #061825; }
   .search--header { display: none; }
   .menu-button { min-width: 102px; height: 40px; font-size: 14px; }
   .menu-button img { width: 19px; height: 14px; }
+  .menu-drawer {
+    top: 8px;
+    display: block;
+    width: calc(100vw - 16px);
+    max-height: calc(100svh - 16px);
+    padding: 18px 18px 20px;
+    border-radius: 14px;
+    transform: translate(-50%, -20px);
+  }
+  .menu-drawer__top { min-height: 32px; }
+  .menu-close { top: 13px; right: 13px; }
+  .drawer-search { height: 40px; margin: 12px 0 16px; }
+  .drawer-search input { font-size: 13px; }
+  .drawer-nav {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+    padding: 0;
+  }
+  .drawer-nav a { padding: 9px 10px; font-size: 12px; }
+  .drawer-editorial { margin-top: 18px; font-size: 13px; }
+  .drawer-social { margin-top: 12px; }
   .city-hero { height: 820px; min-height: 820px; }
   .city-hero__map { object-position: 61% center; }
   .city-hero__photo-tone { background: rgba(0, 24, 39, .36); }

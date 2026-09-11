@@ -14,7 +14,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..800&amp;display=swap" rel="stylesheet" media="print" onload="this.media='all'">
     <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..800&amp;display=swap" rel="stylesheet"></noscript>
     <link rel="stylesheet" href="{% static 'news-site.css' %}?v=49">
-    <link rel="stylesheet" href="{% static 'stavplus-redesign.css' %}?v=13">
+    <link rel="stylesheet" href="{% static 'stavplus-redesign.css' %}?v=14">
   </head>
   <body class="{% block body_class %}{% endblock %}">
     <header class="masthead">
@@ -45,7 +45,7 @@
       <div class="menu-backdrop" data-menu-close></div>
       <aside class="menu-drawer" id="site-menu" aria-label="Главное меню" aria-modal="true" role="dialog">
         <div class="menu-drawer__top"><span>Навигация</span><button type="button" class="menu-close" data-menu-close aria-label="Закрыть меню">×</button></div>
-        <form class="drawer-search" action="{% url 'search' %}" method="get"><label class="sr-only" for="drawer-search">Поиск новостей</label><input id="drawer-search" name="q" value="{{ query|default:'' }}" placeholder="Поиск..."><button type="submit" aria-label="Найти">⌕</button></form>
+        <form class="drawer-search" action="{% url 'search' %}" method="get"><label class="sr-only" for="drawer-search">Поиск новостей</label><input id="drawer-search" name="q" value="{{ query|default:'' }}" placeholder="Поиск..."><button type="submit" aria-label="Найти"><img src="{% static 'hero/search.svg' %}" alt=""></button></form>
         <nav class="drawer-nav" aria-label="Все разделы">{% for category in navigation_categories %}<a href="{% url 'category' category.slug %}">{{ category.name }}</a>{% endfor %}</nav>
         <a class="drawer-editorial" href="mailto:news@stavplus.ru">Редакция</a>
         <div class="drawer-social" aria-label="Социальные сети"><a href="#" aria-label="ВКонтакте"><img src="{% static 'social-icons/vk-icon.jpg' %}" alt=""></a><a href="#" aria-label="Telegram"><img src="{% static 'social-icons/telegram-icon.jpg' %}" alt=""></a><a href="#" aria-label="Одноклассники"><img src="{% static 'social-icons/ok-icon.jpg' %}" alt=""></a><a class="drawer-social__max" href="#" aria-label="MAX, мессенджер"><img src="{% static 'social-icons/max-icon.jpg' %}" alt=""></a></div>

@@ -78,7 +78,7 @@ class AdminJavascriptFallbackTests(SimpleTestCase):
         response = get_template('base.html').render({})
 
         self.assertIn('/static/news-site.css?v=49', response)
-        self.assertIn('/static/stavplus-redesign.css?v=13', response)
+        self.assertIn('/static/stavplus-redesign.css?v=14', response)
         self.assertIn('family=Inter', response)
         self.assertNotIn('family=Merriweather', response)
         self.assertIn('media="print"', response)
@@ -272,6 +272,9 @@ class EditorialAdminTests(SimpleTestCase):
         self.assertIn('scroll-snap-stop: always', css)
         self.assertIn('.back-to-top', css)
         self.assertIn('aspect-ratio: 1584 / 364', css)
+        self.assertIn('"top navigation"', css)
+        self.assertIn('backdrop-filter: blur(24px) saturate(1.15)', css)
+        self.assertIn('grid-template-columns: repeat(2, minmax(0, 1fr))', css)
         self.assertNotIn('city-hero__word-start', css)
         self.assertNotIn('city-hero__word-end', css)
         self.assertNotIn('transform: scale(', css)
