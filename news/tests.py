@@ -46,6 +46,7 @@ class AdminJavascriptFallbackTests(SimpleTestCase):
             'brand/stavplus-mark.svg',
             'hero/stavropol-aerial.jpg',
             'hero/stavropol-aerial.webp',
+            'hero/stavropol-title.png',
             'hero/search.svg',
             'hero/menu.svg',
             'hero/sun.svg',
@@ -77,7 +78,7 @@ class AdminJavascriptFallbackTests(SimpleTestCase):
         response = get_template('base.html').render({})
 
         self.assertIn('/static/news-site.css?v=49', response)
-        self.assertIn('/static/stavplus-redesign.css?v=8', response)
+        self.assertIn('/static/stavplus-redesign.css?v=9', response)
         self.assertIn('family=Inter', response)
         self.assertNotIn('family=Merriweather', response)
         self.assertIn('media="print"', response)
@@ -237,9 +238,9 @@ class EditorialAdminTests(SimpleTestCase):
 
         for marker in (
             'city-hero',
-            'city-hero__word-start',
-            'city-hero__word-end',
+            'city-hero__word',
             "hero/stavropol-aerial.webp",
+            "hero/stavropol-title.png",
             'city-hero__coordinates',
             'city-hero__date',
             'city-hero__cta',
@@ -262,15 +263,17 @@ class EditorialAdminTests(SimpleTestCase):
         css = css_path.read_text(encoding='utf-8')
 
         self.assertIn('Desktop hero, measured from the 1920 x 1080 Figma frame.', css)
-        self.assertIn('hero/stav-mask.svg', css)
-        self.assertIn('hero/stavropol-aerial.webp', css)
+        self.assertIn('.city-hero__map', css)
+        self.assertIn('hero/stavropol-title.png', css)
         self.assertIn('@media (max-width: 1040px)', css)
         self.assertIn('@media (min-width: 721px) and (max-width: 820px)', css)
         self.assertIn('@media (max-width: 720px)', css)
         self.assertNotIn('scroll-snap-type: y mandatory', css)
         self.assertNotIn('scroll-snap-stop: always', css)
         self.assertIn('.back-to-top', css)
-        self.assertIn('left: 5.24%', css)
+        self.assertIn('aspect-ratio: 1584 / 364', css)
+        self.assertNotIn('city-hero__word-start', css)
+        self.assertNotIn('city-hero__word-end', css)
         self.assertNotIn('transform: scale(', css)
 
     def test_public_script_traps_menu_focus_and_controls_page_utilities(self):

@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 {% block body_class %}home-page-body{% endblock %}
-{% block extra_head %}<link rel="preload" as="image" href="{% static 'hero/stavropol-aerial.webp' %}" type="image/webp" fetchpriority="high">{% endblock %}
+{% block extra_head %}<link rel="preload" as="image" href="{% static 'hero/stavropol-aerial.webp' %}" type="image/webp" fetchpriority="high"><link rel="preload" as="image" href="{% static 'hero/stavropol-title.png' %}" type="image/png" fetchpriority="high">{% endblock %}
 
 {% block content %}
 <main>
@@ -11,7 +11,7 @@
     <div class="city-hero__left" aria-hidden="true"></div>
     <div class="city-hero__split" aria-hidden="true"></div>
 
-    <h1 class="city-hero__word" id="city-hero-title" aria-label="Ставрополь"><span class="city-hero__word-start" aria-hidden="true"></span><span class="city-hero__word-end" aria-hidden="true">рополь</span></h1>
+    <h1 class="city-hero__word" id="city-hero-title"><span class="sr-only">Ставрополь</span></h1>
 
     <div class="city-hero__manifesto">
       <p>БОЛЬШЕ<br>ЧЕМ<br>ГОРОД</p>

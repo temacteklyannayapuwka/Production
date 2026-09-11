@@ -144,31 +144,13 @@ body { background: #f2f3f1; font-family: var(--ui); }
 }
 .city-hero__split { position: absolute; top: 0; bottom: 0; left: 40.9375%; width: 1px; background: rgba(255, 255, 255, .16); }
 .city-hero__word {
-  position: static;
+  position: absolute;
+  top: 27.7778%;
+  left: 4.375%;
+  width: min(82.5%, 1584px);
+  aspect-ratio: 1584 / 364;
   margin: 0;
-}
-.city-hero__word-start {
-  position: absolute;
-  top: 28.98%;
-  left: 5.24%;
-  width: min(35.702vw, 685.485px);
-  height: min(13.2687vw, 254.759px);
-  background: url("hero/stavropol-aerial.webp") center / cover no-repeat;
-  -webkit-mask: url("hero/stav-mask.svg") 0 0 / 100% 100% no-repeat;
-  mask: url("hero/stav-mask.svg") 0 0 / 100% 100% no-repeat;
-  filter: saturate(.62) brightness(.93);
-  opacity: .7;
-}
-.city-hero__word-end {
-  position: absolute;
-  top: 35.83%;
-  left: 40.9375%;
-  color: #fff;
-  font-size: clamp(170px, 14.3229vw, 275px);
-  font-weight: 500;
-  letter-spacing: -.0545em;
-  line-height: .77;
-  white-space: nowrap;
+  background: url("hero/stavropol-title.png") 0 0 / contain no-repeat;
 }
 .city-hero__manifesto { position: absolute; top: 56.48%; left: 3.54%; }
 .city-hero__manifesto p, .city-hero__themes {
@@ -337,8 +319,7 @@ footer { background: #061825; }
   .city-hero { min-height: 820px; }
   .city-hero__left { width: 48%; }
   .city-hero__split { left: 48%; }
-  .city-hero__word-start { top: 30%; left: 5.9%; width: 42vw; height: 15.61vw; }
-  .city-hero__word-end { top: 36%; left: 47.9%; font-size: clamp(132px, 14.1vw, 170px); line-height: .77; }
+  .city-hero__word { top: 29%; left: 4.9%; width: 93%; }
   .city-hero__themes { display: none; }
   .city-hero__coordinates { right: 2.5%; }
   .city-hero__pager { left: 47.4%; }
@@ -356,8 +337,7 @@ footer { background: #061825; }
 @media (min-width: 721px) and (max-width: 820px) {
   .city-hero__left { width: 46%; }
   .city-hero__split { left: 46%; }
-  .city-hero__word-start { left: 5.8%; width: 40vw; height: 14.9vw; }
-  .city-hero__word-end { left: 45.8%; font-size: clamp(112px, 16vw, 132px); }
+  .city-hero__word { top: 29.2%; left: 4.8%; width: 92.6%; }
   .city-hero__pager { display: none; }
   .city-hero__manifesto { top: 53%; }
   .city-hero__manifesto span { display: none; }
@@ -386,8 +366,7 @@ footer { background: #061825; }
   .city-hero__photo-tone { background: rgba(0, 24, 39, .36); }
   .city-hero__left { width: 100%; background: linear-gradient(180deg, rgba(7, 27, 45, .7), rgba(7, 27, 45, .42) 38%, rgba(7, 27, 45, .96) 76%); backdrop-filter: none; }
   .city-hero__split { display: none; }
-  .city-hero__word-start { top: 24%; left: 20px; width: 76vw; height: 28.3vw; max-width: 380px; max-height: 141px; background-position: 48% center; }
-  .city-hero__word-end { top: 34%; left: 20px; font-size: clamp(75px, 24vw, 132px); letter-spacing: -.07em; line-height: .8; }
+  .city-hero__word { top: 24%; left: 20px; width: calc(100% - 40px); }
   .city-hero__manifesto { top: 46%; left: 22px; }
   .city-hero__manifesto p { font-size: 12px; letter-spacing: 4px; line-height: 22px; }
   .city-hero__manifesto i { margin: 18px 0; }
