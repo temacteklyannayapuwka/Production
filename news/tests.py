@@ -82,7 +82,7 @@ class AdminJavascriptFallbackTests(SimpleTestCase):
         response = get_template('base.html').render({})
 
         self.assertIn('/static/news-site.css?v=49', response)
-        self.assertIn('/static/stavplus-redesign.css?v=20', response)
+        self.assertIn('/static/stavplus-redesign.css?v=21', response)
         self.assertIn('family=Inter', response)
         self.assertNotIn('family=Merriweather', response)
         self.assertIn('media="print"', response)
@@ -91,7 +91,7 @@ class AdminJavascriptFallbackTests(SimpleTestCase):
         self.assertNotIn('family=Golos+Text', response)
         self.assertNotIn('family=Prata', response)
         self.assertIn('class="brand brand--wordmark"', response)
-        self.assertIn('/static/news-site.js?v=14', response)
+        self.assertIn('/static/news-site.js?v=15', response)
         self.assertIn('data-back-to-top', response)
         self.assertIn('Вернуться наверх', response)
         self.assertIn('>Меню</span>', response)
@@ -292,6 +292,10 @@ class EditorialAdminTests(SimpleTestCase):
         self.assertIn('.footer__bar', css)
         self.assertIn('.city-hero__carousel-slide', css)
         self.assertIn('transition: transform .9s cubic-bezier(.22, 1, .36, 1), opacity .7s ease', css)
+        self.assertIn('@keyframes hero-pager-countdown', css)
+        self.assertIn('animation: hero-pager-countdown 7s linear forwards', css)
+        self.assertIn('font-size: min(19vw, 365px)', css)
+        self.assertIn('font-size: min(18.35vw, 352px)', css)
         self.assertNotIn('city-hero__word-start', css)
         self.assertNotIn('city-hero__word-end', css)
         self.assertNotIn('transform: scale(', css)
@@ -319,6 +323,8 @@ class EditorialAdminTests(SimpleTestCase):
         self.assertIn("style.setProperty('--slide-accent'", script)
         self.assertIn('heroSlides.length > 1', script)
         self.assertIn('7000', script)
+        self.assertIn('heroCarouselRemaining', script)
+        self.assertIn("classList.add('is-carousel-paused')", script)
         self.assertIn("addEventListener('pointerenter', stopHeroCarousel)", script)
 
     def test_admin_featured_switches_are_mutually_exclusive_in_the_list(self):

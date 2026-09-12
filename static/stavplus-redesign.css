@@ -186,7 +186,14 @@ body { background: #f2f3f1; font-family: var(--ui); }
   clip-path: inset(0 0 0 45.5%);
   transform: translateX(-1.35%);
 }
-.city-hero__word--live { position: absolute; inset: 0; margin: 0; }
+.city-hero__word--live {
+  position: absolute;
+  top: 27.7778%;
+  left: 0;
+  width: 100%;
+  height: 33.7037%;
+  margin: 0;
+}
 .city-hero__word--live::before,
 .city-hero__word--live::after {
   position: absolute;
@@ -194,10 +201,9 @@ body { background: #f2f3f1; font-family: var(--ui); }
   display: flex;
   box-sizing: border-box;
   align-items: center;
-  padding: 2.6vh 0 0 var(--title-indent, 8vw);
+  padding-left: var(--title-indent, 8vw);
   content: attr(data-title);
-  font-size: var(--title-size, min(19vw, 365px));
-  font-weight: 330;
+  font-family: var(--ui);
   letter-spacing: -.075em;
   line-height: .84;
   white-space: nowrap;
@@ -205,12 +211,21 @@ body { background: #f2f3f1; font-family: var(--ui); }
 .city-hero__word--live::before {
   background: var(--hero-image) center / cover no-repeat;
   color: transparent;
+  font-size: min(19vw, 365px);
+  font-weight: 390;
   filter: brightness(1.18) saturate(.72);
   clip-path: inset(0 59.0625% 0 0);
+  transform: translateY(-2.2%);
   -webkit-background-clip: text;
   background-clip: text;
 }
-.city-hero__word--live::after { color: #fff; clip-path: inset(0 0 0 40.9375%); }
+.city-hero__word--live::after {
+  color: #fff;
+  font-size: min(18.35vw, 352px);
+  font-weight: 330;
+  clip-path: inset(0 0 0 40.9375%);
+  transform: translateY(2.2%);
+}
 .city-hero__manifesto { position: absolute; top: 56.48%; left: 3.54%; }
 .city-hero__manifesto p, .city-hero__themes {
   margin: 0;
@@ -250,8 +265,10 @@ body { background: #f2f3f1; font-family: var(--ui); }
 .city-hero__pager span em { color: #b3b3b3; font-style: normal; }
 .city-hero__pager-steps { display: flex; align-items: center; gap: 12px; }
 .city-hero__pager-steps button {
+  position: relative;
   width: 10px;
   height: 10px;
+  overflow: hidden;
   padding: 0;
   border: 0;
   border-radius: 999px;
@@ -261,7 +278,19 @@ body { background: #f2f3f1; font-family: var(--ui); }
 }
 .city-hero__pager-steps button:hover,
 .city-hero__pager-steps button:focus-visible { background: rgba(255, 255, 255, .7); }
-.city-hero__pager-steps button.is-active { width: 35px; background: #fff; }
+.city-hero__pager-steps button.is-active { width: 70px; background: rgba(255, 255, 255, .28); }
+.city-hero__pager-steps button.is-active::after {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: #fff;
+  content: "";
+  transform: scaleX(1);
+  transform-origin: left center;
+  animation: hero-pager-countdown 7s linear forwards;
+}
+.city-hero.is-carousel-paused .city-hero__pager-steps button.is-active::after { animation-play-state: paused; }
+@keyframes hero-pager-countdown { to { transform: scaleX(0); } }
 .city-hero__carousel-slide {
   position: absolute;
   inset: 0;
@@ -637,6 +666,8 @@ body { background: #f2f3f1; font-family: var(--ui); }
   .city-hero__left { width: 46%; }
   .city-hero__split { left: 46%; }
   .city-hero__word--asset { top: 29.2%; left: 4.8%; width: 92.6%; }
+  .city-hero__word--live::before { clip-path: inset(0 54% 0 0); }
+  .city-hero__word--live::after { clip-path: inset(0 0 0 46%); }
   .city-hero__pager { display: none; }
   .city-hero__manifesto { top: 53%; }
   .city-hero__manifesto span { display: none; }
@@ -695,12 +726,13 @@ body { background: #f2f3f1; font-family: var(--ui); }
     left: 20px;
     width: calc(100% - 40px);
   }
+  .city-hero__word--live { top: 24%; left: 20px; width: calc(100% - 40px); height: 150px; }
   .city-hero__word--live::before { display: none; }
   .city-hero__word--live::after {
-    align-items: flex-start;
-    padding: 190px 20px 0;
+    padding: 0;
     font-size: min(23vw, 150px);
     clip-path: none;
+    transform: none;
   }
   .city-hero__manifesto { top: 46%; left: 22px; }
   .city-hero__manifesto p { font-size: 12px; letter-spacing: 4px; line-height: 22px; }
@@ -755,6 +787,7 @@ body { background: #f2f3f1; font-family: var(--ui); }
   .city-hero__carousel-slide,
   .city-hero__copy,
   .city-hero__pager-steps button { transition: none; }
+  .city-hero__pager-steps button.is-active::after { animation: none; }
   .city-hero__cta,
   .city-hero__cta::before { animation: none; transition: none; }
 }

@@ -105,6 +105,9 @@ const heroCurrent = heroPager?.querySelector('[data-hero-current]');
 const heroTotal = heroPager?.querySelector('[data-hero-total]');
 let heroSlideIndex = 0;
 let heroCarouselTimer;
+let heroCarouselStartedAt = 0;
+let heroCarouselRemaining = 7000;
+const heroCarouselDuration = 7000;
 
 function renderHeroSlide(nextIndex) {
   if (heroSlides.length < 2) return;
@@ -131,21 +134,35 @@ function renderHeroSlide(nextIndex) {
 }
 
 function stopHeroCarousel() {
-  window.clearInterval(heroCarouselTimer);
+  window.clearTimeout(heroCarouselTimer);
+  if (heroCarouselStartedAt) {
+    heroCarouselRemaining = Math.max(0, heroCarouselRemaining - (performance.now() - heroCarouselStartedAt));
+  }
+  heroCarouselStartedAt = 0;
+  heroCarousel?.classList.add('is-carousel-paused');
 }
 
-function startHeroCarousel() {
-  stopHeroCarousel();
+function startHeroCarousel(reset = false) {
+  window.clearTimeout(heroCarouselTimer);
+  if (reset) heroCarouselRemaining = heroCarouselDuration;
   if (heroSlides.length < 2 || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  heroCarouselTimer = window.setInterval(() => renderHeroSlide(heroSlideIndex + 1), 7000);
+  heroCarousel?.classList.remove('is-carousel-paused');
+  heroCarouselStartedAt = performance.now();
+  heroCarouselTimer = window.setTimeout(() => {
+    heroCarouselStartedAt = 0;
+    renderHeroSlide(heroSlideIndex + 1);
+    startHeroCarousel(true);
+  }, heroCarouselRemaining);
 }
 
 if (heroSlides.length > 1) {
   renderHeroSlide(0);
-  startHeroCarousel();
+  startHeroCarousel(true);
   heroPagerSteps.forEach((step) => step.addEventListener('click', () => {
-    renderHeroSlide(Number(step.dataset.heroPage));
-    startHeroCarousel();
+    const nextIndex = Number(step.dataset.heroPage);
+    const changed = nextIndex !== heroSlideIndex;
+    if (changed) renderHeroSlide(nextIndex);
+    startHeroCarousel(changed);
   }));
   heroPager?.addEventListener('pointerenter', stopHeroCarousel);
   heroPager?.addEventListener('pointerleave', startHeroCarousel);
