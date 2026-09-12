@@ -82,7 +82,7 @@ class AdminJavascriptFallbackTests(SimpleTestCase):
         response = get_template('base.html').render({})
 
         self.assertIn('/static/news-site.css?v=49', response)
-        self.assertIn('/static/stavplus-redesign.css?v=23', response)
+        self.assertIn('/static/stavplus-redesign.css?v=24', response)
         self.assertIn('family=Inter', response)
         self.assertNotIn('family=Merriweather', response)
         self.assertIn('media="print"', response)
@@ -294,6 +294,8 @@ class EditorialAdminTests(SimpleTestCase):
         self.assertIn('transition: transform .9s cubic-bezier(.22, 1, .36, 1), opacity .7s ease', css)
         self.assertIn('@keyframes hero-pager-countdown', css)
         self.assertIn('animation: hero-pager-countdown 7s linear forwards', css)
+        self.assertIn('button.is-active { width: 50px', css)
+        self.assertIn('@keyframes hero-pager-countdown { to { transform: scaleX(1); } }', css)
         self.assertIn('.city-hero__word-mask', css)
         self.assertIn('.city-hero__word-plain', css)
         self.assertIn('font-size: min(17.7084vw, 340px)', css)

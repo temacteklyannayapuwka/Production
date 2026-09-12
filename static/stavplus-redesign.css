@@ -277,19 +277,19 @@ body { background: #f2f3f1; font-family: var(--ui); }
 }
 .city-hero__pager-steps button:hover,
 .city-hero__pager-steps button:focus-visible { background: rgba(255, 255, 255, .7); }
-.city-hero__pager-steps button.is-active { width: 70px; background: rgba(255, 255, 255, .28); }
+.city-hero__pager-steps button.is-active { width: 50px; background: rgba(255, 255, 255, .28); }
 .city-hero__pager-steps button.is-active::after {
   position: absolute;
   inset: 0;
   border-radius: inherit;
   background: #fff;
   content: "";
-  transform: scaleX(1);
+  transform: scaleX(0);
   transform-origin: left center;
   animation: hero-pager-countdown 7s linear forwards;
 }
 .city-hero.is-carousel-paused .city-hero__pager-steps button.is-active::after { animation-play-state: paused; }
-@keyframes hero-pager-countdown { to { transform: scaleX(0); } }
+@keyframes hero-pager-countdown { to { transform: scaleX(1); } }
 .city-hero__carousel-slide {
   position: absolute;
   inset: 0;
