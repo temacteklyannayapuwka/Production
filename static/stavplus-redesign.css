@@ -181,7 +181,11 @@ body { background: #f2f3f1; font-family: var(--ui); }
   content: "";
   background: url("hero/stavropol-title-2x.png") 0 0 / 100% 100% no-repeat;
 }
-.city-hero__word--asset::before { clip-path: inset(0 55% 0 0); }
+.city-hero__word--asset::before {
+  filter: brightness(1.5);
+  clip-path: inset(0 55% 0 0);
+  transform: translateY(-2%);
+}
 .city-hero__word--asset::after {
   clip-path: inset(0 0 0 45.5%);
   transform: translateX(-1.35%);
