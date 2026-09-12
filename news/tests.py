@@ -47,6 +47,10 @@ class AdminJavascriptFallbackTests(SimpleTestCase):
             'hero/stavropol-aerial.jpg',
             'hero/stavropol-aerial.webp',
             'hero/stavropol-title-2x.png',
+            'hero/carousel/stavropol.webp',
+            'hero/carousel/region.webp',
+            'hero/carousel/country.webp',
+            'hero/carousel/world.webp',
             'hero/search.svg',
             'hero/menu.svg',
             'hero/sun.svg',
@@ -78,7 +82,7 @@ class AdminJavascriptFallbackTests(SimpleTestCase):
         response = get_template('base.html').render({})
 
         self.assertIn('/static/news-site.css?v=49', response)
-        self.assertIn('/static/stavplus-redesign.css?v=19', response)
+        self.assertIn('/static/stavplus-redesign.css?v=20', response)
         self.assertIn('family=Inter', response)
         self.assertNotIn('family=Merriweather', response)
         self.assertIn('media="print"', response)
@@ -87,7 +91,7 @@ class AdminJavascriptFallbackTests(SimpleTestCase):
         self.assertNotIn('family=Golos+Text', response)
         self.assertNotIn('family=Prata', response)
         self.assertIn('class="brand brand--wordmark"', response)
-        self.assertIn('/static/news-site.js?v=13', response)
+        self.assertIn('/static/news-site.js?v=14', response)
         self.assertIn('data-back-to-top', response)
         self.assertIn('Вернуться наверх', response)
         self.assertIn('>Меню</span>', response)
@@ -239,7 +243,10 @@ class EditorialAdminTests(SimpleTestCase):
         for marker in (
             'city-hero',
             'city-hero__word',
-            "hero/stavropol-aerial.webp",
+            "hero/carousel/stavropol.webp",
+            "hero/carousel/region.webp",
+            "hero/carousel/country.webp",
+            "hero/carousel/world.webp",
             "hero/stavropol-title-2x.png",
             'city-hero__coordinates',
             'city-hero__date',
@@ -308,6 +315,8 @@ class EditorialAdminTests(SimpleTestCase):
         self.assertIn('data-deferred-src', script)
         self.assertIn('IntersectionObserver', script)
         self.assertIn('renderHeroSlide', script)
+        self.assertIn('heroCopies', script)
+        self.assertIn("style.setProperty('--slide-accent'", script)
         self.assertIn('heroSlides.length > 1', script)
         self.assertIn('7000', script)
         self.assertIn("addEventListener('pointerenter', stopHeroCarousel)", script)

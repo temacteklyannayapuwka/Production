@@ -1,22 +1,43 @@
 {% extends 'base.html' %}
 {% load static %}
 {% block body_class %}home-page-body{% endblock %}
-{% block extra_head %}<link rel="preload" as="image" href="{% static 'hero/stavropol-aerial.webp' %}" type="image/webp" fetchpriority="high"><link rel="preload" as="image" href="{% static 'hero/stavropol-title-2x.png' %}" type="image/png" fetchpriority="high">{% endblock %}
+{% block extra_head %}<link rel="preload" as="image" href="{% static 'hero/carousel/stavropol.webp' %}" type="image/webp" fetchpriority="high"><link rel="preload" as="image" href="{% static 'hero/stavropol-title-2x.png' %}" type="image/png" fetchpriority="high">{% endblock %}
 
 {% block content %}
 <main>
   <section class="city-hero" aria-labelledby="city-hero-title" data-hero-carousel>
-    <picture><source srcset="{% static 'hero/stavropol-aerial.webp' %}" type="image/webp"><img class="city-hero__map" src="{% static 'hero/stavropol-aerial.jpg' %}" alt="Вид Ставрополя с высоты" width="1600" height="1064" fetchpriority="high" decoding="async"></picture>
+    <h1 class="sr-only" id="city-hero-title">Ставрополь+ — новости города, края, страны и мира</h1>
+    <div class="city-hero__carousel-slide is-active" data-hero-slide data-accent="#f5c518"><img class="city-hero__slide-bg" src="{% static 'hero/carousel/stavropol.webp' %}" alt="" width="1672" height="940" fetchpriority="high" decoding="async"></div>
+    <div class="city-hero__carousel-slide" data-hero-slide data-accent="#55d6b8" aria-hidden="true"><img class="city-hero__slide-bg" src="{% static 'hero/carousel/region.webp' %}" alt="" width="1672" height="940" decoding="async"></div>
+    <div class="city-hero__carousel-slide" data-hero-slide data-accent="#ff665e" aria-hidden="true"><img class="city-hero__slide-bg" src="{% static 'hero/carousel/country.webp' %}" alt="" width="1672" height="940" decoding="async"></div>
+    <div class="city-hero__carousel-slide" data-hero-slide data-accent="#8a83ff" aria-hidden="true"><img class="city-hero__slide-bg" src="{% static 'hero/carousel/world.webp' %}" alt="" width="1672" height="940" decoding="async"></div>
     <div class="city-hero__photo-tone" aria-hidden="true"></div>
     <div class="city-hero__left" aria-hidden="true"></div>
     <div class="city-hero__split" aria-hidden="true"></div>
 
-    <h1 class="city-hero__word" id="city-hero-title"><span class="sr-only">Ставрополь</span></h1>
-
-    <div class="city-hero__manifesto">
-      <p>БОЛЬШЕ<br>ЧЕМ<br>ГОРОД</p>
-      <i></i>
-      <span>Новости Ставрополя и края.<br>Люди, события, возможности.<br>Сегодня. Завтра. Всегда рядом.</span>
+    <div class="city-hero__copy is-active" data-hero-copy aria-hidden="true" style="--hero-image: url('{% static 'hero/carousel/stavropol.webp' %}');">
+      <div class="city-hero__word city-hero__word--asset"></div>
+      <div class="city-hero__manifesto"><p>БОЛЬШЕ<br>ЧЕМ<br>ГОРОД</p><i></i><span>Новости Ставрополя и края.<br>Люди, события, возможности.<br>Сегодня. Завтра. Всегда рядом.</span></div>
+      <div class="city-hero__coordinates"><span>45.0448° N<br>41.9697° E</span><img src="{% static 'hero/crosshair.svg' %}" alt=""></div>
+      <p class="city-hero__themes">ГОРОД<br>ЛЮДИ<br>РАЗВИТИЕ</p>
+    </div>
+    <div class="city-hero__copy" data-hero-copy aria-hidden="true" style="--hero-image: url('{% static 'hero/carousel/region.webp' %}'); --title-indent: 14.7vw; --title-size: min(19vw, 365px);">
+      <div class="city-hero__word city-hero__word--live" data-title="Регион"></div>
+      <div class="city-hero__manifesto"><p>ЖИЗНЬ<br>КРАЯ<br>РЯДОМ</p><i></i><span>События Ставропольского края.<br>Районы, станицы, природа.<br>Из первых уст — каждый день.</span></div>
+      <div class="city-hero__coordinates"><span>44.5° N<br>42.9° E</span><img src="{% static 'hero/crosshair.svg' %}" alt=""></div>
+      <p class="city-hero__themes">ПРИРОДА<br>РАЙОНЫ<br>СТАНИЦЫ</p>
+    </div>
+    <div class="city-hero__copy" data-hero-copy aria-hidden="true" style="--hero-image: url('{% static 'hero/carousel/country.webp' %}'); --title-indent: 10.7vw; --title-size: min(19vw, 365px);">
+      <div class="city-hero__word city-hero__word--live" data-title="Страна"></div>
+      <div class="city-hero__manifesto"><p>СТРАНА<br>В<br>ДВИЖЕНИИ</p><i></i><span>Главное из российской повестки.<br>Политика, экономика, общество.<br>Актуально. Без лишнего.</span></div>
+      <div class="city-hero__coordinates"><span>55.7558° N<br>37.6173° E</span><img src="{% static 'hero/crosshair.svg' %}" alt=""></div>
+      <p class="city-hero__themes">ПОЛИТИКА<br>ЭКОНОМИКА<br>ОБЩЕСТВО</p>
+    </div>
+    <div class="city-hero__copy" data-hero-copy aria-hidden="true" style="--hero-image: url('{% static 'hero/carousel/world.webp' %}'); --title-indent: 16.5vw; --title-size: min(20vw, 384px);">
+      <div class="city-hero__word city-hero__word--live" data-title="Мир"></div>
+      <div class="city-hero__manifesto"><p>МИР<br>БЕЗ<br>ГРАНИЦ</p><i></i><span>Международные события и тренды.<br>Геополитика, экономика, культура.<br>Взгляд из Ставрополя — на мир.</span></div>
+      <div class="city-hero__coordinates"><span>0° N<br>0° E</span><img src="{% static 'hero/crosshair.svg' %}" alt=""></div>
+      <p class="city-hero__themes">ГЕОПОЛИТИКА<br>КУЛЬТУРА<br>АНАЛИТИКА</p>
     </div>
 
     <div class="city-hero__date" aria-label="{% now 'j E Y' %}">
@@ -27,9 +48,7 @@
       <span class="city-hero__weather"><b>+24°</b><small>Ставрополь</small></span>
     </div>
 
-    <div class="city-hero__coordinates"><span>45.0448° N<br>41.9697° E</span><img src="{% static 'hero/crosshair.svg' %}" alt="" aria-hidden="true"></div>
-    <p class="city-hero__themes">ГОРОД<br>ЛЮДИ<br>РАЗВИТИЕ</p>
-    <div class="city-hero__pager" aria-hidden="true" data-hero-pager><i class="city-hero__pager-origin"></i><span><b data-hero-current>01</b> / <em data-hero-total>04</em></span><div class="city-hero__pager-steps"><i class="is-active"></i><i></i><i></i><i></i></div></div>
+    <div class="city-hero__pager" data-hero-pager><i class="city-hero__pager-origin" aria-hidden="true"></i><span aria-live="polite"><b data-hero-current>01</b> / <em data-hero-total>04</em></span><div class="city-hero__pager-steps" aria-label="Страницы карусели"><button class="is-active" type="button" data-hero-page="0" aria-label="Ставрополь"></button><button type="button" data-hero-page="1" aria-label="Регион"></button><button type="button" data-hero-page="2" aria-label="Страна"></button><button type="button" data-hero-page="3" aria-label="Мир"></button></div></div>
 
     <a class="city-hero__cta" href="{% if hero_news %}{% url 'news_detail' hero_news.slug %}{% else %}#news-feed{% endif %}">
       <img src="{% static 'hero/corner-tl.svg' %}" alt=""><img src="{% static 'hero/corner-tr.svg' %}" alt=""><img src="{% static 'hero/corner-bl.svg' %}" alt=""><img src="{% static 'hero/corner-br.svg' %}" alt="">

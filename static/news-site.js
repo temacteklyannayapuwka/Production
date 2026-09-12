@@ -98,8 +98,9 @@ window.addEventListener('resize', scheduleHeaderNavigationFit, { passive: true }
 
 const heroCarousel = document.querySelector('[data-hero-carousel]');
 const heroSlides = heroCarousel ? [...heroCarousel.querySelectorAll('[data-hero-slide]')] : [];
+const heroCopies = heroCarousel ? [...heroCarousel.querySelectorAll('[data-hero-copy]')] : [];
 const heroPager = heroCarousel?.querySelector('[data-hero-pager]');
-const heroPagerSteps = heroPager ? [...heroPager.querySelectorAll('.city-hero__pager-steps i')] : [];
+const heroPagerSteps = heroPager ? [...heroPager.querySelectorAll('[data-hero-page]')] : [];
 const heroCurrent = heroPager?.querySelector('[data-hero-current]');
 const heroTotal = heroPager?.querySelector('[data-hero-total]');
 let heroSlideIndex = 0;
@@ -114,9 +115,18 @@ function renderHeroSlide(nextIndex) {
     slide.classList.toggle('is-before', index < normalizedIndex);
     slide.setAttribute('aria-hidden', String(index !== normalizedIndex));
   });
-  heroPagerSteps.forEach((step, index) => step.classList.toggle('is-active', index === normalizedIndex));
+  heroCopies.forEach((copy, index) => {
+    copy.classList.toggle('is-active', index === normalizedIndex);
+    copy.classList.toggle('is-before', index < normalizedIndex);
+  });
+  heroPagerSteps.forEach((step, index) => {
+    step.classList.toggle('is-active', index === normalizedIndex);
+    if (index === normalizedIndex) step.setAttribute('aria-current', 'true');
+    else step.removeAttribute('aria-current');
+  });
   if (heroCurrent) heroCurrent.textContent = String(normalizedIndex + 1).padStart(2, '0');
   if (heroTotal) heroTotal.textContent = String(heroSlides.length).padStart(2, '0');
+  heroCarousel?.style.setProperty('--slide-accent', heroSlides[normalizedIndex].dataset.accent || '#f5c518');
   heroSlideIndex = normalizedIndex;
 }
 
@@ -133,8 +143,12 @@ function startHeroCarousel() {
 if (heroSlides.length > 1) {
   renderHeroSlide(0);
   startHeroCarousel();
-  heroCarousel?.addEventListener('pointerenter', stopHeroCarousel);
-  heroCarousel?.addEventListener('pointerleave', startHeroCarousel);
+  heroPagerSteps.forEach((step) => step.addEventListener('click', () => {
+    renderHeroSlide(Number(step.dataset.heroPage));
+    startHeroCarousel();
+  }));
+  heroPager?.addEventListener('pointerenter', stopHeroCarousel);
+  heroPager?.addEventListener('pointerleave', startHeroCarousel);
   heroCarousel?.addEventListener('focusin', stopHeroCarousel);
   heroCarousel?.addEventListener('focusout', startHeroCarousel);
   document.addEventListener('visibilitychange', () => {
