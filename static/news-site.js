@@ -96,6 +96,53 @@ fitHeaderNavigation();
 document.fonts?.ready.then(fitHeaderNavigation);
 window.addEventListener('resize', scheduleHeaderNavigationFit, { passive: true });
 
+const heroCarousel = document.querySelector('[data-hero-carousel]');
+const heroSlides = heroCarousel ? [...heroCarousel.querySelectorAll('[data-hero-slide]')] : [];
+const heroPager = heroCarousel?.querySelector('[data-hero-pager]');
+const heroPagerSteps = heroPager ? [...heroPager.querySelectorAll('.city-hero__pager-steps i')] : [];
+const heroCurrent = heroPager?.querySelector('[data-hero-current]');
+const heroTotal = heroPager?.querySelector('[data-hero-total]');
+let heroSlideIndex = 0;
+let heroCarouselTimer;
+
+function renderHeroSlide(nextIndex) {
+  if (heroSlides.length < 2) return;
+  const normalizedIndex = (nextIndex + heroSlides.length) % heroSlides.length;
+
+  heroSlides.forEach((slide, index) => {
+    slide.classList.toggle('is-active', index === normalizedIndex);
+    slide.classList.toggle('is-before', index < normalizedIndex);
+    slide.setAttribute('aria-hidden', String(index !== normalizedIndex));
+  });
+  heroPagerSteps.forEach((step, index) => step.classList.toggle('is-active', index === normalizedIndex));
+  if (heroCurrent) heroCurrent.textContent = String(normalizedIndex + 1).padStart(2, '0');
+  if (heroTotal) heroTotal.textContent = String(heroSlides.length).padStart(2, '0');
+  heroSlideIndex = normalizedIndex;
+}
+
+function stopHeroCarousel() {
+  window.clearInterval(heroCarouselTimer);
+}
+
+function startHeroCarousel() {
+  stopHeroCarousel();
+  if (heroSlides.length < 2 || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  heroCarouselTimer = window.setInterval(() => renderHeroSlide(heroSlideIndex + 1), 7000);
+}
+
+if (heroSlides.length > 1) {
+  renderHeroSlide(0);
+  startHeroCarousel();
+  heroCarousel?.addEventListener('pointerenter', stopHeroCarousel);
+  heroCarousel?.addEventListener('pointerleave', startHeroCarousel);
+  heroCarousel?.addEventListener('focusin', stopHeroCarousel);
+  heroCarousel?.addEventListener('focusout', startHeroCarousel);
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) stopHeroCarousel();
+    else startHeroCarousel();
+  });
+}
+
 const cityHero = document.querySelector('.city-hero');
 const newsFeed = document.querySelector('#news-feed');
 

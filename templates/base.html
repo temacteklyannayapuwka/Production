@@ -14,7 +14,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..800&amp;display=swap" rel="stylesheet" media="print" onload="this.media='all'">
     <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..800&amp;display=swap" rel="stylesheet"></noscript>
     <link rel="stylesheet" href="{% static 'news-site.css' %}?v=49">
-    <link rel="stylesheet" href="{% static 'stavplus-redesign.css' %}?v=18">
+    <link rel="stylesheet" href="{% static 'stavplus-redesign.css' %}?v=19">
   </head>
   <body class="{% block body_class %}{% endblock %}">
     <header class="masthead">
@@ -33,22 +33,16 @@
     {% block content %}{% endblock %}
 
     <footer class="site-footer">
-      <div class="site-shell footer__grid">
-        <section class="footer__brand-panel">
-          <a class="footer-wordmark" href="{% url 'index' %}" aria-label="Ставрополь+, на главную">СТАВРОПОЛЬ<span>+</span></a>
-          <p>Городское медиа о людях, событиях и развитии Ставропольского края.</p>
-          <small>Больше, чем город.</small>
-        </section>
+      <div class="site-shell footer__bar">
+        <a class="footer-wordmark" href="{% url 'index' %}" aria-label="Ставрополь+, на главную">СТАВРОПОЛЬ<span>+</span></a>
         <nav class="footer__sections" aria-label="Основные разделы">
-          <h2>В центре внимания</h2>
+          <h2 class="sr-only">Основные разделы</h2>
           <div>{% for category in header_categories %}<a href="{% url 'category' category.slug %}">{{ category.name }}</a>{% endfor %}</div>
         </nav>
-        <section class="footer__contacts">
-          <h2>Связаться с редакцией</h2>
-          <a class="footer__email" href="mailto:news@stavplus.ru">news@stavplus.ru <span>↗</span></a>
-          <address>Пятигорск, Кавказский проспект, 24</address>
+        <div class="footer__actions">
+          <a class="footer__email" href="mailto:news@stavplus.ru">Редакция <span>↗</span></a>
           <div class="footer-social" aria-label="Социальные сети"><a href="#" aria-label="ВКонтакте"><img src="{% static 'social-icons/vk-icon.jpg' %}" alt=""></a><a href="#" aria-label="Telegram"><img src="{% static 'social-icons/telegram-icon.jpg' %}" alt=""></a><a href="#" aria-label="Одноклассники"><img src="{% static 'social-icons/ok-icon.jpg' %}" alt=""></a><a href="#" aria-label="MAX, мессенджер"><img src="{% static 'social-icons/max-icon.jpg' %}" alt=""></a></div>
-        </section>
+        </div>
       </div>
       <div class="site-shell copyright"><span>© {% now "Y" %} Ставрополь+</span><span>Новости Ставрополя и края</span></div>
     </footer>
@@ -65,6 +59,6 @@
     </div>
     <div class="toast" role="status" aria-live="polite"></div>
     <button class="back-to-top" type="button" data-back-to-top aria-label="Вернуться наверх" aria-hidden="true">↑</button>
-    <script src="{% static 'news-site.js' %}?v=12"></script>
+    <script src="{% static 'news-site.js' %}?v=13"></script>
   </body>
 </html>

@@ -78,7 +78,7 @@ class AdminJavascriptFallbackTests(SimpleTestCase):
         response = get_template('base.html').render({})
 
         self.assertIn('/static/news-site.css?v=49', response)
-        self.assertIn('/static/stavplus-redesign.css?v=18', response)
+        self.assertIn('/static/stavplus-redesign.css?v=19', response)
         self.assertIn('family=Inter', response)
         self.assertNotIn('family=Merriweather', response)
         self.assertIn('media="print"', response)
@@ -86,8 +86,8 @@ class AdminJavascriptFallbackTests(SimpleTestCase):
         self.assertNotIn('family=Playfair+Display', response)
         self.assertNotIn('family=Golos+Text', response)
         self.assertNotIn('family=Prata', response)
-        self.assertIn('/static/brand/stavplus-mark.svg', response)
-        self.assertIn('/static/news-site.js?v=12', response)
+        self.assertIn('class="brand brand--wordmark"', response)
+        self.assertIn('/static/news-site.js?v=13', response)
         self.assertIn('data-back-to-top', response)
         self.assertIn('Вернуться наверх', response)
         self.assertIn('>Меню</span>', response)
@@ -244,6 +244,8 @@ class EditorialAdminTests(SimpleTestCase):
             'city-hero__coordinates',
             'city-hero__date',
             'city-hero__cta',
+            'data-hero-carousel',
+            'data-hero-pager',
             'headline_news',
             'hero_news',
             'popular_news',
@@ -280,7 +282,9 @@ class EditorialAdminTests(SimpleTestCase):
         self.assertIn('.home-page-body .header-nav', css)
         self.assertIn('transform: translateX(-1.35%)', css)
         self.assertIn('@keyframes hero-cta-sheen', css)
-        self.assertIn('.site-footer::before', css)
+        self.assertIn('.footer__bar', css)
+        self.assertIn('.city-hero__carousel-slide', css)
+        self.assertIn('transition: transform .9s cubic-bezier(.22, 1, .36, 1), opacity .7s ease', css)
         self.assertNotIn('city-hero__word-start', css)
         self.assertNotIn('city-hero__word-end', css)
         self.assertNotIn('transform: scale(', css)
@@ -303,6 +307,10 @@ class EditorialAdminTests(SimpleTestCase):
         self.assertIn("requestAnimationFrame", script)
         self.assertIn('data-deferred-src', script)
         self.assertIn('IntersectionObserver', script)
+        self.assertIn('renderHeroSlide', script)
+        self.assertIn('heroSlides.length > 1', script)
+        self.assertIn('7000', script)
+        self.assertIn("addEventListener('pointerenter', stopHeroCarousel)", script)
 
     def test_admin_featured_switches_are_mutually_exclusive_in_the_list(self):
         source = get_template('admin/news/news/change_list.html').template.source

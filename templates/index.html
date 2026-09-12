@@ -5,7 +5,7 @@
 
 {% block content %}
 <main>
-  <section class="city-hero" aria-labelledby="city-hero-title">
+  <section class="city-hero" aria-labelledby="city-hero-title" data-hero-carousel>
     <picture><source srcset="{% static 'hero/stavropol-aerial.webp' %}" type="image/webp"><img class="city-hero__map" src="{% static 'hero/stavropol-aerial.jpg' %}" alt="Вид Ставрополя с высоты" width="1600" height="1064" fetchpriority="high" decoding="async"></picture>
     <div class="city-hero__photo-tone" aria-hidden="true"></div>
     <div class="city-hero__left" aria-hidden="true"></div>
@@ -29,7 +29,7 @@
 
     <div class="city-hero__coordinates"><span>45.0448° N<br>41.9697° E</span><img src="{% static 'hero/crosshair.svg' %}" alt="" aria-hidden="true"></div>
     <p class="city-hero__themes">ГОРОД<br>ЛЮДИ<br>РАЗВИТИЕ</p>
-    <div class="city-hero__pager" aria-hidden="true"><b></b><span>01 / <i>04</i></span><b></b><i></i><i></i><i></i></div>
+    <div class="city-hero__pager" aria-hidden="true" data-hero-pager><i class="city-hero__pager-origin"></i><span><b data-hero-current>01</b> / <em data-hero-total>04</em></span><div class="city-hero__pager-steps"><i class="is-active"></i><i></i><i></i><i></i></div></div>
 
     <a class="city-hero__cta" href="{% if hero_news %}{% url 'news_detail' hero_news.slug %}{% else %}#news-feed{% endif %}">
       <img src="{% static 'hero/corner-tl.svg' %}" alt=""><img src="{% static 'hero/corner-tr.svg' %}" alt=""><img src="{% static 'hero/corner-bl.svg' %}" alt=""><img src="{% static 'hero/corner-br.svg' %}" alt="">
