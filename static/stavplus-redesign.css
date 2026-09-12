@@ -261,27 +261,36 @@ body { background: #f2f3f1; font-family: var(--ui); }
 .city-hero__coordinates span { color: rgba(255, 255, 255, .72); font-size: 17px; font-weight: 500; letter-spacing: 2px; line-height: 30px; text-align: right; }
 .city-hero__coordinates img { width: 88px; height: 88px; }
 .city-hero__themes { position: absolute; top: 62.59%; right: 3.33%; width: 158px; }
-.city-hero__pager { position: absolute; bottom: 8.7%; left: 40.62%; display: flex; align-items: center; gap: 17px; }
-.city-hero__pager-origin { width: 12px; height: 12px; border-radius: 50%; background: #fff; }
-.city-hero__pager span { display: flex; gap: 7px; font-size: 16px; font-weight: 500; letter-spacing: 1.2px; }
-.city-hero__pager span b { font-weight: 650; }
-.city-hero__pager span em { color: #b3b3b3; font-style: normal; }
-.city-hero__pager-steps { display: flex; align-items: center; gap: 12px; }
+.city-hero__pager { position: absolute; bottom: 8.7%; left: 40.62%; display: flex; align-items: center; gap: 20px; }
+.city-hero__pager span { display: flex; gap: 7px; color: #fff; font-size: 18px; font-weight: 500; letter-spacing: 1.2px; line-height: 1; }
+.city-hero__pager span b { font-weight: 700; }
+.city-hero__pager span em { color: rgba(255, 255, 255, .62); font-style: normal; }
+.city-hero__pager-steps { display: flex; align-items: center; gap: 14px; }
 .city-hero__pager-steps button {
   position: relative;
-  width: 10px;
-  height: 10px;
+  width: 11px;
+  height: 11px;
   overflow: hidden;
   padding: 0;
   border: 0;
   border-radius: 999px;
-  background: rgba(255, 255, 255, .28);
+  background: rgba(255, 255, 255, .3);
   cursor: pointer;
-  transition: width .65s cubic-bezier(.22, 1, .36, 1), background .45s ease, opacity .45s ease;
+  transform: translateZ(0);
+  will-change: width, transform, background-color;
+  transition:
+    width .8s cubic-bezier(.16, 1, .3, 1),
+    transform .8s cubic-bezier(.16, 1, .3, 1),
+    background-color .45s ease,
+    box-shadow .45s ease;
 }
 .city-hero__pager-steps button:hover,
-.city-hero__pager-steps button:focus-visible { background: rgba(255, 255, 255, .7); }
-.city-hero__pager-steps button.is-active { width: 50px; background: rgba(255, 255, 255, .28); }
+.city-hero__pager-steps button:focus-visible { background: rgba(255, 255, 255, .72); transform: scale(1.12); }
+.city-hero__pager-steps button.is-active {
+  width: 44px;
+  background: rgba(255, 255, 255, .48);
+  box-shadow: 0 0 18px rgba(255, 255, 255, .14);
+}
 .city-hero__pager-steps button.is-active::after {
   position: absolute;
   inset: 0;

@@ -48,7 +48,7 @@
       <span class="city-hero__weather"><b>+24°</b><small>Ставрополь</small></span>
     </div>
 
-    <div class="city-hero__pager" data-hero-pager><i class="city-hero__pager-origin" aria-hidden="true"></i><span aria-live="polite"><b data-hero-current>01</b> / <em data-hero-total>04</em></span><div class="city-hero__pager-steps" aria-label="Страницы карусели"><button class="is-active" type="button" data-hero-page="0" aria-label="Ставрополь"></button><button type="button" data-hero-page="1" aria-label="Регион"></button><button type="button" data-hero-page="2" aria-label="Страна"></button><button type="button" data-hero-page="3" aria-label="Мир"></button></div></div>
+    <div class="city-hero__pager" data-hero-pager><span aria-live="polite"><b data-hero-current>01</b> / <em data-hero-total>04</em></span><div class="city-hero__pager-steps" aria-label="Страницы карусели"><button class="is-active" type="button" data-hero-page="0" aria-label="Ставрополь"></button><button type="button" data-hero-page="1" aria-label="Регион"></button><button type="button" data-hero-page="2" aria-label="Страна"></button><button type="button" data-hero-page="3" aria-label="Мир"></button></div></div>
 
     <a class="city-hero__cta" href="{% if hero_news %}{% url 'news_detail' hero_news.slug %}{% else %}#news-feed{% endif %}">
       <img src="{% static 'hero/corner-tl.svg' %}" alt=""><img src="{% static 'hero/corner-tr.svg' %}" alt=""><img src="{% static 'hero/corner-bl.svg' %}" alt=""><img src="{% static 'hero/corner-br.svg' %}" alt="">
