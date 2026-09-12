@@ -225,6 +225,10 @@ body { background: #f2f3f1; font-family: var(--ui); }
   font-weight: 330;
   transform: translateY(calc(-50% + var(--plain-drop, 8px)));
 }
+.city-hero__word-plain--stavropol-r {
+  font-size: min(13.5417vw, 260px);
+  font-weight: 330;
+}
 .city-hero__manifesto { position: absolute; top: 56.48%; left: 3.54%; }
 .city-hero__manifesto p, .city-hero__themes {
   margin: 0;
@@ -736,6 +740,7 @@ body { background: #f2f3f1; font-family: var(--ui); }
     filter: none;
     transform: none;
   }
+  .city-hero__word-plain--stavropol-r { font-size: min(23vw, 150px); }
   .city-hero__manifesto { top: 46%; left: 22px; }
   .city-hero__manifesto p { font-size: 12px; letter-spacing: 4px; line-height: 22px; }
   .city-hero__manifesto i { margin: 18px 0; }

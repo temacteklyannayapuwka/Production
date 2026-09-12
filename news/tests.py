@@ -82,7 +82,7 @@ class AdminJavascriptFallbackTests(SimpleTestCase):
         response = get_template('base.html').render({})
 
         self.assertIn('/static/news-site.css?v=49', response)
-        self.assertIn('/static/stavplus-redesign.css?v=25', response)
+        self.assertIn('/static/stavplus-redesign.css?v=26', response)
         self.assertIn('family=Inter', response)
         self.assertNotIn('family=Merriweather', response)
         self.assertIn('media="print"', response)
@@ -300,6 +300,8 @@ class EditorialAdminTests(SimpleTestCase):
         self.assertIn('.city-hero__word-plain', css)
         self.assertIn('font-size: min(17.7084vw, 340px)', css)
         self.assertIn('font-size: min(14.5834vw, 280px)', css)
+        self.assertIn('.city-hero__word-plain--stavropol-r', css)
+        self.assertIn('font-size: min(13.5417vw, 260px)', css)
         self.assertIn('filter: brightness(1.5)', css)
         self.assertIn('transform: translateY(-3.5%)', css)
         self.assertIn('left: calc(40.9375% + 4px)', css)
