@@ -191,6 +191,7 @@ document.querySelectorAll('[data-article-gallery]').forEach((gallery) => {
   if (slides.length < 2) {
     if (controls) controls.hidden = true;
     slides[0]?.setAttribute('aria-hidden', 'false');
+    fitArticleGalleryToSlide(slides[0]);
     return;
   }
 
@@ -202,6 +203,17 @@ document.querySelectorAll('[data-article-gallery]').forEach((gallery) => {
     stepsContainer?.append(button);
     return button;
   });
+
+  function fitArticleGalleryToSlide(slide) {
+    const image = slide?.querySelector('img');
+    if (!viewport || !image) return;
+    const applyRatio = () => {
+      if (!image.naturalWidth || !image.naturalHeight) return;
+      viewport.style.aspectRatio = `${image.naturalWidth} / ${image.naturalHeight}`;
+    };
+    if (image.complete) applyRatio();
+    else image.addEventListener('load', applyRatio, { once: true });
+  }
 
   function renderArticleGallery(nextIndex) {
     activeIndex = (nextIndex + slides.length) % slides.length;
@@ -216,6 +228,7 @@ document.querySelectorAll('[data-article-gallery]').forEach((gallery) => {
       else step.removeAttribute('aria-current');
     });
     if (current) current.textContent = String(activeIndex + 1).padStart(2, '0');
+    fitArticleGalleryToSlide(slides[activeIndex]);
   }
 
   previous?.addEventListener('click', () => renderArticleGallery(activeIndex - 1));

@@ -465,6 +465,7 @@ body { background: #f2f3f1; font-family: var(--ui); }
   background: #061825;
   outline: none;
   touch-action: pan-y;
+  transition: aspect-ratio .65s cubic-bezier(.16, 1, .3, 1);
 }
 .article-carousel__viewport:focus-visible { box-shadow: inset 0 0 0 3px var(--lime); }
 .article-carousel__slide {
@@ -899,7 +900,6 @@ body { background: #f2f3f1; font-family: var(--ui); }
   .city-hero__cta b { font-size: 12px; letter-spacing: 1.5px; }
   .rubric-row { grid-template-columns: 24px 78px minmax(0, 1fr); padding-right: 10px; padding-left: 10px; }
   .rubric-row__excerpt, .rubric-row__tags { display: none; }
-  .article-carousel__viewport { aspect-ratio: 1 / 1; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -910,7 +910,8 @@ body { background: #f2f3f1; font-family: var(--ui); }
   .rubric-row__thumb img,
   .article-carousel__slide,
   .article-carousel__controls > button,
-  .article-carousel__steps button { transition: none; }
+  .article-carousel__steps button,
+  .article-carousel__viewport { transition: none; }
   .city-hero__pager-steps button.is-active::after { animation: none; }
   .city-hero__cta,
   .city-hero__cta::before { animation: none; transition: none; }

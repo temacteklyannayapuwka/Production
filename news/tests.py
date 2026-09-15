@@ -82,7 +82,7 @@ class AdminJavascriptFallbackTests(SimpleTestCase):
         response = get_template('base.html').render({})
 
         self.assertIn('/static/news-site.css?v=49', response)
-        self.assertIn('/static/stavplus-redesign.css?v=28', response)
+        self.assertIn('/static/stavplus-redesign.css?v=29', response)
         self.assertIn('family=Inter', response)
         self.assertNotIn('family=Merriweather', response)
         self.assertIn('media="print"', response)
@@ -91,7 +91,7 @@ class AdminJavascriptFallbackTests(SimpleTestCase):
         self.assertNotIn('family=Golos+Text', response)
         self.assertNotIn('family=Prata', response)
         self.assertIn('class="brand brand--wordmark"', response)
-        self.assertIn('/static/news-site.js?v=16', response)
+        self.assertIn('/static/news-site.js?v=17', response)
         self.assertIn('data-back-to-top', response)
         self.assertIn('Вернуться наверх', response)
         self.assertIn('>Меню</span>', response)
@@ -339,6 +339,9 @@ class EditorialAdminTests(SimpleTestCase):
         self.assertIn("addEventListener('pointerenter', stopHeroCarousel)", script)
         self.assertIn("querySelectorAll('[data-article-gallery]')", script)
         self.assertIn('renderArticleGallery', script)
+        self.assertIn('fitArticleGalleryToSlide', script)
+        self.assertIn('image.naturalWidth', script)
+        self.assertIn('viewport.style.aspectRatio', script)
         self.assertIn("event.key === 'ArrowRight'", script)
         self.assertIn("addEventListener('pointerup'", script)
 
