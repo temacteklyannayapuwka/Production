@@ -146,10 +146,10 @@ class NewsGalleryInlineForm(forms.ModelForm):
 class NewsGalleryInline(StackedInline):
     model = NewsGallery
     form = NewsGalleryInlineForm
-    extra = 1
+    extra = 2
     fields = ('image', 'caption', 'order')
-    verbose_name = 'Дополнительная фотография'
-    verbose_name_plural = '4. Дополнительные фотографии'
+    verbose_name = 'Фотография карусели'
+    verbose_name_plural = '4. Фотокарусель'
 
 
 @admin.register(Category)

@@ -82,7 +82,7 @@ class AdminJavascriptFallbackTests(SimpleTestCase):
         response = get_template('base.html').render({})
 
         self.assertIn('/static/news-site.css?v=49', response)
-        self.assertIn('/static/stavplus-redesign.css?v=27', response)
+        self.assertIn('/static/stavplus-redesign.css?v=28', response)
         self.assertIn('family=Inter', response)
         self.assertNotIn('family=Merriweather', response)
         self.assertIn('media="print"', response)
@@ -91,7 +91,7 @@ class AdminJavascriptFallbackTests(SimpleTestCase):
         self.assertNotIn('family=Golos+Text', response)
         self.assertNotIn('family=Prata', response)
         self.assertIn('class="brand brand--wordmark"', response)
-        self.assertIn('/static/news-site.js?v=15', response)
+        self.assertIn('/static/news-site.js?v=16', response)
         self.assertIn('data-back-to-top', response)
         self.assertIn('Вернуться наверх', response)
         self.assertIn('>Меню</span>', response)
@@ -137,8 +137,9 @@ class EditorialAdminTests(SimpleTestCase):
         self.assertFalse(admin.site.is_registered(NewsGallery))
         self.assertEqual(
             NewsGalleryInline.verbose_name_plural,
-            '4. Дополнительные фотографии',
+            '4. Фотокарусель',
         )
+        self.assertEqual(NewsGalleryInline.extra, 2)
 
     def test_category_form_uses_full_width_description_and_clear_labels(self):
         form = CategoryAdminForm()
@@ -336,6 +337,10 @@ class EditorialAdminTests(SimpleTestCase):
         self.assertIn('heroCarouselRemaining', script)
         self.assertIn("classList.add('is-carousel-paused')", script)
         self.assertIn("addEventListener('pointerenter', stopHeroCarousel)", script)
+        self.assertIn("querySelectorAll('[data-article-gallery]')", script)
+        self.assertIn('renderArticleGallery', script)
+        self.assertIn("event.key === 'ArrowRight'", script)
+        self.assertIn("addEventListener('pointerup'", script)
 
     def test_admin_featured_switches_are_mutually_exclusive_in_the_list(self):
         source = get_template('admin/news/news/change_list.html').template.source
@@ -387,7 +392,12 @@ class EditorialAdminTests(SimpleTestCase):
     def test_templates_render_advertising_slots_and_article_gallery(self):
         self.assertIn('components/ad_slot.html', get_template('index.html').template.source)
         article_source = get_template('article.html').template.source
-        self.assertIn('article.gallery.all', article_source)
+        gallery_source = get_template('components/article_gallery.html').template.source
+        self.assertIn("components/article_gallery.html", article_source)
+        self.assertIn('news.gallery.all', gallery_source)
+        self.assertIn('data-article-gallery', gallery_source)
+        self.assertIn('data-gallery-previous', gallery_source)
+        self.assertIn('data-gallery-next', gallery_source)
         self.assertIn('Лента новостей', article_source)
         self.assertIn('article-news-feed', article_source)
         self.assertIn('news_feed', article_source)
@@ -398,11 +408,13 @@ class EditorialAdminTests(SimpleTestCase):
 
     def test_article_template_uses_semantic_dates_and_honest_image_markup(self):
         article_source = get_template('article.html').template.source
+        gallery_source = get_template('components/article_gallery.html').template.source
 
         self.assertIn('<header class="article-header">', article_source)
         self.assertIn('<time datetime=', article_source)
         self.assertIn('aria-label="Текст материала"', article_source)
-        self.assertIn('decoding="async" fetchpriority="high"', article_source)
+        self.assertIn('fetchpriority="high"', gallery_source)
+        self.assertIn('decoding="async"', gallery_source)
         self.assertIn('Архивный материал', article_source)
         self.assertNotIn('Фото: Ставрополь+', article_source)
         self.assertIn("news.date_start|date:'H:i'", article_source)
@@ -434,6 +446,14 @@ class EditorialAdminTests(SimpleTestCase):
         ):
             rule = css.split(selector, 1)[1].split('}', 1)[0]
             self.assertNotIn('text-transform: uppercase', rule)
+
+    def test_rubric_lists_show_photo_previews(self):
+        for template_name in ('category.html', 'tag.html', 'search.html'):
+            source = get_template(template_name).template.source
+            with self.subTest(template=template_name):
+                self.assertIn('rubric-row__thumb', source)
+                self.assertIn('news.main_photo.url', source)
+                self.assertIn('loading="lazy"', source)
 
     def test_legacy_lightbox_markup_is_hidden_from_readers(self):
         legacy = (
@@ -685,6 +705,25 @@ class ArticleContinuationTests(TestCase):
             economy_response.context['next_category_article'],
             society_news[0],
         )
+
+    def test_article_combines_main_and_additional_photos_in_one_carousel(self):
+        article = self.create_news('gallery-story', self.society, 1)
+        News.objects.filter(pk=article.pk).update(
+            main_photo='news/main/2026/09/main.webp',
+        )
+        NewsGallery.objects.create(
+            news=article,
+            image='news/gallery/2026/09/second.webp',
+            caption='Второй кадр',
+            order=1,
+        )
+
+        response = self.client.get(article.get_absolute_url())
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'data-article-gallery')
+        self.assertContains(response, 'data-gallery-slide', count=2)
+        self.assertContains(response, 'Второй кадр')
 
 
 class EditorialStatusAndSearchTests(TestCase):

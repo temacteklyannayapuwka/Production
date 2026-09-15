@@ -1,0 +1,24 @@
+{% with additional_count=news.gallery.all|length %}
+  {% if news.main_photo or additional_count %}
+    <section class="article-carousel" data-article-gallery aria-label="Фотографии материала «{{ news.title }}»">
+      <div class="article-carousel__viewport" data-gallery-viewport tabindex="0" aria-label="Фотокарусель. Используйте стрелки влево и вправо для переключения">
+        {% if news.main_photo %}
+          <figure class="article-carousel__slide is-active" data-gallery-slide>
+            <img src="{{ news.main_photo.url }}" alt="{{ news.title }}" {% if eager %}fetchpriority="high"{% else %}loading="lazy"{% endif %} decoding="async">
+          </figure>
+        {% endif %}
+        {% for photo in news.gallery.all %}
+          <figure class="article-carousel__slide{% if not news.main_photo and forloop.first %} is-active{% endif %}" data-gallery-slide aria-hidden="true">
+            <img src="{{ photo.image.url }}" alt="{{ photo.caption|default:news.title }}" loading="lazy" decoding="async">
+            {% if photo.caption %}<figcaption>{{ photo.caption }}</figcaption>{% endif %}
+          </figure>
+        {% endfor %}
+      </div>
+      <div class="article-carousel__controls" data-gallery-controls>
+        <button type="button" data-gallery-previous aria-label="Предыдущая фотография">←</button>
+        <div class="article-carousel__status"><span><b data-gallery-current>01</b> / <em data-gallery-total>01</em></span><div class="article-carousel__steps" data-gallery-steps aria-label="Выбор фотографии"></div></div>
+        <button type="button" data-gallery-next aria-label="Следующая фотография">→</button>
+      </div>
+    </section>
+  {% endif %}
+{% endwith %}

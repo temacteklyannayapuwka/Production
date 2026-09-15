@@ -174,6 +174,74 @@ if (heroSlides.length > 1) {
   });
 }
 
+document.querySelectorAll('[data-article-gallery]').forEach((gallery) => {
+  const viewport = gallery.querySelector('[data-gallery-viewport]');
+  const slides = [...gallery.querySelectorAll('[data-gallery-slide]')];
+  const controls = gallery.querySelector('[data-gallery-controls]');
+  const previous = gallery.querySelector('[data-gallery-previous]');
+  const next = gallery.querySelector('[data-gallery-next]');
+  const current = gallery.querySelector('[data-gallery-current]');
+  const total = gallery.querySelector('[data-gallery-total]');
+  const stepsContainer = gallery.querySelector('[data-gallery-steps]');
+  let activeIndex = Math.max(0, slides.findIndex((slide) => slide.classList.contains('is-active')));
+  let pointerStartX = null;
+  let pointerStartY = null;
+
+  if (total) total.textContent = String(slides.length).padStart(2, '0');
+  if (slides.length < 2) {
+    if (controls) controls.hidden = true;
+    slides[0]?.setAttribute('aria-hidden', 'false');
+    return;
+  }
+
+  const steps = slides.map((slide, index) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.setAttribute('aria-label', `Показать фотографию ${index + 1}`);
+    button.addEventListener('click', () => renderArticleGallery(index));
+    stepsContainer?.append(button);
+    return button;
+  });
+
+  function renderArticleGallery(nextIndex) {
+    activeIndex = (nextIndex + slides.length) % slides.length;
+    slides.forEach((slide, index) => {
+      slide.classList.toggle('is-active', index === activeIndex);
+      slide.classList.toggle('is-before', index < activeIndex);
+      slide.setAttribute('aria-hidden', String(index !== activeIndex));
+    });
+    steps.forEach((step, index) => {
+      step.classList.toggle('is-active', index === activeIndex);
+      if (index === activeIndex) step.setAttribute('aria-current', 'true');
+      else step.removeAttribute('aria-current');
+    });
+    if (current) current.textContent = String(activeIndex + 1).padStart(2, '0');
+  }
+
+  previous?.addEventListener('click', () => renderArticleGallery(activeIndex - 1));
+  next?.addEventListener('click', () => renderArticleGallery(activeIndex + 1));
+  viewport?.addEventListener('keydown', (event) => {
+    if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+    event.preventDefault();
+    renderArticleGallery(activeIndex + (event.key === 'ArrowRight' ? 1 : -1));
+  });
+  viewport?.addEventListener('pointerdown', (event) => {
+    pointerStartX = event.clientX;
+    pointerStartY = event.clientY;
+  }, { passive: true });
+  viewport?.addEventListener('pointerup', (event) => {
+    if (pointerStartX === null || pointerStartY === null) return;
+    const deltaX = event.clientX - pointerStartX;
+    const deltaY = event.clientY - pointerStartY;
+    pointerStartX = null;
+    pointerStartY = null;
+    if (Math.abs(deltaX) < 45 || Math.abs(deltaX) <= Math.abs(deltaY)) return;
+    renderArticleGallery(activeIndex + (deltaX < 0 ? 1 : -1));
+  }, { passive: true });
+
+  renderArticleGallery(activeIndex);
+});
+
 const cityHero = document.querySelector('.city-hero');
 const newsFeed = document.querySelector('#news-feed');
 
