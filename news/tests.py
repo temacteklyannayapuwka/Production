@@ -46,7 +46,6 @@ class AdminJavascriptFallbackTests(SimpleTestCase):
             'brand/stavplus-mark.svg',
             'hero/stavropol-aerial.jpg',
             'hero/stavropol-aerial.webp',
-            'hero/stavropol-title-2x.png',
             'hero/carousel/stavropol.webp',
             'hero/carousel/region.webp',
             'hero/carousel/country.webp',
@@ -55,7 +54,6 @@ class AdminJavascriptFallbackTests(SimpleTestCase):
             'hero/menu.svg',
             'hero/sun.svg',
             'hero/crosshair.svg',
-            'hero/stav-mask.svg',
             'social-icons/vk-icon.jpg',
             'social-icons/telegram-icon.jpg',
             'social-icons/ok-icon.jpg',
@@ -82,7 +80,7 @@ class AdminJavascriptFallbackTests(SimpleTestCase):
         response = get_template('base.html').render({})
 
         self.assertIn('/static/news-site.css?v=49', response)
-        self.assertIn('/static/stavplus-redesign.css?v=29', response)
+        self.assertIn('/static/stavplus-redesign.css?v=30', response)
         self.assertIn('family=Inter', response)
         self.assertNotIn('family=Merriweather', response)
         self.assertIn('media="print"', response)
@@ -248,7 +246,7 @@ class EditorialAdminTests(SimpleTestCase):
             "hero/carousel/region.webp",
             "hero/carousel/country.webp",
             "hero/carousel/world.webp",
-            "hero/stavropol-title-2x.png",
+            'city-hero__word--solid',
             'city-hero__coordinates',
             'city-hero__date',
             'city-hero__cta',
@@ -267,6 +265,8 @@ class EditorialAdminTests(SimpleTestCase):
         self.assertIn('Главный материал', source)
         self.assertIn('Читают сейчас', source)
         self.assertIn('Новые материалы', source)
+        self.assertNotIn('city-hero__word-mask', source)
+        self.assertNotIn('city-hero__word--asset', source)
 
     def test_reference_hero_has_explicit_desktop_tablet_and_mobile_layouts(self):
         css_path = Path(__file__).resolve().parents[1] / 'static' / 'stavplus-redesign.css'
@@ -274,21 +274,19 @@ class EditorialAdminTests(SimpleTestCase):
 
         self.assertIn('Desktop hero, measured from the 1920 x 1080 Figma frame.', css)
         self.assertIn('.city-hero__map', css)
-        self.assertIn('hero/stavropol-title-2x.png', css)
+        self.assertIn('.city-hero__word--solid', css)
         self.assertIn('@media (max-width: 1040px)', css)
         self.assertIn('@media (min-width: 721px) and (max-width: 820px)', css)
         self.assertIn('@media (max-width: 720px)', css)
         self.assertIn('scroll-snap-type: y mandatory', css)
         self.assertIn('scroll-snap-stop: always', css)
         self.assertIn('.back-to-top', css)
-        self.assertIn('aspect-ratio: 1584 / 364', css)
         self.assertIn('"top navigation"', css)
         self.assertIn('backdrop-filter: blur(24px) saturate(1.15)', css)
         self.assertIn('grid-template-columns: repeat(2, minmax(0, 1fr))', css)
         self.assertIn('grid-template-rows: repeat(5, auto)', css)
         self.assertIn('grid-auto-flow: column', css)
         self.assertIn('.home-page-body .header-nav', css)
-        self.assertIn('transform: translateX(-1.35%)', css)
         self.assertIn('@keyframes hero-cta-sheen', css)
         self.assertIn('.footer__bar', css)
         self.assertIn('.city-hero__carousel-slide', css)
@@ -298,18 +296,16 @@ class EditorialAdminTests(SimpleTestCase):
         self.assertIn('width: 44px', css)
         self.assertIn('width .8s cubic-bezier(.16, 1, .3, 1)', css)
         self.assertIn('@keyframes hero-pager-countdown { to { transform: scaleX(1); } }', css)
-        self.assertIn('.city-hero__word-mask', css)
-        self.assertIn('.city-hero__word-plain', css)
-        self.assertIn('font-size: min(17.7084vw, 340px)', css)
         self.assertIn('font-size: min(14.5834vw, 280px)', css)
-        self.assertIn('.city-hero__word-plain--stavropol-r', css)
-        self.assertIn('font-size: min(13.5417vw, 260px)', css)
-        self.assertIn('filter: brightness(1.5)', css)
-        self.assertIn('transform: translateY(-3.5%)', css)
-        self.assertIn('left: calc(40.9375% + 4px)', css)
+        self.assertIn('.city-hero__word--stavropol { left: 4.375%; }', css)
+        self.assertIn('.city-hero__word--region { top: 29.35%; left: 14.84%; }', css)
+        self.assertIn('.city-hero__word--country { top: 28.52%; left: 11.04%; }', css)
+        self.assertIn('.city-hero__word--world { top: 30.74%; left: 16.77%; }', css)
+        self.assertNotIn('.city-hero__word-mask', css)
+        self.assertNotIn('.city-hero__word-plain', css)
+        self.assertNotIn('background-clip: text', css)
         self.assertNotIn('city-hero__word-start', css)
         self.assertNotIn('city-hero__word-end', css)
-        self.assertNotIn('transform: scale(', css)
 
     def test_public_script_traps_menu_focus_and_controls_page_utilities(self):
         script_path = Path(__file__).resolve().parents[1] / 'static' / 'news-site.js'

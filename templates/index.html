@@ -1,40 +1,40 @@
 {% extends 'base.html' %}
 {% load static %}
 {% block body_class %}home-page-body{% endblock %}
-{% block extra_head %}<link rel="preload" as="image" href="{% static 'hero/carousel/stavropol.webp' %}" type="image/webp" fetchpriority="high"><link rel="preload" as="image" href="{% static 'hero/stavropol-title-2x.png' %}" type="image/png" fetchpriority="high">{% endblock %}
+{% block extra_head %}<link rel="preload" as="image" href="{% static 'hero/carousel/stavropol.webp' %}" type="image/webp" fetchpriority="high">{% endblock %}
 
 {% block content %}
 <main>
   <section class="city-hero" aria-labelledby="city-hero-title" data-hero-carousel>
     <h1 class="sr-only" id="city-hero-title">Ставрополь+ — новости города, края, страны и мира</h1>
-    <div class="city-hero__carousel-slide is-active" data-hero-slide data-accent="#f5c518"><img class="city-hero__slide-bg" src="{% static 'hero/carousel/stavropol.webp' %}" alt="" width="1672" height="940" fetchpriority="high" decoding="async"></div>
+    <div class="city-hero__carousel-slide is-active" data-hero-slide data-accent="#f5c518"><img class="city-hero__slide-bg" src="{% static 'hero/carousel/stavropol.webp' %}" alt="" width="1376" height="768" fetchpriority="high" decoding="async"></div>
     <div class="city-hero__carousel-slide" data-hero-slide data-accent="#55d6b8" aria-hidden="true"><img class="city-hero__slide-bg" src="{% static 'hero/carousel/region.webp' %}" alt="" width="1672" height="940" decoding="async"></div>
-    <div class="city-hero__carousel-slide" data-hero-slide data-accent="#ff665e" aria-hidden="true"><img class="city-hero__slide-bg" src="{% static 'hero/carousel/country.webp' %}" alt="" width="1672" height="940" decoding="async"></div>
-    <div class="city-hero__carousel-slide" data-hero-slide data-accent="#8a83ff" aria-hidden="true"><img class="city-hero__slide-bg" src="{% static 'hero/carousel/world.webp' %}" alt="" width="1672" height="940" decoding="async"></div>
+    <div class="city-hero__carousel-slide" data-hero-slide data-accent="#ff665e" aria-hidden="true"><img class="city-hero__slide-bg" src="{% static 'hero/carousel/country.webp' %}" alt="" width="1376" height="768" decoding="async"></div>
+    <div class="city-hero__carousel-slide" data-hero-slide data-accent="#8a83ff" aria-hidden="true"><img class="city-hero__slide-bg" src="{% static 'hero/carousel/world.webp' %}" alt="" width="1376" height="768" decoding="async"></div>
     <div class="city-hero__photo-tone" aria-hidden="true"></div>
     <div class="city-hero__left" aria-hidden="true"></div>
     <div class="city-hero__split" aria-hidden="true"></div>
 
-    <div class="city-hero__copy is-active" data-hero-copy aria-hidden="true" style="--hero-image: url('{% static 'hero/carousel/stavropol.webp' %}');">
-      <div class="city-hero__word city-hero__word--asset"></div>
+    <div class="city-hero__copy is-active" data-hero-copy aria-hidden="true">
+      <div class="city-hero__word city-hero__word--solid city-hero__word--stavropol">Ставрополь</div>
       <div class="city-hero__manifesto"><p>БОЛЬШЕ<br>ЧЕМ<br>ГОРОД</p><i></i><span>Новости Ставрополя и края.<br>Люди, события, возможности.<br>Сегодня. Завтра. Всегда рядом.</span></div>
       <div class="city-hero__coordinates"><span>45.0448° N<br>41.9697° E</span><img src="{% static 'hero/crosshair.svg' %}" alt=""></div>
       <p class="city-hero__themes">ГОРОД<br>ЛЮДИ<br>РАЗВИТИЕ</p>
     </div>
-    <div class="city-hero__copy" data-hero-copy aria-hidden="true" style="--hero-image: url('{% static 'hero/carousel/region.webp' %}');">
-      <div class="city-hero__word city-hero__word--live"><span class="city-hero__word-mask">Рег</span><span class="city-hero__word-plain">ион</span></div>
+    <div class="city-hero__copy" data-hero-copy aria-hidden="true">
+      <div class="city-hero__word city-hero__word--solid city-hero__word--region">Регион</div>
       <div class="city-hero__manifesto"><p>ЖИЗНЬ<br>КРАЯ<br>РЯДОМ</p><i></i><span>События Ставропольского края.<br>Районы, станицы, природа.<br>Из первых уст — каждый день.</span></div>
       <div class="city-hero__coordinates"><span>44.5° N<br>42.9° E</span><img src="{% static 'hero/crosshair.svg' %}" alt=""></div>
       <p class="city-hero__themes">ПРИРОДА<br>РАЙОНЫ<br>СТАНИЦЫ</p>
     </div>
-    <div class="city-hero__copy" data-hero-copy aria-hidden="true" style="--hero-image: url('{% static 'hero/carousel/country.webp' %}'); --mask-lift: 20px;">
-      <div class="city-hero__word city-hero__word--live"><span class="city-hero__word-mask">Стр</span><span class="city-hero__word-plain">ана</span></div>
+    <div class="city-hero__copy" data-hero-copy aria-hidden="true">
+      <div class="city-hero__word city-hero__word--solid city-hero__word--country">Страна</div>
       <div class="city-hero__manifesto"><p>СТРАНА<br>В<br>ДВИЖЕНИИ</p><i></i><span>Главное из российской повестки.<br>Политика, экономика, общество.<br>Актуально. Без лишнего.</span></div>
       <div class="city-hero__coordinates"><span>55.7558° N<br>37.6173° E</span><img src="{% static 'hero/crosshair.svg' %}" alt=""></div>
       <p class="city-hero__themes">ПОЛИТИКА<br>ЭКОНОМИКА<br>ОБЩЕСТВО</p>
     </div>
-    <div class="city-hero__copy" data-hero-copy aria-hidden="true" style="--hero-image: url('{% static 'hero/carousel/world.webp' %}'); --mask-lift: 16px; --plain-drop: 8px;">
-      <div class="city-hero__word city-hero__word--live"><span class="city-hero__word-mask">Ми</span><span class="city-hero__word-plain city-hero__word-plain--stavropol-r">р</span></div>
+    <div class="city-hero__copy" data-hero-copy aria-hidden="true">
+      <div class="city-hero__word city-hero__word--solid city-hero__word--world">Мир</div>
       <div class="city-hero__manifesto"><p>МИР<br>БЕЗ<br>ГРАНИЦ</p><i></i><span>Международные события и тренды.<br>Геополитика, экономика, культура.<br>Взгляд из Ставрополя — на мир.</span></div>
       <div class="city-hero__coordinates"><span>0° N<br>0° E</span><img src="{% static 'hero/crosshair.svg' %}" alt=""></div>
       <p class="city-hero__themes">ГЕОПОЛИТИКА<br>КУЛЬТУРА<br>АНАЛИТИКА</p>
