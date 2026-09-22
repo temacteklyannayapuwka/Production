@@ -215,6 +215,170 @@ class News(models.Model):
         return True
 
 
+class NewsSource(models.Model):
+    class SourceType(models.TextChoices):
+        RSS = 'rss', 'RSS'
+        ATOM = 'atom', 'Atom'
+        API = 'api', 'API'
+
+    name = models.CharField('Название источника', max_length=160, unique=True)
+    website_url = models.URLField('Сайт источника')
+    feed_url = models.URLField('URL ленты или API', unique=True)
+    source_type = models.CharField(
+        'Тип источника',
+        max_length=8,
+        choices=SourceType.choices,
+        default=SourceType.RSS,
+    )
+    allowed_domains = models.TextField(
+        'Разрешённые домены',
+        help_text='Домены через запятую. Ссылки вне списка не загружаются.',
+    )
+    is_active = models.BooleanField(
+        'Источник включён',
+        default=False,
+        db_index=True,
+    )
+    editorial_approved = models.BooleanField(
+        'Одобрен редакцией',
+        default=False,
+    )
+    legal_approved = models.BooleanField(
+        'Одобрен юридически',
+        default=False,
+    )
+    terms_url = models.URLField('Условия использования', blank=True)
+    terms_reviewed_at = models.DateTimeField('Условия проверены', null=True, blank=True)
+    robots_reviewed_at = models.DateTimeField('robots.txt проверен', null=True, blank=True)
+    min_request_interval_minutes = models.PositiveIntegerField(
+        'Минимальный интервал запросов, минут',
+        default=60,
+    )
+    last_fetched_at = models.DateTimeField('Последняя загрузка', null=True, blank=True)
+    notes = models.TextField('Редакционные примечания', blank=True)
+    created_at = models.DateTimeField('Создано', auto_now_add=True)
+    updated_at = models.DateTimeField('Обновлено', auto_now=True)
+
+    class Meta:
+        verbose_name = 'Разрешённый источник новостей'
+        verbose_name_plural = 'Разрешённые источники новостей'
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name
+
+    @property
+    def is_approved_for_ingestion(self):
+        return (
+            self.is_active
+            and self.editorial_approved
+            and self.legal_approved
+            and self.terms_reviewed_at is not None
+            and self.robots_reviewed_at is not None
+        )
+
+    def allowed_domain_list(self):
+        return [domain.strip().lower() for domain in self.allowed_domains.split(',') if domain.strip()]
+
+
+class ImportedNewsItem(models.Model):
+    class ProcessingStatus(models.TextChoices):
+        PENDING = 'pending', 'Ожидает рерайта'
+        PROCESSING = 'processing', 'Обрабатывается'
+        DRAFT_READY = 'draft_ready', 'Черновик создан'
+        NEEDS_REVIEW = 'needs_review', 'Требует ручной проверки'
+        FAILED = 'failed', 'Ошибка'
+        PUBLISHED = 'published', 'Опубликовано редактором'
+        SKIPPED = 'skipped', 'Пропущено'
+
+    source = models.ForeignKey(
+        NewsSource,
+        on_delete=models.PROTECT,
+        related_name='imported_items',
+        verbose_name='Источник',
+    )
+    source_url = models.URLField('Оригинальный URL', max_length=1000, unique=True)
+    source_name = models.CharField('Название источника', max_length=160)
+    source_title = models.CharField('Оригинальный заголовок', max_length=500)
+    source_published_at = models.DateTimeField('Дата оригинала', null=True, blank=True)
+    fetched_at = models.DateTimeField('Загружено', default=timezone.now, db_index=True)
+    normalized_text = models.TextField('Нормализованный исходный текст')
+    content_hash = models.CharField(
+        'SHA-256 содержимого',
+        max_length=64,
+        unique=True,
+        editable=False,
+    )
+    extracted_facts = models.JSONField('Кандидаты проверяемых фактов', default=list)
+    status = models.CharField(
+        'Состояние обработки',
+        max_length=20,
+        choices=ProcessingStatus.choices,
+        default=ProcessingStatus.PENDING,
+        db_index=True,
+    )
+    rewrite_model = models.CharField('Модель рерайта', max_length=160, blank=True)
+    prompt_version = models.CharField('Версия промпта', max_length=40, blank=True)
+    provider_response_id = models.CharField('ID ответа провайдера', max_length=160, blank=True)
+    source_facts = models.JSONField('Факты из результата модели', default=list, blank=True)
+    warnings = models.JSONField('Предупреждения', default=list, blank=True)
+    error_message = models.TextField('Ошибка', blank=True)
+    retry_count = models.PositiveIntegerField('Количество попыток', default=0)
+    input_tokens = models.PositiveIntegerField('Входные токены', null=True, blank=True)
+    output_tokens = models.PositiveIntegerField('Выходные токены', null=True, blank=True)
+    provider_cost_usd = models.DecimalField(
+        'Стоимость провайдера, USD',
+        max_digits=12,
+        decimal_places=8,
+        null=True,
+        blank=True,
+    )
+    created_news = models.OneToOneField(
+        News,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='ai_import',
+        verbose_name='Созданный черновик',
+    )
+    last_attempted_at = models.DateTimeField('Последняя попытка', null=True, blank=True)
+    created_at = models.DateTimeField('Создано', auto_now_add=True)
+    updated_at = models.DateTimeField('Обновлено', auto_now=True)
+
+    class Meta:
+        verbose_name = 'Импортированный материал для AI-рерайта'
+        verbose_name_plural = 'Импортированные материалы для AI-рерайта'
+        ordering = ['-fetched_at', '-pk']
+        indexes = [
+            models.Index(fields=['status', 'fetched_at']),
+        ]
+
+    def __str__(self):
+        return self.source_title
+
+
+class AIRewriteAuditEvent(models.Model):
+    item = models.ForeignKey(
+        ImportedNewsItem,
+        on_delete=models.CASCADE,
+        related_name='audit_events',
+        verbose_name='Материал',
+    )
+    event_type = models.CharField('Тип события', max_length=40, db_index=True)
+    message = models.CharField('Описание', max_length=500)
+    actor = models.CharField('Инициатор', max_length=160, default='system')
+    details = models.JSONField('Безопасные детали', default=dict, blank=True)
+    created_at = models.DateTimeField('Время', auto_now_add=True, db_index=True)
+
+    class Meta:
+        verbose_name = 'Событие AI-конвейера'
+        verbose_name_plural = 'События AI-конвейера'
+        ordering = ['-created_at', '-pk']
+
+    def __str__(self):
+        return f'{self.event_type}: {self.item}'
+
+
 class NewsGallery(models.Model):
     news = models.ForeignKey(News, on_delete=models.CASCADE, related_name='gallery', verbose_name='Новость')
     image = models.ImageField('Изображение', upload_to='news/gallery/%Y/%m/')

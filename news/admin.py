@@ -7,7 +7,16 @@ from django.utils.html import format_html
 from ckeditor_uploader.widgets import CKEditorUploadingWidget
 from unfold.admin import ModelAdmin, StackedInline
 
-from .models import Advertisement, Category, News, NewsGallery, Tag
+from .models import (
+    AIRewriteAuditEvent,
+    Advertisement,
+    Category,
+    ImportedNewsItem,
+    News,
+    NewsGallery,
+    NewsSource,
+    Tag,
+)
 
 
 class CategoryAdminForm(forms.ModelForm):
@@ -284,6 +293,13 @@ class NewsAdmin(ModelAdmin):
 
     @admin.display(description='Источник материала')
     def import_source(self, obj):
+        ai_import = getattr(obj, 'ai_import', None) if obj else None
+        if ai_import:
+            return format_html(
+                'AI-рерайт · <a href="{}">{}</a>',
+                reverse('admin:news_importednewsitem_change', args=(ai_import.pk,)),
+                ai_import.source_name,
+            )
         if obj and obj.legacy_k2_id:
             return f'Архив Joomla K2 · ID {obj.legacy_k2_id}'
         return 'Создано в редакции StavPlus'
@@ -365,6 +381,185 @@ class NewsAdmin(ModelAdmin):
             is_published=False,
         )
         self.message_user(request, 'Выбранные новости переведены в черновики.')
+
+
+@admin.register(NewsSource)
+class NewsSourceAdmin(ModelAdmin):
+    list_display = (
+        'name',
+        'source_type',
+        'is_active',
+        'editorial_approved',
+        'legal_approved',
+        'approval_state',
+        'last_fetched_at',
+    )
+    list_filter = ('source_type', 'is_active', 'editorial_approved', 'legal_approved')
+    search_fields = ('name', 'website_url', 'feed_url', 'allowed_domains')
+    readonly_fields = ('last_fetched_at', 'created_at', 'updated_at')
+    list_filter_sheet = True
+    fieldsets = (
+        ('Источник', {
+            'fields': ('name', 'website_url', 'feed_url', 'source_type', 'allowed_domains'),
+        }),
+        ('Разрешения', {
+            'description': (
+                'Загрузка начнётся только после редакционного и юридического согласования, '
+                'а также документированной проверки robots.txt и условий использования.'
+            ),
+            'fields': (
+                'is_active',
+                'editorial_approved',
+                'legal_approved',
+                'terms_url',
+                'terms_reviewed_at',
+                'robots_reviewed_at',
+            ),
+        }),
+        ('Ограничения запросов', {
+            'fields': ('min_request_interval_minutes', 'last_fetched_at'),
+        }),
+        ('Примечания', {'fields': ('notes', 'created_at', 'updated_at')}),
+    )
+
+    @admin.display(description='Готов к загрузке', boolean=True)
+    def approval_state(self, obj):
+        return obj.is_approved_for_ingestion
+
+
+class AIRewriteAuditEventInline(admin.TabularInline):
+    model = AIRewriteAuditEvent
+    extra = 0
+    can_delete = False
+    fields = ('created_at', 'event_type', 'actor', 'message')
+    readonly_fields = fields
+    ordering = ('-created_at', '-pk')
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(ImportedNewsItem)
+class ImportedNewsItemAdmin(ModelAdmin):
+    list_display = (
+        'source_title_short',
+        'source',
+        'status',
+        'rewrite_model',
+        'fetched_at',
+        'created_draft_link',
+    )
+    list_filter = ('status', 'source', 'rewrite_model', 'fetched_at')
+    search_fields = ('source_title', 'source_url', 'source_name', 'content_hash', 'error_message')
+    list_filter_sheet = True
+    readonly_fields = (
+        'source',
+        'source_url_link',
+        'source_name',
+        'source_title',
+        'source_published_at',
+        'fetched_at',
+        'normalized_text',
+        'content_hash',
+        'extracted_facts',
+        'status',
+        'rewrite_model',
+        'prompt_version',
+        'provider_response_id',
+        'source_facts',
+        'warnings',
+        'error_message',
+        'retry_count',
+        'input_tokens',
+        'output_tokens',
+        'provider_cost_usd',
+        'created_draft_link',
+        'last_attempted_at',
+        'created_at',
+        'updated_at',
+    )
+    fields = readonly_fields
+    inlines = (AIRewriteAuditEventInline,)
+    actions = ('retry_rewrite', 'publish_created_draft')
+    ordering = ('-fetched_at', '-pk')
+
+    @admin.display(description='Материал')
+    def source_title_short(self, obj):
+        return f'{obj.source_title[:70]}…' if len(obj.source_title) > 70 else obj.source_title
+
+    @admin.display(description='Оригинальный URL')
+    def source_url_link(self, obj):
+        return format_html(
+            '<a href="{}" target="_blank" rel="noopener noreferrer">{}</a>',
+            obj.source_url,
+            obj.source_url,
+        )
+
+    @admin.display(description='Созданный черновик')
+    def created_draft_link(self, obj):
+        if not obj.created_news_id:
+            return '—'
+        return format_html(
+            '<a href="{}">{}</a>',
+            reverse('admin:news_news_change', args=(obj.created_news_id,)),
+            obj.created_news.title,
+        )
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related('source', 'created_news')
+
+    @admin.action(description='Повторить AI-рерайт')
+    def retry_rewrite(self, request, queryset):
+        eligible = queryset.exclude(
+            status__in=(
+                ImportedNewsItem.ProcessingStatus.PROCESSING,
+                ImportedNewsItem.ProcessingStatus.PUBLISHED,
+            )
+        )
+        count = 0
+        for item in eligible:
+            item.status = ImportedNewsItem.ProcessingStatus.PENDING
+            item.error_message = ''
+            item.save(update_fields=('status', 'error_message', 'updated_at'))
+            AIRewriteAuditEvent.objects.create(
+                item=item,
+                event_type='retry_requested',
+                actor=request.user.get_username(),
+                message='Редактор запросил повторный AI-рерайт.',
+            )
+            count += 1
+        self.message_user(request, f'На повторный рерайт отправлено: {count}.')
+
+    @admin.action(description='Отправить созданный черновик в публикацию')
+    def publish_created_draft(self, request, queryset):
+        published = 0
+        skipped = 0
+        for item in queryset.select_related('created_news'):
+            news = item.created_news
+            if not news or not item.source_url or not news.title.strip() or not news.content.strip():
+                skipped += 1
+                continue
+            news.editorial_status = News.EditorialStatus.PUBLISHED
+            news.is_published = True
+            news.date_start = timezone.now()
+            news.save(update_fields=('editorial_status', 'is_published', 'date_start', 'updated_at'))
+            item.status = ImportedNewsItem.ProcessingStatus.PUBLISHED
+            item.save(update_fields=('status', 'updated_at'))
+            AIRewriteAuditEvent.objects.create(
+                item=item,
+                event_type='published_manually',
+                actor=request.user.get_username(),
+                message='Редактор вручную отправил AI-черновик в публикацию.',
+            )
+            published += 1
+        if published:
+            self.message_user(request, f'Опубликовано вручную: {published}.')
+        if skipped:
+            self.message_user(
+                request,
+                f'Пропущено из-за отсутствующего черновика или обязательных полей: {skipped}.',
+                level=messages.WARNING,
+            )
 
 
 class AdvertisementAdminForm(forms.ModelForm):
