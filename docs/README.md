@@ -12,5 +12,7 @@
 
 Актуальные отчёты для тимлида:
 
+- [`AI_NEWS_PIPELINE.md`](AI_NEWS_PIPELINE.md) — безопасный draft-only конвейер внешних новостей и OpenRouter;
+- [`AI_NEWS_PIPELINE_2026-09-22.md`](reports/AI_NEWS_PIPELINE_2026-09-22.md) — аудит, архитектура, тесты, стоимость и rollback AI-конвейера;
 - [`K2_IMPORT_TECHNICAL_REPORT_2026-09-10.md`](reports/K2_IMPORT_TECHNICAL_REPORT_2026-09-10.md) — логика и результаты переноса Joomla K2;
 - [`DESIGN_IMPLEMENTATION_REPORT_2026-09-10.md`](reports/DESIGN_IMPLEMENTATION_REPORT_2026-09-10.md) — реализация Figma-дизайна, адаптивность и UI-аудит.
