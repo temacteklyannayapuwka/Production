@@ -1,0 +1,8 @@
+{% if news.ai_import %}
+  <p class="article-source-attribution">
+    Материал подготовлен с применением AI на основе опубликованных данных источника
+    <a href="{{ news.ai_import.source_url }}" target="_blank" rel="noopener noreferrer">{{ news.ai_import.source_name }}</a>{% if news.ai_import.source_published_at %}
+    от <time datetime="{{ news.ai_import.source_published_at|date:'c' }}">{{ news.ai_import.source_published_at|date:'j E Y, H:i' }}</time>{% endif %}.
+    Текст прошёл редакторскую проверку и не является собственным репортажем с места события.
+  </p>
+{% endif %}

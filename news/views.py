@@ -82,7 +82,7 @@ def serve_public_javascript(request):
 def published_news(*, with_tags=True):
     """News that may be shown publicly at the current moment."""
     now = timezone.now()
-    queryset = News.objects.select_related("category")
+    queryset = News.objects.select_related("category", "ai_import")
     if with_tags:
         queryset = queryset.prefetch_related(
             Prefetch(

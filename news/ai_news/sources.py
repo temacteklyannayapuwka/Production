@@ -1,0 +1,184 @@
+from __future__ import annotations
+
+import hashlib
+import ipaddress
+import re
+from dataclasses import dataclass
+from datetime import datetime, timezone as datetime_timezone
+from email.utils import parsedate_to_datetime
+from urllib.parse import urlparse
+from urllib.request import Request, urlopen
+from urllib.robotparser import RobotFileParser
+from xml.etree import ElementTree
+
+from .sanitization import normalize_external_text
+
+
+USER_AGENT = 'StavplusAINewsBot/1.0 (+https://stavplus.ru/)'
+MAX_FEED_BYTES = 2 * 1024 * 1024
+INJECTION_MARKERS = (
+    'ignore previous',
+    'ignore all previous',
+    'system prompt',
+    'developer message',
+    'выполни инструкц',
+    'игнорируй предыдущ',
+    'системный промпт',
+)
+SENTENCE_RE = re.compile(r'(?<=[.!?])\s+')
+
+
+class SourceFetchError(RuntimeError):
+    pass
+
+
+@dataclass(frozen=True)
+class FeedEntry:
+    title: str
+    url: str
+    published_at: datetime | None
+    content: str
+
+
+def validate_source_url(url: str, allowed_domains: list[str]) -> str:
+    parsed = urlparse(url)
+    if parsed.scheme not in {'http', 'https'} or not parsed.hostname:
+        raise SourceFetchError('Only absolute HTTP(S) source URLs are allowed.')
+    if parsed.username or parsed.password:
+        raise SourceFetchError('Source URLs with credentials are not allowed.')
+    hostname = parsed.hostname.rstrip('.').lower()
+    if hostname == 'localhost' or hostname.endswith('.local'):
+        raise SourceFetchError('Local source hosts are not allowed.')
+    try:
+        address = ipaddress.ip_address(hostname)
+    except ValueError:
+        address = None
+    if address is not None and not address.is_global:
+        raise SourceFetchError('Private or reserved source addresses are not allowed.')
+    domains = [domain.lstrip('.').rstrip('.').lower() for domain in allowed_domains]
+    if not domains or not any(hostname == domain or hostname.endswith(f'.{domain}') for domain in domains):
+        raise SourceFetchError('Source URL is outside the approved domain allowlist.')
+    return url
+
+
+def fetch_bytes(url: str, *, allowed_domains: list[str], timeout: int) -> bytes:
+    validate_source_url(url, allowed_domains)
+    request = Request(url, headers={'User-Agent': USER_AGENT, 'Accept': 'application/xml,text/xml,*/*'})
+    with urlopen(request, timeout=timeout) as response:
+        validate_source_url(response.geturl(), allowed_domains)
+        payload = response.read(MAX_FEED_BYTES + 1)
+    if len(payload) > MAX_FEED_BYTES:
+        raise SourceFetchError('Source response exceeded the 2 MiB safety limit.')
+    return payload
+
+
+def robots_allows(url: str, *, allowed_domains: list[str], timeout: int) -> bool:
+    parsed = urlparse(url)
+    robots_url = f'{parsed.scheme}://{parsed.netloc}/robots.txt'
+    payload = fetch_bytes(robots_url, allowed_domains=allowed_domains, timeout=timeout)
+    parser = RobotFileParser()
+    parser.set_url(robots_url)
+    parser.parse(payload.decode('utf-8', errors='replace').splitlines())
+    return parser.can_fetch(USER_AGENT, url)
+
+
+def parse_feed(payload: bytes) -> list[FeedEntry]:
+    try:
+        root = ElementTree.fromstring(payload)
+    except ElementTree.ParseError as error:
+        raise SourceFetchError('Source returned invalid RSS/Atom XML.') from error
+
+    root_name = _local_name(root.tag)
+    if root_name == 'feed':
+        nodes = [node for node in root if _local_name(node.tag) == 'entry']
+    else:
+        nodes = [node for node in root.iter() if _local_name(node.tag) == 'item']
+    return [entry for node in nodes if (entry := _parse_entry(node)) is not None]
+
+
+def _parse_entry(node) -> FeedEntry | None:
+    values: dict[str, list] = {}
+    for child in node:
+        values.setdefault(_local_name(child.tag), []).append(child)
+    title = _element_text(_first(values, 'title'))
+    link_node = _first(values, 'link')
+    url = ''
+    if link_node is not None:
+        url = (link_node.attrib.get('href') or _element_text(link_node)).strip()
+    published_node = _first(values, 'published')
+    if published_node is None:
+        published_node = _first(values, 'updated')
+    if published_node is None:
+        published_node = _first(values, 'pubDate')
+    published = _element_text(published_node)
+    content_node = None
+    for field_name in ('encoded', 'content', 'description', 'summary'):
+        content_node = _first(values, field_name)
+        if content_node is not None:
+            break
+    content = _element_text(content_node, include_markup=True)
+    if not title or not url or not content:
+        return None
+    return FeedEntry(title=title, url=url, published_at=_parse_date(published), content=content)
+
+
+def _first(values, name):
+    items = values.get(name, [])
+    return items[0] if items else None
+
+
+def _element_text(element, *, include_markup=False):
+    if element is None:
+        return ''
+    if include_markup and list(element):
+        return ''.join(ElementTree.tostring(child, encoding='unicode') for child in element)
+    return ''.join(element.itertext()).strip()
+
+
+def _local_name(tag):
+    return str(tag).rsplit('}', 1)[-1]
+
+
+def _parse_date(value: str) -> datetime | None:
+    if not value:
+        return None
+    try:
+        parsed = parsedate_to_datetime(value)
+    except (TypeError, ValueError):
+        try:
+            parsed = datetime.fromisoformat(value.replace('Z', '+00:00'))
+        except ValueError:
+            return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=datetime_timezone.utc)
+    return parsed
+
+
+def normalize_entry(entry: FeedEntry, *, max_chars: int) -> tuple[str, str]:
+    title = normalize_external_text(entry.title, max_chars=500)
+    content = normalize_external_text(entry.content, max_chars=max_chars)
+    return title, content
+
+
+def content_digest(title: str, content: str) -> str:
+    canonical = f'{title.strip()}\n{content.strip()}'.casefold().encode('utf-8')
+    return hashlib.sha256(canonical).hexdigest()
+
+
+def extract_fact_candidates(content: str, source_url: str, *, limit: int = 12) -> list[dict]:
+    candidates = []
+    for sentence in SENTENCE_RE.split(content):
+        text = sentence.strip()
+        lowered = text.casefold()
+        if len(text) < 20 or any(marker in lowered for marker in INJECTION_MARKERS):
+            continue
+        candidates.append(
+            {
+                'id': f'fact-{len(candidates) + 1}',
+                'statement': text[:700],
+                'source_url': source_url,
+            }
+        )
+        if len(candidates) >= limit:
+            break
+    return candidates
