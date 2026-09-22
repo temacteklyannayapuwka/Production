@@ -1,0 +1,179 @@
+from __future__ import annotations
+
+from django.conf import settings
+from django.db import transaction
+from django.utils import timezone
+
+from news.models import AIRewriteAuditEvent, Category, ImportedNewsItem, News, Tag
+
+from .openrouter import PROMPT_VERSION, OpenRouterClient, OpenRouterError, StructuredOutputError
+from .sanitization import normalize_external_text, sanitize_generated_html
+
+
+def assert_pipeline_enabled() -> None:
+    if settings.AUTO_PUBLISH_AI_NEWS:
+        raise OpenRouterError(
+            'AUTO_PUBLISH_AI_NEWS=true is not supported in version 1. '
+            'AI drafts require manual publication.'
+        )
+    if not settings.AI_NEWS_ENABLED:
+        raise OpenRouterError('AI_NEWS_ENABLED is false; the pipeline is disabled.')
+
+
+def configured_client() -> OpenRouterClient:
+    return OpenRouterClient(
+        api_key=settings.OPENROUTER_API_KEY,
+        model=settings.OPENROUTER_MODEL,
+        fallback_model=settings.OPENROUTER_FALLBACK_MODEL,
+        timeout=settings.OPENROUTER_TIMEOUT_SECONDS,
+        max_retries=settings.OPENROUTER_MAX_RETRIES,
+        max_input_chars=settings.OPENROUTER_MAX_INPUT_CHARS,
+    )
+
+
+def rewrite_item(item: ImportedNewsItem, *, client: OpenRouterClient) -> ImportedNewsItem:
+    if not item.source_url:
+        raise OpenRouterError('An imported item without a source URL cannot be rewritten.')
+
+    item.status = ImportedNewsItem.ProcessingStatus.PROCESSING
+    item.last_attempted_at = timezone.now()
+    item.retry_count += 1
+    item.error_message = ''
+    item.save(
+        update_fields=(
+            'status',
+            'last_attempted_at',
+            'retry_count',
+            'error_message',
+            'updated_at',
+        )
+    )
+    AIRewriteAuditEvent.objects.create(
+        item=item,
+        event_type='rewrite_started',
+        message='Запущен AI-рерайт с обязательным structured output.',
+        details={'attempt': item.retry_count},
+    )
+
+    try:
+        result = client.rewrite(
+            source_name=item.source_name,
+            source_url=item.source_url,
+            source_published_at=item.source_published_at,
+            source_title=item.source_title,
+            source_text=item.normalized_text,
+            fact_candidates=item.extracted_facts,
+        )
+        _store_draft(item, result)
+    except Exception as error:
+        safe_error = _safe_error_message(error)
+        item.status = ImportedNewsItem.ProcessingStatus.FAILED
+        item.error_message = safe_error
+        item.save(update_fields=('status', 'error_message', 'updated_at'))
+        AIRewriteAuditEvent.objects.create(
+            item=item,
+            event_type='rewrite_failed',
+            message=safe_error,
+        )
+        raise
+    return item
+
+
+def _store_draft(item, result) -> None:
+    data = result.data
+    title = normalize_external_text(data['title'], max_chars=255)
+    excerpt = normalize_external_text(data['excerpt'], max_chars=500)
+    content = sanitize_generated_html(data['content'])
+    meta_title = normalize_external_text(data['meta_title'], max_chars=255)
+    meta_description = normalize_external_text(data['meta_description'], max_chars=255)
+    if not title or not excerpt or len(normalize_external_text(content, max_chars=30000)) < 50:
+        raise StructuredOutputError('Sanitized draft is missing required editorial content.')
+
+    category = None
+    category_name = data['category_suggestion'].strip()
+    if category_name:
+        category = Category.objects.filter(name__iexact=category_name, is_active=True).first()
+
+    tags = []
+    for tag_name in data['tags']:
+        tag = Tag.objects.filter(name__iexact=tag_name.strip(), is_active=True).first()
+        if tag and tag not in tags:
+            tags.append(tag)
+
+    with transaction.atomic():
+        if item.created_news_id:
+            news = News.objects.select_for_update().get(pk=item.created_news_id)
+            news.title = title
+            news.excerpt = excerpt
+            news.content = content
+            news.category = category
+            news.meta_title = meta_title
+            news.meta_description = meta_description
+            news.editorial_status = News.EditorialStatus.DRAFT
+            news.is_published = False
+            news.is_featured = False
+            news.save()
+        else:
+            news = News.objects.create(
+                title=title,
+                excerpt=excerpt,
+                content=content,
+                category=category,
+                meta_title=meta_title,
+                meta_description=meta_description,
+                editorial_status=News.EditorialStatus.DRAFT,
+                is_published=False,
+                is_featured=False,
+                date_start=item.source_published_at or timezone.now(),
+            )
+        news.tags.set(tags)
+        item.created_news = news
+        item.status = (
+            ImportedNewsItem.ProcessingStatus.NEEDS_REVIEW
+            if data['warnings']
+            else ImportedNewsItem.ProcessingStatus.DRAFT_READY
+        )
+        item.rewrite_model = result.model
+        item.prompt_version = PROMPT_VERSION
+        item.provider_response_id = result.response_id
+        item.source_facts = data['source_facts']
+        item.warnings = data['warnings']
+        item.error_message = ''
+        item.input_tokens = result.input_tokens
+        item.output_tokens = result.output_tokens
+        item.provider_cost_usd = result.cost_usd
+        item.save(
+            update_fields=(
+                'created_news',
+                'status',
+                'rewrite_model',
+                'prompt_version',
+                'provider_response_id',
+                'source_facts',
+                'warnings',
+                'error_message',
+                'input_tokens',
+                'output_tokens',
+                'provider_cost_usd',
+                'updated_at',
+            )
+        )
+        AIRewriteAuditEvent.objects.create(
+            item=item,
+            event_type='draft_created' if not data['warnings'] else 'manual_review_required',
+            message=(
+                'Создан или обновлён только редакционный черновик. Автопубликация не выполнялась.'
+            ),
+            details={
+                'news_id': news.pk,
+                'model': result.model,
+                'prompt_version': item.prompt_version,
+                'warnings_count': len(data['warnings']),
+            },
+        )
+
+
+def _safe_error_message(error: Exception) -> str:
+    if isinstance(error, OpenRouterError):
+        return str(error)[:1000]
+    return f'{type(error).__name__}: processing failed'[:1000]
