@@ -12,6 +12,10 @@
 
 Актуальные отчёты для тимлида:
 
+- [`SEO_INDEXING.md`](SEO_INDEXING.md) — проверка robots/sitemap/метатегов,
+  PageSpeed, Google Search Console, Яндекс Вебмастер и rollback;
+- [`SEO_AUDIT_STAVPLUS_2026-09-22.md`](reports/SEO_AUDIT_STAVPLUS_2026-09-22.md) —
+  технический SEO-аудит и применение двух исходных чек-листов;
 - [`AI_NEWS_PIPELINE.md`](AI_NEWS_PIPELINE.md) — безопасный draft-only конвейер внешних новостей и OpenRouter;
 - [`AI_NEWS_PIPELINE_2026-09-22.md`](reports/AI_NEWS_PIPELINE_2026-09-22.md) — аудит, архитектура, тесты, стоимость и rollback AI-конвейера;
 - [`K2_IMPORT_TECHNICAL_REPORT_2026-09-10.md`](reports/K2_IMPORT_TECHNICAL_REPORT_2026-09-10.md) — логика и результаты переноса Joomla K2;

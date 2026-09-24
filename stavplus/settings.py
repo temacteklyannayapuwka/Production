@@ -55,6 +55,12 @@ ALLOWED_HOSTS = [host.strip() for host in os.getenv(
     'localhost,127.0.0.1,new.stavplus.ru,stavplus.ru,www.stavplus.ru',
 ).split(',') if host.strip()]
 
+# Search-facing URLs must never depend on an arbitrary request Host header.
+# The redesign is still tested on new.stavplus.ru, while stavplus.ru is the
+# canonical public property confirmed by the deployment configuration.
+PUBLIC_SITE_URL = os.getenv('PUBLIC_SITE_URL', 'https://stavplus.ru').rstrip('/')
+SEO_NOINDEX_HOSTS = {'new.stavplus.ru'}
+
 OPENROUTER_API_KEY = os.getenv('OPENROUTER_API_KEY', '')
 OPENROUTER_MODEL = os.getenv('OPENROUTER_MODEL', '')
 OPENROUTER_FALLBACK_MODEL = os.getenv('OPENROUTER_FALLBACK_MODEL', '')
@@ -83,6 +89,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sitemaps',
     'ckeditor',
     'ckeditor_uploader',
     'news',
@@ -95,6 +102,7 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
+    'news.middleware.SearchEnginePolicyMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
