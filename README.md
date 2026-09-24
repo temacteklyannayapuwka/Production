@@ -40,6 +40,8 @@ ISPmanager или в конфигурации процесса. Не испол�
 - `DJANGO_SECRET_KEY` — уникальный секретный ключ;
 - `DJANGO_DEBUG=0` — отключает отладочный режим;
 - `DJANGO_ALLOWED_HOSTS=stavplus.ru,www.stavplus.ru` — домены сайта.
+- `PUBLIC_SITE_URL=https://stavplus.ru` — доверенный канонический origin для
+  canonical, Open Graph, JSON-LD, robots и sitemap.
 
 `.env`, база `db.sqlite3`, пользовательские загрузки `media/`, собранная статика
 и виртуальное окружение намеренно исключены из Git. Исходные frontend-файлы

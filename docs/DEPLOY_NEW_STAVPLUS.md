@@ -25,6 +25,12 @@
     DJANGO_DEBUG=0
     DJANGO_ALLOWED_HOSTS=new.stavplus.ru
     DJANGO_SECRET_KEY=<отдельный тестовый секрет>
+    PUBLIC_SITE_URL=https://stavplus.ru
+
+`new.stavplus.ru` остаётся тестовым контуром: приложение добавляет к его
+ответам `X-Robots-Tag: noindex, nofollow`. Canonical и sitemap при этом всегда
+указывают на основной `https://stavplus.ru`, чтобы тестовый домен не становился
+конкурирующим зеркалом.
 
 Если используется PostgreSQL, DB_NAME должен указывать на тестовую базу. Не
 запускайте миграции редизайна против production-базы без отдельного плана.
