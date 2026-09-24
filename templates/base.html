@@ -1,12 +1,31 @@
-{% load static %}
+{% load static seo_tags %}
 <!doctype html>
 <html lang="ru">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#071b2d">
-    <meta name="description" content="{% block meta_description %}Ставрополь+ — новости Ставропольского края и Северного Кавказа.{% endblock %}">
-    <title>{% block title %}Ставрополь+ — новости без лишнего{% endblock %}</title>
+    <title>{{ seo.title|default:'Ставрополь+ — новости Ставрополя и края' }}</title>
+    <meta name="description" content="{{ seo.description|default:'Ставрополь+ — новости Ставрополя, Ставропольского края, России и мира.' }}">
+    <meta name="robots" content="{{ seo.robots|default:'index,follow' }}">
+    <link rel="canonical" href="{{ seo.canonical_url }}">
+    <meta property="og:locale" content="ru_RU">
+    <meta property="og:site_name" content="Ставрополь+">
+    <meta property="og:type" content="{{ seo.page_type|default:'website' }}">
+    <meta property="og:title" content="{{ seo.title|default:'Ставрополь+ — новости Ставрополя и края' }}">
+    <meta property="og:description" content="{{ seo.description|default:'Ставрополь+ — новости Ставрополя, Ставропольского края, России и мира.' }}">
+    <meta property="og:url" content="{{ seo.canonical_url }}">
+    <meta property="og:image" content="{{ seo.image_url }}">
+    <meta property="og:image:alt" content="{{ seo.title|default:'Ставрополь+' }}">
+    {% if seo.published_time %}<meta property="article:published_time" content="{{ seo.published_time }}">{% endif %}
+    {% if seo.modified_time %}<meta property="article:modified_time" content="{{ seo.modified_time }}">{% endif %}
+    {% if seo.section %}<meta property="article:section" content="{{ seo.section }}">{% endif %}
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ seo.title|default:'Ставрополь+' }}">
+    <meta name="twitter:description" content="{{ seo.description|default:'Новости Ставрополя и Ставропольского края.' }}">
+    <meta name="twitter:image" content="{{ seo.image_url }}">
+    <link rel="icon" href="{% static 'brand/stavplus-mark.svg' %}" type="image/svg+xml">
+    {% json_ld seo.structured_data %}
     {% block extra_head %}{% endblock %}
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

@@ -1,7 +1,5 @@
 {% extends 'base.html' %}
 {% load news_content %}
-{% block title %}{{ article.meta_title|default:article.title }} — Ставрополь+{% endblock %}
-{% block meta_description %}{{ article.meta_description|default:article.excerpt|default:article.title|striptags|truncatechars:160 }}{% endblock %}
 {% block content %}
 <main class="site-shell article-page">
   {% include 'components/ad_slot.html' with ad=advertisements.top css_class='ad--leader' slot_size='970 × 90' slot_label='верх сайта' %}

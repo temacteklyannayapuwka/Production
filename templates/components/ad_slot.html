@@ -1,11 +1,12 @@
+{% load seo_tags %}
 {% if ad %}
   <aside class="ad {{ css_class }} ad--filled" aria-label="Рекламный баннер: {{ ad.name }}">
     {% if ad.link %}
       <a class="ad__link" href="{{ ad.link }}"{% if ad.open_in_new_tab %} target="_blank" rel="sponsored noopener"{% endif %}>
-        <img class="ad__image" src="{{ ad.image.url }}" alt="{{ ad.alt_text|default:ad.name }}" loading="lazy">
+        <img class="ad__image" src="{{ ad.image.url }}" alt="{{ ad.alt_text|default:ad.name }}" loading="lazy" decoding="async" {% image_dimensions ad.image %}>
       </a>
     {% else %}
-      <img class="ad__image" src="{{ ad.image.url }}" alt="{{ ad.alt_text|default:ad.name }}" loading="lazy">
+      <img class="ad__image" src="{{ ad.image.url }}" alt="{{ ad.alt_text|default:ad.name }}" loading="lazy" decoding="async" {% image_dimensions ad.image %}>
     {% endif %}
     <span class="ad__label">Реклама</span>
   </aside>

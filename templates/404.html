@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<main class="site-shell rubric-page error-page">
+  <header class="rubric-intro">
+    <p>Ошибка 404</p>
+    <h1>Страница не найдена</h1>
+    <span>Адрес мог измениться или материал больше недоступен.</span>
+  </header>
+  <p><a href="{% url 'index' %}">Вернуться на главную страницу</a></p>
+</main>
+{% endblock %}

@@ -1,15 +1,26 @@
 import mimetypes
 from pathlib import PurePosixPath
 
+from django.conf import settings
 from django.contrib.staticfiles import finders
 from django.core.paginator import Paginator
 from django.db.models import Count, F, Prefetch, Q
-from django.http import FileResponse, Http404
-from django.shortcuts import get_object_or_404, render
+from django.http import FileResponse, Http404, HttpResponse
+from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.html import strip_tags
 from django.utils import timezone
 
 from .models import Advertisement, Category, News, Tag
+from .seo import (
+    absolute_url,
+    article_seo,
+    category_seo,
+    home_seo,
+    not_found_seo,
+    search_seo,
+    tag_seo,
+)
+from .sitemaps import GOOGLE_NEWS_SITEMAPS, PUBLIC_SITEMAPS, sitemap_response
 
 
 ARTICLE_CATEGORY_FLOW = (
@@ -183,7 +194,7 @@ def active_advertisements():
     return {banner.placement: banner for banner in banners}
 
 
-def shared_context(**extra):
+def shared_context(request, **extra):
     categories = list(navigation_categories())
     context = {
         "navigation_categories": categories,
@@ -217,6 +228,8 @@ def index(request):
         request,
         "index.html",
         shared_context(
+            request,
+            seo=home_seo(),
             hero_news=news[0] if news else None,
             card_news=news[1:5],
             # The compact feed is an independent chronology. It excludes only
@@ -237,6 +250,8 @@ def category_page(request, category_slug):
         request,
         "category.html",
         shared_context(
+            request,
+            seo=category_seo(category, page_obj),
             active_category=category,
             category_news=page_obj,
             page_obj=page_obj,
@@ -253,6 +268,8 @@ def tag_page(request, tag_slug):
         request,
         "tag.html",
         shared_context(
+            request,
+            seo=tag_seo(tag, page_obj),
             active_tag=tag,
             tag_news=page_obj,
             page_obj=page_obj,
@@ -279,7 +296,13 @@ def search(request):
     return render(
         request,
         "search.html",
-        shared_context(query=query, search_results=page_obj, page_obj=page_obj),
+        shared_context(
+            request,
+            seo=search_seo(query),
+            query=query,
+            search_results=page_obj,
+            page_obj=page_obj,
+        ),
     )
 
 
@@ -345,6 +368,8 @@ def news_detail(request, slug):
         request,
         "article.html",
         shared_context(
+            request,
+            seo=article_seo(article),
             article=article,
             news_feed=news_feed,
             article_sequence_number=article_sequence_number,
@@ -409,30 +434,74 @@ def _search_fragment(text, query, radius=115):
     return f"{'…' if start else ''}{clean_text[start:end]}{'…' if end < len(clean_text) else ''}"
 
 
-# Legacy paths remain available for old bookmarks and navigation links.
-def politika(request):
-    return category_page(request, "politika")
+def legacy_category_redirect(request, category_slug):
+    """Permanently consolidate an old section URL into its canonical rubric."""
+    category = get_object_or_404(
+        Category.objects.filter(is_active=True),
+        slug=category_slug,
+    )
+    return redirect(
+        "category",
+        category_slug=category.slug,
+        permanent=True,
+    )
 
 
-def ekonomika(request):
-    return category_page(request, "ekonomika")
+def index_file_redirect(request):
+    """Consolidate legacy web-server index filenames into the site root."""
+    return redirect("index", permanent=True)
 
 
-def obshchestvo(request):
-    return category_page(request, "obshchestvo")
+def robots_txt(request):
+    hostname = request.get_host().partition(":")[0].lower()
+    if hostname in settings.SEO_NOINDEX_HOSTS:
+        rules = [
+            "User-agent: *",
+            "Allow: /",
+            "# HTML responses use X-Robots-Tag: noindex, nofollow.",
+        ]
+    else:
+        rules = [
+            "User-agent: *",
+            "Disallow: /admin/",
+            "Disallow: /ckeditor/",
+            "# Search stays crawlable so its noindex directive can be processed.",
+            "Disallow: /static/admin/",
+            "Disallow: /static/ckeditor/",
+            "Disallow: /static/unfold/",
+            "Allow: /static/",
+            "Allow: /media/",
+        ]
+    rules.extend(
+        [
+            f"Sitemap: {absolute_url('/sitemap.xml')}",
+            f"Sitemap: {absolute_url('/news-sitemap.xml')}",
+        ]
+    )
+    return HttpResponse("\n".join(rules) + "\n", content_type="text/plain")
 
 
-def mir(request):
-    return category_page(request, "mir")
+def public_sitemap(request):
+    return sitemap_response(request, PUBLIC_SITEMAPS)
 
 
-def tehnologii(request):
-    return category_page(request, "tehnologii")
+def google_news_sitemap(request):
+    return sitemap_response(
+        request,
+        GOOGLE_NEWS_SITEMAPS,
+        template_name="news_sitemap.xml",
+    )
 
 
-def sport(request):
-    return category_page(request, "sport")
-
-
-def kultura(request):
-    return category_page(request, "kultura")
+def page_not_found(request, exception):
+    return render(
+        request,
+        "404.html",
+        {
+            "seo": not_found_seo(request.path),
+            "navigation_categories": (),
+            "header_categories": (),
+            "advertisements": {},
+        },
+        status=404,
+    )
