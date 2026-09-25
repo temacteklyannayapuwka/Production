@@ -2,12 +2,20 @@ from __future__ import annotations
 
 from django.conf import settings
 from django.db import transaction
+from django.db.models import F, Q
 from django.utils import timezone
 
 from news.models import AIRewriteAuditEvent, Category, ImportedNewsItem, News, Tag
 
 from .openrouter import PROMPT_VERSION, OpenRouterClient, OpenRouterError, StructuredOutputError
 from .sanitization import normalize_external_text, sanitize_generated_html
+
+
+STALE_REWRITE_MESSAGE = 'Предыдущая попытка рерайта прервана или превысила допустимое время.'
+
+
+class RewriteClaimError(OpenRouterError):
+    """The item could not be claimed, or this worker no longer owns its claim."""
 
 
 def assert_pipeline_enabled() -> None:
@@ -32,30 +40,13 @@ def configured_client() -> OpenRouterClient:
 
 
 def rewrite_item(item: ImportedNewsItem, *, client: OpenRouterClient) -> ImportedNewsItem:
-    if not item.source_url:
-        raise OpenRouterError('An imported item without a source URL cannot be rewritten.')
-
-    item.status = ImportedNewsItem.ProcessingStatus.PROCESSING
-    item.last_attempted_at = timezone.now()
-    item.retry_count += 1
-    item.error_message = ''
-    item.save(
-        update_fields=(
-            'status',
-            'last_attempted_at',
-            'retry_count',
-            'error_message',
-            'updated_at',
-        )
-    )
-    AIRewriteAuditEvent.objects.create(
-        item=item,
-        event_type='rewrite_started',
-        message='Запущен AI-рерайт с обязательным structured output.',
-        details={'attempt': item.retry_count},
-    )
+    if not claim_rewrite_item(item):
+        raise RewriteClaimError('Imported news item is not pending and was not claimed.')
+    claim_started_at = item.last_attempted_at
 
     try:
+        if not item.source_url:
+            raise OpenRouterError('An imported item without a source URL cannot be rewritten.')
         result = client.rewrite(
             source_name=item.source_name,
             source_url=item.source_url,
@@ -64,22 +55,71 @@ def rewrite_item(item: ImportedNewsItem, *, client: OpenRouterClient) -> Importe
             source_text=item.normalized_text,
             fact_candidates=item.extracted_facts,
         )
-        _store_draft(item, result)
+        _store_draft(item, result, claim_started_at=claim_started_at)
     except Exception as error:
-        safe_error = _safe_error_message(error)
-        item.status = ImportedNewsItem.ProcessingStatus.FAILED
-        item.error_message = safe_error
-        item.save(update_fields=('status', 'error_message', 'updated_at'))
-        AIRewriteAuditEvent.objects.create(
-            item=item,
-            event_type='rewrite_failed',
-            message=safe_error,
-        )
+        _mark_claim_failed(item.pk, claim_started_at=claim_started_at, error=error)
         raise
+    item.refresh_from_db()
     return item
 
 
-def _store_draft(item, result) -> None:
+def claim_rewrite_item(item: ImportedNewsItem) -> bool:
+    """Atomically move one pending item to processing before any provider call."""
+    claimed_at = timezone.now()
+    with transaction.atomic():
+        claimed = ImportedNewsItem.objects.filter(
+            pk=item.pk,
+            status=ImportedNewsItem.ProcessingStatus.PENDING,
+        ).update(
+            status=ImportedNewsItem.ProcessingStatus.PROCESSING,
+            last_attempted_at=claimed_at,
+            retry_count=F('retry_count') + 1,
+            error_message='',
+            updated_at=claimed_at,
+        )
+        if not claimed:
+            return False
+        item.refresh_from_db()
+        AIRewriteAuditEvent.objects.create(
+            item=item,
+            event_type='rewrite_started',
+            message='Запущен AI-рерайт с обязательным structured output.',
+            details={'attempt': item.retry_count},
+        )
+    return True
+
+
+def recover_stale_rewrite_jobs(*, stale_before) -> int:
+    """Fail abandoned processing claims so an editor can explicitly retry them."""
+    stale_filter = Q(last_attempted_at__lt=stale_before) | Q(last_attempted_at__isnull=True)
+    item_ids = list(
+        ImportedNewsItem.objects.filter(
+            Q(status=ImportedNewsItem.ProcessingStatus.PROCESSING) & stale_filter
+        ).values_list('pk', flat=True)
+    )
+    recovered = 0
+    for item_id in item_ids:
+        with transaction.atomic():
+            updated = ImportedNewsItem.objects.filter(
+                Q(pk=item_id, status=ImportedNewsItem.ProcessingStatus.PROCESSING)
+                & stale_filter
+            ).update(
+                status=ImportedNewsItem.ProcessingStatus.FAILED,
+                error_message=STALE_REWRITE_MESSAGE,
+                updated_at=timezone.now(),
+            )
+            if not updated:
+                continue
+            AIRewriteAuditEvent.objects.create(
+                item_id=item_id,
+                event_type='rewrite_stale',
+                message=STALE_REWRITE_MESSAGE,
+            )
+            recovered += 1
+    return recovered
+
+
+def _store_draft(item, result, *, claim_started_at) -> None:
     data = result.data
     title = normalize_external_text(data['title'], max_chars=255)
     excerpt = normalize_external_text(data['excerpt'], max_chars=500)
@@ -101,6 +141,12 @@ def _store_draft(item, result) -> None:
             tags.append(tag)
 
     with transaction.atomic():
+        item = ImportedNewsItem.objects.select_for_update().get(pk=item.pk)
+        if (
+            item.status != ImportedNewsItem.ProcessingStatus.PROCESSING
+            or item.last_attempted_at != claim_started_at
+        ):
+            raise RewriteClaimError('Rewrite claim is no longer active; result was discarded.')
         if item.created_news_id:
             news = News.objects.select_for_update().get(pk=item.created_news_id)
             news.title = title
@@ -171,6 +217,26 @@ def _store_draft(item, result) -> None:
                 'warnings_count': len(data['warnings']),
             },
         )
+
+
+def _mark_claim_failed(item_id: int, *, claim_started_at, error: Exception) -> None:
+    safe_error = _safe_error_message(error)
+    with transaction.atomic():
+        updated = ImportedNewsItem.objects.filter(
+            pk=item_id,
+            status=ImportedNewsItem.ProcessingStatus.PROCESSING,
+            last_attempted_at=claim_started_at,
+        ).update(
+            status=ImportedNewsItem.ProcessingStatus.FAILED,
+            error_message=safe_error,
+            updated_at=timezone.now(),
+        )
+        if updated:
+            AIRewriteAuditEvent.objects.create(
+                item_id=item_id,
+                event_type='rewrite_failed',
+                message=safe_error,
+            )
 
 
 def _safe_error_message(error: Exception) -> str:

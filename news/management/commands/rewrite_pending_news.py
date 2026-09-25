@@ -1,7 +1,17 @@
+from datetime import timedelta
+
+from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
+from django.utils import timezone
 
 from news.ai_news.openrouter import OpenRouterError
-from news.ai_news.pipeline import assert_pipeline_enabled, configured_client, rewrite_item
+from news.ai_news.pipeline import (
+    RewriteClaimError,
+    assert_pipeline_enabled,
+    configured_client,
+    recover_stale_rewrite_jobs,
+    rewrite_item,
+)
 from news.models import ImportedNewsItem
 
 
@@ -38,12 +48,20 @@ class Command(BaseCommand):
             client = configured_client()
         except OpenRouterError as error:
             raise CommandError(str(error)) from error
+        stale_before = timezone.now() - timedelta(
+            minutes=settings.AI_NEWS_PROCESSING_TIMEOUT_MINUTES
+        )
+        recovered = recover_stale_rewrite_jobs(stale_before=stale_before)
+        if recovered:
+            self.stderr.write(f'Marked stale processing jobs as failed: {recovered}')
 
         succeeded = 0
         failed = 0
         for item in items:
             try:
                 rewrite_item(item, client=client)
+            except RewriteClaimError:
+                continue
             except Exception as error:
                 failed += 1
                 self.stderr.write(f'Item {item.pk} failed: {type(error).__name__}')

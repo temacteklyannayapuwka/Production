@@ -13,6 +13,7 @@ from urllib.request import Request
 
 from django.contrib import admin
 from django.core.management import CommandError, call_command
+from django.db import connection
 from django.test import SimpleTestCase, TestCase, override_settings
 from django.utils import timezone
 
@@ -24,7 +25,13 @@ from .ai_news.openrouter import (
     StructuredOutputError,
     validate_structured_output,
 )
-from .ai_news.pipeline import assert_pipeline_enabled, rewrite_item
+from .ai_news.pipeline import (
+    RewriteClaimError,
+    assert_pipeline_enabled,
+    claim_rewrite_item,
+    recover_stale_rewrite_jobs,
+    rewrite_item,
+)
 from .ai_news.sources import (
     SourceFetchError,
     _SourceRedirectHandler,
@@ -520,6 +527,77 @@ class AINewsPipelineTests(TestCase):
             ],
         )
         self.assertTrue(item.audit_events.filter(event_type='draft_created').exists())
+
+    def test_claim_is_conditional_and_only_claimant_increments_retry(self):
+        item = self.create_item(suffix='claim')
+        competing_copy = ImportedNewsItem.objects.get(pk=item.pk)
+
+        self.assertTrue(claim_rewrite_item(item))
+        self.assertFalse(claim_rewrite_item(competing_copy))
+
+        item.refresh_from_db()
+        self.assertEqual(item.status, ImportedNewsItem.ProcessingStatus.PROCESSING)
+        self.assertEqual(item.retry_count, 1)
+        self.assertEqual(item.audit_events.filter(event_type='rewrite_started').count(), 1)
+
+    def test_losing_worker_does_not_call_openrouter(self):
+        item = self.create_item(suffix='lost-claim')
+        self.assertTrue(claim_rewrite_item(item))
+        client = Mock()
+
+        with self.assertRaises(RewriteClaimError):
+            rewrite_item(ImportedNewsItem.objects.get(pk=item.pk), client=client)
+
+        client.rewrite.assert_not_called()
+        item.refresh_from_db()
+        self.assertEqual(item.retry_count, 1)
+
+    def test_openrouter_request_runs_outside_database_transaction(self):
+        item = self.create_item(suffix='transaction-boundary')
+        client = Mock()
+        outer_test_transactions = len(connection.atomic_blocks)
+
+        def rewrite_outside_transaction(**kwargs):
+            self.assertEqual(len(connection.atomic_blocks), outer_test_transactions)
+            return self.result_for(item)
+
+        client.rewrite.side_effect = rewrite_outside_transaction
+
+        rewrite_item(item, client=client)
+
+        self.assertEqual(client.rewrite.call_count, 1)
+
+    def test_stale_processing_claim_is_failed_once_for_explicit_retry(self):
+        item = self.create_item(
+            suffix='stale-processing',
+            status=ImportedNewsItem.ProcessingStatus.PROCESSING,
+        )
+        stale_at = timezone.now() - timedelta(hours=2)
+        ImportedNewsItem.objects.filter(pk=item.pk).update(last_attempted_at=stale_at)
+        cutoff = timezone.now() - timedelta(minutes=30)
+
+        self.assertEqual(recover_stale_rewrite_jobs(stale_before=cutoff), 1)
+        self.assertEqual(recover_stale_rewrite_jobs(stale_before=cutoff), 0)
+
+        item.refresh_from_db()
+        self.assertEqual(item.status, ImportedNewsItem.ProcessingStatus.FAILED)
+        self.assertIn('превысила', item.error_message)
+        self.assertEqual(item.audit_events.filter(event_type='rewrite_stale').count(), 1)
+
+    def test_fresh_processing_claim_is_not_recovered_or_reprocessed(self):
+        item = self.create_item(
+            suffix='fresh-processing',
+            status=ImportedNewsItem.ProcessingStatus.PROCESSING,
+        )
+        ImportedNewsItem.objects.filter(pk=item.pk).update(last_attempted_at=timezone.now())
+
+        recovered = recover_stale_rewrite_jobs(
+            stale_before=timezone.now() - timedelta(minutes=30)
+        )
+
+        self.assertEqual(recovered, 0)
+        item.refresh_from_db()
+        self.assertEqual(item.status, ImportedNewsItem.ProcessingStatus.PROCESSING)
 
     def test_sanitization_removes_active_html(self):
         item = self.create_item(suffix='sanitize')

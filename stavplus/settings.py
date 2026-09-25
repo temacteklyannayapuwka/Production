@@ -69,6 +69,11 @@ OPENROUTER_MAX_INPUT_CHARS = environment_integer(
     12000,
     minimum=1000,
 )
+AI_NEWS_PROCESSING_TIMEOUT_MINUTES = environment_integer(
+    'AI_NEWS_PROCESSING_TIMEOUT_MINUTES',
+    30,
+    minimum=1,
+)
 AI_NEWS_ENABLED = environment_flag('AI_NEWS_ENABLED', False)
 # Version 1 is intentionally manual-only. Commands refuse to run if this is true.
 AUTO_PUBLISH_AI_NEWS = environment_flag('AUTO_PUBLISH_AI_NEWS', False)
