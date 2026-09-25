@@ -9,6 +9,7 @@ from io import BytesIO, StringIO
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
 from urllib.error import HTTPError
+from urllib.request import Request
 
 from django.contrib import admin
 from django.core.management import CommandError, call_command
@@ -24,7 +25,13 @@ from .ai_news.openrouter import (
     validate_structured_output,
 )
 from .ai_news.pipeline import assert_pipeline_enabled, rewrite_item
-from .ai_news.sources import extract_fact_candidates
+from .ai_news.sources import (
+    SourceFetchError,
+    _SourceRedirectHandler,
+    extract_fact_candidates,
+    fetch_bytes,
+    validate_source_url,
+)
 from .models import AIRewriteAuditEvent, ImportedNewsItem, News, NewsSource
 
 
@@ -64,8 +71,9 @@ def response_body(data=None):
 
 
 class FakeHTTPResponse:
-    def __init__(self, body):
+    def __init__(self, body, url=SOURCE_URL):
         self.body = body
+        self.url = url
 
     def __enter__(self):
         return self
@@ -75,6 +83,170 @@ class FakeHTTPResponse:
 
     def read(self, size=-1):
         return self.body if size < 0 else self.body[:size]
+
+    def geturl(self):
+        return self.url
+
+
+class SourceFetchSecurityTests(SimpleTestCase):
+    @staticmethod
+    def address_results(*addresses):
+        return [
+            (
+                socket.AF_INET6 if ':' in address else socket.AF_INET,
+                socket.SOCK_STREAM,
+                socket.IPPROTO_TCP,
+                '',
+                (address, 443, 0, 0) if ':' in address else (address, 443),
+            )
+            for address in addresses
+        ]
+
+    @patch('news.ai_news.sources.socket.getaddrinfo')
+    def test_public_allowed_hostname_and_literal_ip_are_accepted(self, resolver):
+        resolver.return_value = self.address_results('93.184.216.34')
+
+        self.assertEqual(
+            validate_source_url('https://example.com/feed.xml', ['example.com']),
+            'https://example.com/feed.xml',
+        )
+        self.assertEqual(
+            validate_source_url('https://93.184.216.34/feed.xml', ['93.184.216.34']),
+            'https://93.184.216.34/feed.xml',
+        )
+
+    @patch('news.ai_news.sources.socket.getaddrinfo')
+    def test_loopback_ipv4_is_rejected(self, resolver):
+        resolver.return_value = self.address_results('127.0.0.1')
+
+        with self.assertRaisesRegex(SourceFetchError, 'Non-public'):
+            validate_source_url('http://127.0.0.1/feed.xml', ['127.0.0.1'])
+
+    @patch('news.ai_news.sources.socket.getaddrinfo')
+    def test_loopback_ipv6_is_rejected(self, resolver):
+        resolver.return_value = self.address_results('::1')
+
+        with self.assertRaisesRegex(SourceFetchError, 'Non-public'):
+            validate_source_url('http://[::1]/feed.xml', ['::1'])
+
+    @patch('news.ai_news.sources.socket.getaddrinfo')
+    def test_private_ipv4_is_rejected(self, resolver):
+        resolver.return_value = self.address_results('10.20.30.40')
+
+        with self.assertRaisesRegex(SourceFetchError, 'Non-public'):
+            validate_source_url('https://10.20.30.40/feed.xml', ['10.20.30.40'])
+
+    @patch('news.ai_news.sources.socket.getaddrinfo')
+    def test_link_local_address_is_rejected(self, resolver):
+        resolver.return_value = self.address_results('169.254.10.20')
+
+        with self.assertRaisesRegex(SourceFetchError, 'Non-public'):
+            validate_source_url('https://169.254.10.20/feed.xml', ['169.254.10.20'])
+
+    @patch('news.ai_news.sources.socket.getaddrinfo')
+    def test_multicast_unspecified_and_reserved_addresses_are_rejected(self, resolver):
+        for address in ('224.0.0.1', '0.0.0.0', '240.0.0.1'):
+            with self.subTest(address=address):
+                resolver.return_value = self.address_results(address)
+                with self.assertRaisesRegex(SourceFetchError, 'Non-public'):
+                    validate_source_url(f'https://{address}/feed.xml', [address])
+
+    @patch('news.ai_news.sources.socket.getaddrinfo')
+    def test_allowed_hostname_resolving_to_private_ip_is_rejected(self, resolver):
+        resolver.return_value = self.address_results('192.168.1.25')
+
+        with self.assertRaisesRegex(SourceFetchError, 'Non-public'):
+            validate_source_url('https://example.com/feed.xml', ['example.com'])
+
+    @patch('news.ai_news.sources.socket.getaddrinfo')
+    def test_mixed_public_and_private_dns_results_are_rejected(self, resolver):
+        resolver.return_value = self.address_results('93.184.216.34', '172.16.4.2')
+
+        with self.assertRaisesRegex(SourceFetchError, 'Non-public'):
+            validate_source_url('https://example.com/feed.xml', ['example.com'])
+
+    @patch('news.ai_news.sources.socket.getaddrinfo')
+    def test_redirect_from_public_host_to_private_destination_is_rejected(self, resolver):
+        resolver.return_value = self.address_results('10.0.0.9')
+        handler = _SourceRedirectHandler(allowed_domains=['example.com'])
+
+        with self.assertRaisesRegex(SourceFetchError, 'Non-public'):
+            handler.redirect_request(
+                Request('https://example.com/feed.xml'),
+                None,
+                302,
+                'Found',
+                {},
+                'https://private.example.com/feed.xml',
+            )
+
+    @patch('news.ai_news.sources.socket.getaddrinfo')
+    def test_redirect_to_disallowed_domain_is_rejected(self, resolver):
+        resolver.return_value = self.address_results('93.184.216.34')
+        handler = _SourceRedirectHandler(allowed_domains=['example.com'])
+
+        with self.assertRaisesRegex(SourceFetchError, 'outside the approved domain'):
+            handler.redirect_request(
+                Request('https://example.com/feed.xml'),
+                None,
+                302,
+                'Found',
+                {},
+                'https://other.example.net/feed.xml',
+            )
+        resolver.assert_not_called()
+
+    @patch('news.ai_news.sources.socket.getaddrinfo')
+    def test_source_url_credentials_are_rejected_before_dns(self, resolver):
+        with self.assertRaisesRegex(SourceFetchError, 'credentials'):
+            validate_source_url('https://user:password@example.com/feed.xml', ['example.com'])
+        resolver.assert_not_called()
+
+    @patch('news.ai_news.sources.socket.getaddrinfo')
+    def test_redirect_limit_is_enforced(self, resolver):
+        resolver.return_value = self.address_results('93.184.216.34')
+        handler = _SourceRedirectHandler(allowed_domains=['example.com'], max_redirects=1)
+        request = Request('https://example.com/feed.xml')
+        redirected = handler.redirect_request(
+            request,
+            None,
+            302,
+            'Found',
+            {},
+            'https://example.com/step-one',
+        )
+
+        with self.assertRaisesRegex(SourceFetchError, 'redirect limit'):
+            handler.redirect_request(
+                redirected,
+                None,
+                302,
+                'Found',
+                {},
+                'https://example.com/step-two',
+            )
+
+    @patch('news.ai_news.sources.build_opener')
+    @patch('news.ai_news.sources.socket.getaddrinfo')
+    def test_normal_public_feed_fetch_uses_validating_opener(self, resolver, build_opener_mock):
+        resolver.return_value = self.address_results('93.184.216.34')
+        opener = Mock()
+        opener.open.return_value = FakeHTTPResponse(
+            b'<?xml version="1.0"?><rss><channel/></rss>',
+            url='https://example.com/feed.xml',
+        )
+        build_opener_mock.return_value = opener
+
+        payload = fetch_bytes(
+            'https://example.com/feed.xml',
+            allowed_domains=['example.com'],
+            timeout=5,
+        )
+
+        self.assertIn(b'<rss>', payload)
+        self.assertIsInstance(build_opener_mock.call_args.args[0], _SourceRedirectHandler)
+        opener.open.assert_called_once()
+        self.assertEqual(opener.open.call_args.kwargs['timeout'], 5)
 
 
 class OpenRouterClientTests(SimpleTestCase):
@@ -254,6 +426,20 @@ class OpenRouterClientTests(SimpleTestCase):
 )
 class AINewsPipelineTests(TestCase):
     def setUp(self):
+        dns_patcher = patch(
+            'news.ai_news.sources.socket.getaddrinfo',
+            return_value=[
+                (
+                    socket.AF_INET,
+                    socket.SOCK_STREAM,
+                    socket.IPPROTO_TCP,
+                    '',
+                    ('93.184.216.34', 443),
+                )
+            ],
+        )
+        dns_patcher.start()
+        self.addCleanup(dns_patcher.stop)
         now = timezone.now()
         self.source = NewsSource.objects.create(
             name='Разрешённый источник',

@@ -3,11 +3,12 @@ from __future__ import annotations
 import hashlib
 import ipaddress
 import re
+import socket
 from dataclasses import dataclass
 from datetime import datetime, timezone as datetime_timezone
 from email.utils import parsedate_to_datetime
-from urllib.parse import urlparse
-from urllib.request import Request, urlopen
+from urllib.parse import urljoin, urlparse
+from urllib.request import HTTPRedirectHandler, Request, build_opener
 from urllib.robotparser import RobotFileParser
 from xml.etree import ElementTree
 
@@ -16,6 +17,7 @@ from .sanitization import normalize_external_text
 
 USER_AGENT = 'StavplusAINewsBot/1.0 (+https://stavplus.ru/)'
 MAX_FEED_BYTES = 2 * 1024 * 1024
+MAX_REDIRECTS = 5
 INJECTION_MARKERS = (
     'ignore previous',
     'ignore all previous',
@@ -44,27 +46,73 @@ def validate_source_url(url: str, allowed_domains: list[str]) -> str:
     parsed = urlparse(url)
     if parsed.scheme not in {'http', 'https'} or not parsed.hostname:
         raise SourceFetchError('Only absolute HTTP(S) source URLs are allowed.')
-    if parsed.username or parsed.password:
+    if parsed.username is not None or parsed.password is not None:
         raise SourceFetchError('Source URLs with credentials are not allowed.')
     hostname = parsed.hostname.rstrip('.').lower()
     if hostname == 'localhost' or hostname.endswith('.local'):
         raise SourceFetchError('Local source hosts are not allowed.')
     try:
-        address = ipaddress.ip_address(hostname)
-    except ValueError:
-        address = None
-    if address is not None and not address.is_global:
-        raise SourceFetchError('Private or reserved source addresses are not allowed.')
+        port = parsed.port or (443 if parsed.scheme == 'https' else 80)
+    except ValueError as error:
+        raise SourceFetchError('Source URL contains an invalid port.') from error
     domains = [domain.lstrip('.').rstrip('.').lower() for domain in allowed_domains]
     if not domains or not any(hostname == domain or hostname.endswith(f'.{domain}') for domain in domains):
         raise SourceFetchError('Source URL is outside the approved domain allowlist.')
+    _validate_destination_addresses(hostname, port)
     return url
+
+
+def _validate_destination_addresses(hostname: str, port: int) -> None:
+    try:
+        results = socket.getaddrinfo(
+            hostname,
+            port,
+            family=socket.AF_UNSPEC,
+            type=socket.SOCK_STREAM,
+        )
+    except (OSError, UnicodeError) as error:
+        raise SourceFetchError('Source hostname could not be resolved safely.') from error
+    if not results:
+        raise SourceFetchError('Source hostname did not resolve to an address.')
+
+    for result in results:
+        try:
+            address = ipaddress.ip_address(result[4][0].split('%', 1)[0])
+        except (IndexError, TypeError, ValueError) as error:
+            raise SourceFetchError('Source hostname resolved to an invalid address.') from error
+        if (
+            not address.is_global
+            or address.is_private
+            or address.is_loopback
+            or address.is_link_local
+            or address.is_multicast
+            or address.is_unspecified
+            or address.is_reserved
+        ):
+            raise SourceFetchError('Non-public source addresses are not allowed.')
+
+
+class _SourceRedirectHandler(HTTPRedirectHandler):
+    def __init__(self, *, allowed_domains: list[str], max_redirects: int = MAX_REDIRECTS):
+        super().__init__()
+        self.allowed_domains = allowed_domains
+        self.max_redirects = max_redirects
+        self.redirect_count = 0
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        self.redirect_count += 1
+        if self.redirect_count > self.max_redirects:
+            raise SourceFetchError('Source response exceeded the redirect limit.')
+        target_url = urljoin(req.full_url, newurl)
+        validate_source_url(target_url, self.allowed_domains)
+        return super().redirect_request(req, fp, code, msg, headers, target_url)
 
 
 def fetch_bytes(url: str, *, allowed_domains: list[str], timeout: int) -> bytes:
     validate_source_url(url, allowed_domains)
     request = Request(url, headers={'User-Agent': USER_AGENT, 'Accept': 'application/xml,text/xml,*/*'})
-    with urlopen(request, timeout=timeout) as response:
+    opener = build_opener(_SourceRedirectHandler(allowed_domains=allowed_domains))
+    with opener.open(request, timeout=timeout) as response:
         validate_source_url(response.geturl(), allowed_domains)
         payload = response.read(MAX_FEED_BYTES + 1)
     if len(payload) > MAX_FEED_BYTES:
@@ -73,7 +121,7 @@ def fetch_bytes(url: str, *, allowed_domains: list[str], timeout: int) -> bytes:
 
 
 def robots_allows(url: str, *, allowed_domains: list[str], timeout: int) -> bool:
-    parsed = urlparse(url)
+    parsed = urlparse(validate_source_url(url, allowed_domains))
     robots_url = f'{parsed.scheme}://{parsed.netloc}/robots.txt'
     payload = fetch_bytes(robots_url, allowed_domains=allowed_domains, timeout=timeout)
     parser = RobotFileParser()
