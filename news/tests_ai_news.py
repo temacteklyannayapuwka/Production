@@ -20,6 +20,8 @@ from .ai_news.openrouter import (
     OpenRouterClient,
     OpenRouterError,
     RewriteResult,
+    StructuredOutputError,
+    validate_structured_output,
 )
 from .ai_news.pipeline import assert_pipeline_enabled, rewrite_item
 from .ai_news.sources import extract_fact_candidates
@@ -33,7 +35,7 @@ SOURCE_TEXT = (
 )
 
 
-def valid_structured_output(*, source_url=SOURCE_URL, warnings=None):
+def valid_structured_output(*, warnings=None):
     return {
         'title': 'В городе завершили ремонт дороги',
         'excerpt': 'Движение откроют после обязательной проверки безопасности.',
@@ -45,13 +47,7 @@ def valid_structured_output(*, source_url=SOURCE_URL, warnings=None):
         'tags': ['Транспорт'],
         'meta_title': 'В городе завершили ремонт дороги',
         'meta_description': 'Дорогу готовят к открытию после проверки безопасности.',
-        'source_facts': [
-            {
-                'fact_id': 'fact-1',
-                'statement': 'Администрация сообщила о завершении ремонта дороги.',
-                'source_url': source_url,
-            }
-        ],
+        'source_facts': [{'fact_id': 'fact-1'}],
         'warnings': list(warnings or []),
     }
 
@@ -116,12 +112,30 @@ class OpenRouterClientTests(SimpleTestCase):
         result = self.rewrite(self.make_client())
 
         self.assertEqual(result.data['title'], 'В городе завершили ремонт дороги')
+        self.assertEqual(
+            result.data['source_facts'],
+            [
+                {
+                    'fact_id': 'fact-1',
+                    'statement': 'Администрация сообщила о завершении ремонта дороги.',
+                    'source_url': SOURCE_URL,
+                }
+            ],
+        )
         self.assertEqual(result.model, 'provider/test-structured-model')
         self.assertEqual(result.cost_usd, Decimal('0.0012'))
         request = mocked.call_args.args[0]
         payload = json.loads(request.data.decode())
         self.assertEqual(payload['response_format']['type'], 'json_schema')
         self.assertTrue(payload['response_format']['json_schema']['strict'])
+        source_fact_schema = payload['response_format']['json_schema']['schema']['properties'][
+            'source_facts'
+        ]['items']
+        self.assertEqual(
+            source_fact_schema['properties'],
+            {'fact_id': {'type': 'string', 'minLength': 1}},
+        )
+        self.assertEqual(source_fact_schema['required'], ['fact_id'])
         self.assertTrue(payload['provider']['require_parameters'])
         self.assertEqual(payload['messages'][0]['role'], 'system')
         self.assertEqual(payload['messages'][1]['role'], 'user')
@@ -153,12 +167,43 @@ class OpenRouterClientTests(SimpleTestCase):
         with self.assertRaisesRegex(OpenRouterError, 'JSONDecodeError'):
             self.rewrite(self.make_client())
 
-    @patch('news.ai_news.openrouter.urlopen')
-    def test_source_fact_must_reference_supplied_fact_id(self, mocked):
+    def test_source_fact_must_reference_supplied_fact_id(self):
         data = valid_structured_output()
         data['source_facts'][0]['fact_id'] = 'invented-fact'
+        with self.assertRaisesRegex(StructuredOutputError, 'unapproved evidence'):
+            validate_structured_output(
+                data,
+                source_url=SOURCE_URL,
+                fact_candidates=[
+                    {
+                        'id': 'fact-1',
+                        'statement': 'Администрация сообщила о завершении ремонта дороги.',
+                        'source_url': SOURCE_URL,
+                    }
+                ],
+            )
+
+    @patch('news.ai_news.openrouter.urlopen')
+    def test_source_fact_cannot_override_canonical_evidence(self, mocked):
+        data = valid_structured_output()
+        data['source_facts'][0].update(
+            {
+                'statement': 'Подменённый моделью факт.',
+                'source_url': 'https://attacker.example/invented',
+            }
+        )
         mocked.return_value = FakeHTTPResponse(response_body(data))
-        with self.assertRaisesRegex(OpenRouterError, 'unapproved evidence'):
+
+        with self.assertRaisesRegex(OpenRouterError, 'required object shape'):
+            self.rewrite(self.make_client())
+
+    @patch('news.ai_news.openrouter.urlopen')
+    def test_duplicate_source_fact_id_is_rejected(self, mocked):
+        data = valid_structured_output()
+        data['source_facts'].append({'fact_id': 'fact-1'})
+        mocked.return_value = FakeHTTPResponse(response_body(data))
+
+        with self.assertRaisesRegex(OpenRouterError, 'duplicate fact_id'):
             self.rewrite(self.make_client())
 
     def test_missing_api_key_fails_before_network(self):
@@ -244,7 +289,14 @@ class AINewsPipelineTests(TestCase):
         )
 
     def result_for(self, item, *, content=None, warnings=None):
-        data = valid_structured_output(source_url=item.source_url, warnings=warnings)
+        data = valid_structured_output(warnings=warnings)
+        data['source_facts'] = [
+            {
+                'fact_id': 'fact-1',
+                'statement': 'Администрация сообщила о завершении ремонта дороги.',
+                'source_url': item.source_url,
+            }
+        ]
         if content is not None:
             data['content'] = content
         return RewriteResult(
@@ -271,6 +323,16 @@ class AINewsPipelineTests(TestCase):
         self.assertFalse(news.is_published)
         self.assertFalse(news.is_featured)
         self.assertEqual(item.prompt_version, 'stavplus-ai-news-v1')
+        self.assertEqual(
+            item.source_facts,
+            [
+                {
+                    'fact_id': 'fact-1',
+                    'statement': 'Администрация сообщила о завершении ремонта дороги.',
+                    'source_url': item.source_url,
+                }
+            ],
+        )
         self.assertTrue(item.audit_events.filter(event_type='draft_created').exists())
 
     def test_sanitization_removes_active_html(self):
