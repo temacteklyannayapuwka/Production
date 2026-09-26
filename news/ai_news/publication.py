@@ -62,3 +62,43 @@ def publish_ai_draft(item_id: int, *, actor: str) -> News:
             message='Редактор вручную отправил AI-черновик в публикацию.',
         )
         return news
+
+
+def unpublish_ai_news(item_id: int, *, actor: str) -> News:
+    """Return published AI news to the appropriate editorial review state."""
+    actor = str(actor or '').strip()[:160]
+    if not actor:
+        raise PublicationPolicyError('A named editorial actor is required to unpublish AI news.')
+
+    with transaction.atomic():
+        item = (
+            ImportedNewsItem.objects.select_for_update()
+            .select_related('created_news')
+            .get(pk=item_id)
+        )
+        if item.status != ImportedNewsItem.ProcessingStatus.PUBLISHED:
+            raise PublicationPolicyError('Only published AI news can be unpublished.')
+        if not item.created_news_id:
+            raise PublicationPolicyError('The imported item has no generated news.')
+
+        news = News.objects.select_for_update().get(pk=item.created_news_id)
+        news.editorial_status = News.EditorialStatus.DRAFT
+        news.is_published = False
+        news.is_featured = False
+        news.save(
+            update_fields=('editorial_status', 'is_published', 'is_featured', 'updated_at'),
+            ai_publication_token=_AI_PUBLICATION_TOKEN,
+        )
+        item.status = (
+            ImportedNewsItem.ProcessingStatus.NEEDS_REVIEW
+            if item.warnings
+            else ImportedNewsItem.ProcessingStatus.DRAFT_READY
+        )
+        item.save(update_fields=('status', 'updated_at'))
+        AIRewriteAuditEvent.objects.create(
+            item=item,
+            event_type='unpublished_manually',
+            actor=actor,
+            message='Редактор вручную вернул AI-материал в черновики.',
+        )
+        return news

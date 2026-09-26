@@ -34,6 +34,7 @@ OPENROUTER_FALLBACK_MODEL=
 OPENROUTER_TIMEOUT_SECONDS=30
 OPENROUTER_MAX_RETRIES=2
 OPENROUTER_MAX_INPUT_CHARS=12000
+AI_NEWS_PROCESSING_TIMEOUT_MINUTES=30
 AI_NEWS_ENABLED=false
 AUTO_PUBLISH_AI_NEWS=false
 ```
@@ -72,8 +73,12 @@ mock/staging-тест. Документация:
 7. текущий `robots.txt` разрешает запрос ленты нашему User-Agent.
 
 Блокировки, CAPTCHA и ограничения доступа не обходятся. URL с credentials,
-localhost, `.local`, приватными или зарезервированными IP запрещены. Один URL и
-одинаковый SHA-256 нормализованного материала повторно не обрабатываются.
+localhost, `.local`, приватными или зарезервированными IP запрещены. HTTP(S)
+transport отключает environment proxy и подключается к уже проверенному
+результату DNS, поэтому повторное DNS-разрешение не может перенаправить запрос
+во внутреннюю сеть. Каждый redirect проходит ту же проверку. RSS/Atom с DTD или
+entity declarations отклоняется. Один URL и одинаковый SHA-256
+нормализованного материала повторно не обрабатываются.
 
 До включения юридическое и редакционное согласование требуется для каждой
 конкретной ленты, включая:
@@ -156,9 +161,14 @@ python manage.py rewrite_pending_news --limit 10
 - «Повторить AI-рерайт»;
 - «Отправить созданный черновик в публикацию».
 
-Второе действие — единственный добавленный путь публикации AI-новости. Оно
-проверяет наличие источника, заголовка и текста и создаёт audit event с именем
-редактора. Существующий общий workflow DRAFT/SCHEDULED/PUBLISHED сохраняется.
+Публикация AI-новости проходит через централизованную policy независимо от
+того, запущена она из списка импортов или общим действием в списке новостей.
+Policy разрешает только `draft_ready` без предупреждений, проверяет canonical
+evidence и обязательные поля, блокирует строки на время короткой транзакции и
+создаёт audit event с именем редактора. Прямой model save, bulk update и смена
+статуса через форму не обходят policy. Снятие с публикации также синхронно
+возвращает импорт в `draft_ready` или `needs_review` и пишет audit event.
+Обычный редакционный workflow DRAFT/SCHEDULED/PUBLISHED сохраняется.
 
 ## Ошибки и retries
 
@@ -168,6 +178,14 @@ python manage.py rewrite_pending_news --limit 10
 - после исчерпания retries может использоваться fallback;
 - 4xx, schema mismatch и invalid JSON не повторяются на той же модели;
 - логи не содержат API key, полный request/response payload или текст статьи.
+
+Worker атомарно переводит только `pending` запись в `processing` коротким
+conditional update и фиксирует `rewrite_started`; только после commit вызывается
+OpenRouter. Второй worker не получает claim и не делает HTTP-запрос. Результат
+записывается отдельной короткой транзакцией, только если claim всё ещё актуален.
+Зависший `processing` старше `AI_NEWS_PROCESSING_TIMEOUT_MINUTES` переводится в
+`failed` с audit event. Повторный запуск после failure требует явного действия
+редактора.
 
 ## Стоимость и стартовый лимит
 

@@ -17,22 +17,11 @@ _AI_PUBLICATION_TOKEN = object()
 class NewsQuerySet(models.QuerySet):
     def update(self, **kwargs):
         publication_fields = {'editorial_status', 'is_published'} & kwargs.keys()
-        if publication_fields and self._may_make_news_public(kwargs):
-            if self.filter(ai_import__isnull=False).exists():
-                raise ValidationError(
-                    'AI-generated news must be published through the manual publication policy.'
-                )
+        if publication_fields and self.filter(ai_import__isnull=False).exists():
+            raise ValidationError(
+                'AI-generated news publication state must change through the editorial policy.'
+            )
         return super().update(**kwargs)
-
-    @staticmethod
-    def _may_make_news_public(values):
-        status = values.get('editorial_status')
-        published = values.get('is_published')
-        if status is not None and status != News.EditorialStatus.DRAFT:
-            return True
-        if published is not None and published is not False:
-            return True
-        return False
 
 
 class Category(models.Model):
@@ -241,21 +230,23 @@ class News(models.Model):
             'is_published',
         }.intersection(update_fields):
             return
-        if self.editorial_status == self.EditorialStatus.DRAFT and not self.is_published:
-            return
         if not ImportedNewsItem.objects.filter(created_news_id=self.pk).exists():
             return
         previous = type(self).objects.filter(pk=self.pk).values(
             'editorial_status',
             'is_published',
         ).first()
-        if previous and (
+        previous_public = previous and (
             previous['editorial_status'] != self.EditorialStatus.DRAFT
             or previous['is_published']
-        ):
+        )
+        requested_public = (
+            self.editorial_status != self.EditorialStatus.DRAFT or self.is_published
+        )
+        if previous_public == requested_public:
             return
         raise ValidationError(
-            'AI-generated news must be published through the manual publication policy.'
+            'AI-generated news publication state must change through the editorial policy.'
         )
 
     def get_absolute_url(self):

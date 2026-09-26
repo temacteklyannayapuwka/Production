@@ -7,7 +7,11 @@ from django.utils.html import format_html
 from ckeditor_uploader.widgets import CKEditorUploadingWidget
 from unfold.admin import ModelAdmin, StackedInline
 
-from .ai_news.publication import PublicationPolicyError, publish_ai_draft
+from .ai_news.publication import (
+    PublicationPolicyError,
+    publish_ai_draft,
+    unpublish_ai_news,
+)
 from .models import (
     AIRewriteAuditEvent,
     Advertisement,
@@ -416,11 +420,36 @@ class NewsAdmin(ModelAdmin):
 
     @admin.action(description='Снять выбранные новости с публикации')
     def unpublish_selected(self, request, queryset):
-        queryset.update(
+        actor = request.user.get_username()
+        regular_ids = []
+        unpublished_ai = 0
+        skipped_ai = 0
+        for news in queryset.select_related('ai_import'):
+            try:
+                item = news.ai_import
+            except ImportedNewsItem.DoesNotExist:
+                regular_ids.append(news.pk)
+                continue
+            try:
+                unpublish_ai_news(item.pk, actor=actor)
+            except PublicationPolicyError:
+                skipped_ai += 1
+            else:
+                unpublished_ai += 1
+        unpublished_regular = News.objects.filter(pk__in=regular_ids).update(
             editorial_status=News.EditorialStatus.DRAFT,
             is_published=False,
         )
-        self.message_user(request, 'Выбранные новости переведены в черновики.')
+        self.message_user(
+            request,
+            f'Переведено в черновики: {unpublished_regular + unpublished_ai}.',
+        )
+        if skipped_ai:
+            self.message_user(
+                request,
+                f'AI-материалов пропущено политикой публикации: {skipped_ai}.',
+                level=messages.WARNING,
+            )
 
 
 @admin.register(NewsSource)

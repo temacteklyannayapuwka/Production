@@ -7,8 +7,16 @@ import socket
 from dataclasses import dataclass
 from datetime import datetime, timezone as datetime_timezone
 from email.utils import parsedate_to_datetime
+from http.client import HTTPConnection, HTTPSConnection
 from urllib.parse import urljoin, urlparse
-from urllib.request import HTTPRedirectHandler, Request, build_opener
+from urllib.request import (
+    HTTPHandler,
+    HTTPRedirectHandler,
+    HTTPSHandler,
+    ProxyHandler,
+    Request,
+    build_opener,
+)
 from urllib.robotparser import RobotFileParser
 from xml.etree import ElementTree
 
@@ -62,7 +70,7 @@ def validate_source_url(url: str, allowed_domains: list[str]) -> str:
     return url
 
 
-def _validate_destination_addresses(hostname: str, port: int) -> None:
+def _validate_destination_addresses(hostname: str, port: int) -> list[tuple]:
     try:
         results = socket.getaddrinfo(
             hostname,
@@ -90,6 +98,67 @@ def _validate_destination_addresses(hostname: str, port: int) -> None:
             or address.is_reserved
         ):
             raise SourceFetchError('Non-public source addresses are not allowed.')
+    return results
+
+
+def _connect_to_validated_address(hostname, port, timeout, source_address=None):
+    """Resolve once, validate every address, then connect to an exact validated sockaddr."""
+    results = _validate_destination_addresses(hostname, port)
+    last_error = None
+    for family, socktype, proto, _, sockaddr in results:
+        sock = None
+        try:
+            sock = socket.socket(family, socktype, proto)
+            if timeout is not socket._GLOBAL_DEFAULT_TIMEOUT:
+                sock.settimeout(timeout)
+            if source_address:
+                sock.bind(source_address)
+            sock.connect(sockaddr)
+            return sock
+        except OSError as error:
+            last_error = error
+            if sock is not None:
+                sock.close()
+    raise SourceFetchError('Could not connect to a validated public source address.') from last_error
+
+
+class _PinnedHTTPConnection(HTTPConnection):
+    def connect(self):
+        if self._tunnel_host:
+            raise SourceFetchError('Proxy tunnels are not allowed for source fetches.')
+        self.sock = _connect_to_validated_address(
+            self.host,
+            self.port,
+            self.timeout,
+            self.source_address,
+        )
+
+
+class _PinnedHTTPSConnection(HTTPSConnection):
+    def connect(self):
+        if self._tunnel_host:
+            raise SourceFetchError('Proxy tunnels are not allowed for source fetches.')
+        self.sock = _connect_to_validated_address(
+            self.host,
+            self.port,
+            self.timeout,
+            self.source_address,
+        )
+        self.sock = self._context.wrap_socket(self.sock, server_hostname=self.host)
+
+
+class _PinnedHTTPHandler(HTTPHandler):
+    def http_open(self, request):
+        return self.do_open(_PinnedHTTPConnection, request)
+
+
+class _PinnedHTTPSHandler(HTTPSHandler):
+    def https_open(self, request):
+        return self.do_open(
+            _PinnedHTTPSConnection,
+            request,
+            context=self._context,
+        )
 
 
 class _SourceRedirectHandler(HTTPRedirectHandler):
@@ -111,7 +180,12 @@ class _SourceRedirectHandler(HTTPRedirectHandler):
 def fetch_bytes(url: str, *, allowed_domains: list[str], timeout: int) -> bytes:
     validate_source_url(url, allowed_domains)
     request = Request(url, headers={'User-Agent': USER_AGENT, 'Accept': 'application/xml,text/xml,*/*'})
-    opener = build_opener(_SourceRedirectHandler(allowed_domains=allowed_domains))
+    opener = build_opener(
+        ProxyHandler({}),
+        _SourceRedirectHandler(allowed_domains=allowed_domains),
+        _PinnedHTTPHandler(),
+        _PinnedHTTPSHandler(),
+    )
     with opener.open(request, timeout=timeout) as response:
         validate_source_url(response.geturl(), allowed_domains)
         payload = response.read(MAX_FEED_BYTES + 1)
@@ -131,6 +205,9 @@ def robots_allows(url: str, *, allowed_domains: list[str], timeout: int) -> bool
 
 
 def parse_feed(payload: bytes) -> list[FeedEntry]:
+    lowered_payload = payload.lower()
+    if b'<!doctype' in lowered_payload or b'<!entity' in lowered_payload:
+        raise SourceFetchError('Source XML declarations with DTD or entities are not allowed.')
     try:
         root = ElementTree.fromstring(payload)
     except ElementTree.ParseError as error:

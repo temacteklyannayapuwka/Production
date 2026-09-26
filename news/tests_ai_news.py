@@ -33,12 +33,19 @@ from .ai_news.pipeline import (
     recover_stale_rewrite_jobs,
     rewrite_item,
 )
-from .ai_news.publication import PublicationPolicyError, publish_ai_draft
+from .ai_news.publication import (
+    PublicationPolicyError,
+    publish_ai_draft,
+)
 from .ai_news.sources import (
     SourceFetchError,
+    _connect_to_validated_address,
+    _PinnedHTTPHandler,
+    _PinnedHTTPSHandler,
     _SourceRedirectHandler,
     extract_fact_candidates,
     fetch_bytes,
+    parse_feed,
     validate_source_url,
 )
 from .models import AIRewriteAuditEvent, ImportedNewsItem, News, NewsSource
@@ -174,6 +181,27 @@ class SourceFetchSecurityTests(SimpleTestCase):
         with self.assertRaisesRegex(SourceFetchError, 'Non-public'):
             validate_source_url('https://example.com/feed.xml', ['example.com'])
 
+    @patch('news.ai_news.sources.socket.socket')
+    @patch('news.ai_news.sources.socket.getaddrinfo')
+    def test_transport_connects_to_exact_validated_address(self, resolver, socket_factory):
+        resolver.return_value = self.address_results('93.184.216.34')
+        connected_socket = socket_factory.return_value
+
+        result = _connect_to_validated_address('example.com', 443, 5)
+
+        self.assertIs(result, connected_socket)
+        connected_socket.connect.assert_called_once_with(('93.184.216.34', 443))
+
+    @patch('news.ai_news.sources.socket.socket')
+    @patch('news.ai_news.sources.socket.getaddrinfo')
+    def test_rebound_private_address_is_rejected_before_connect(self, resolver, socket_factory):
+        resolver.return_value = self.address_results('127.0.0.1')
+
+        with self.assertRaisesRegex(SourceFetchError, 'Non-public'):
+            _connect_to_validated_address('example.com', 443, 5)
+
+        socket_factory.assert_not_called()
+
     @patch('news.ai_news.sources.socket.getaddrinfo')
     def test_redirect_from_public_host_to_private_destination_is_rejected(self, resolver):
         resolver.return_value = self.address_results('10.0.0.9')
@@ -253,9 +281,20 @@ class SourceFetchSecurityTests(SimpleTestCase):
         )
 
         self.assertIn(b'<rss>', payload)
-        self.assertIsInstance(build_opener_mock.call_args.args[0], _SourceRedirectHandler)
+        handlers = build_opener_mock.call_args.args
+        self.assertTrue(any(isinstance(handler, _SourceRedirectHandler) for handler in handlers))
+        self.assertTrue(any(isinstance(handler, _PinnedHTTPHandler) for handler in handlers))
+        self.assertTrue(any(isinstance(handler, _PinnedHTTPSHandler) for handler in handlers))
         opener.open.assert_called_once()
         self.assertEqual(opener.open.call_args.kwargs['timeout'], 5)
+
+    def test_feed_parser_rejects_dtd_and_entity_declarations(self):
+        payload = b'''<?xml version="1.0"?>
+            <!DOCTYPE rss [<!ENTITY secret SYSTEM "file:///etc/passwd">]>
+            <rss><channel><item><title>&secret;</title></item></channel></rss>'''
+
+        with self.assertRaisesRegex(SourceFetchError, 'DTD or entities'):
+            parse_feed(payload)
 
 
 class OpenRouterClientTests(SimpleTestCase):
@@ -655,7 +694,7 @@ class AINewsPipelineTests(TestCase):
         news = item.created_news
         news.editorial_status = News.EditorialStatus.PUBLISHED
 
-        with self.assertRaisesRegex(ValidationError, 'manual publication policy'):
+        with self.assertRaisesRegex(ValidationError, 'editorial policy'):
             news.save()
 
         news.refresh_from_db()
@@ -668,7 +707,7 @@ class AINewsPipelineTests(TestCase):
         client.rewrite.return_value = self.result_for(item)
         rewrite_item(item, client=client)
 
-        with self.assertRaisesRegex(ValidationError, 'manual publication policy'):
+        with self.assertRaisesRegex(ValidationError, 'editorial policy'):
             News.objects.filter(pk=item.created_news_id).update(
                 editorial_status=News.EditorialStatus.PUBLISHED,
                 is_published=True,
@@ -738,6 +777,42 @@ class AINewsPipelineTests(TestCase):
             item.audit_events.get(event_type='published_manually').actor,
             'news-editor',
         )
+
+    def test_unpublish_keeps_ai_item_and_news_states_consistent(self):
+        item = self.create_item(suffix='unpublish')
+        client = Mock()
+        client.rewrite.return_value = self.result_for(item)
+        rewrite_item(item, client=client)
+        publish_ai_draft(item.pk, actor='publisher')
+        model_admin = NewsAdmin(News, admin.site)
+        model_admin.message_user = Mock()
+        request = SimpleNamespace(user=SimpleNamespace(get_username=lambda: 'unpublisher'))
+
+        model_admin.unpublish_selected(request, News.objects.filter(pk=item.created_news_id))
+
+        item.refresh_from_db()
+        item.created_news.refresh_from_db()
+        self.assertEqual(item.status, ImportedNewsItem.ProcessingStatus.DRAFT_READY)
+        self.assertEqual(item.created_news.editorial_status, News.EditorialStatus.DRAFT)
+        self.assertFalse(item.created_news.is_published)
+        self.assertEqual(
+            item.audit_events.get(event_type='unpublished_manually').actor,
+            'unpublisher',
+        )
+
+    def test_direct_unpublish_bypass_is_rejected(self):
+        item = self.create_item(suffix='unpublish-bypass')
+        client = Mock()
+        client.rewrite.return_value = self.result_for(item)
+        rewrite_item(item, client=client)
+        news = publish_ai_draft(item.pk, actor='publisher')
+        news.editorial_status = News.EditorialStatus.DRAFT
+
+        with self.assertRaisesRegex(ValidationError, 'editorial policy'):
+            news.save()
+
+        news.refresh_from_db()
+        self.assertTrue(news.is_published)
 
     def test_regular_editorial_news_still_publishes_normally(self):
         news = News.objects.create(
