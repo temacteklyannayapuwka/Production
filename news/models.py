@@ -1,5 +1,6 @@
 from datetime import timedelta
 
+from django.core.exceptions import ValidationError
 from django.db import models, transaction
 from django.utils import timezone
 from django.urls import reverse
@@ -8,6 +9,30 @@ from transliterate import translit
 from ckeditor_uploader.fields import RichTextUploadingField
 
 from .image_processing import convert_pending_upload_to_webp
+
+
+_AI_PUBLICATION_TOKEN = object()
+
+
+class NewsQuerySet(models.QuerySet):
+    def update(self, **kwargs):
+        publication_fields = {'editorial_status', 'is_published'} & kwargs.keys()
+        if publication_fields and self._may_make_news_public(kwargs):
+            if self.filter(ai_import__isnull=False).exists():
+                raise ValidationError(
+                    'AI-generated news must be published through the manual publication policy.'
+                )
+        return super().update(**kwargs)
+
+    @staticmethod
+    def _may_make_news_public(values):
+        status = values.get('editorial_status')
+        published = values.get('is_published')
+        if status is not None and status != News.EditorialStatus.DRAFT:
+            return True
+        if published is not None and published is not False:
+            return True
+        return False
 
 
 class Category(models.Model):
@@ -80,6 +105,8 @@ class News(models.Model):
         DRAFT = 'draft', 'Черновик'
         SCHEDULED = 'scheduled', 'Запланирована'
         PUBLISHED = 'published', 'На сайте'
+
+    objects = NewsQuerySet.as_manager()
 
     legacy_k2_id = models.PositiveBigIntegerField(
         null=True,
@@ -155,6 +182,7 @@ class News(models.Model):
         return self.title
 
     def save(self, *args, **kwargs):
+        ai_publication_token = kwargs.pop('ai_publication_token', None)
         now = timezone.now()
         if self.editorial_status == self.EditorialStatus.DRAFT:
             self.is_published = False
@@ -166,6 +194,11 @@ class News(models.Model):
             self.is_published = True
             if self.date_start > now:
                 self.date_start = now
+
+        self._enforce_ai_publication_policy(
+            update_fields=kwargs.get('update_fields'),
+            publication_token=ai_publication_token,
+        )
 
         converted_image = convert_pending_upload_to_webp(self.main_photo)
         if converted_image:
@@ -199,6 +232,31 @@ class News(models.Model):
             return
 
         super().save(*args, **kwargs)
+
+    def _enforce_ai_publication_policy(self, *, update_fields, publication_token):
+        if not self.pk or publication_token is _AI_PUBLICATION_TOKEN:
+            return
+        if update_fields is not None and not {
+            'editorial_status',
+            'is_published',
+        }.intersection(update_fields):
+            return
+        if self.editorial_status == self.EditorialStatus.DRAFT and not self.is_published:
+            return
+        if not ImportedNewsItem.objects.filter(created_news_id=self.pk).exists():
+            return
+        previous = type(self).objects.filter(pk=self.pk).values(
+            'editorial_status',
+            'is_published',
+        ).first()
+        if previous and (
+            previous['editorial_status'] != self.EditorialStatus.DRAFT
+            or previous['is_published']
+        ):
+            return
+        raise ValidationError(
+            'AI-generated news must be published through the manual publication policy.'
+        )
 
     def get_absolute_url(self):
         return reverse('news_detail', kwargs={'slug': self.slug})

@@ -7,6 +7,7 @@ from django.utils.html import format_html
 from ckeditor_uploader.widgets import CKEditorUploadingWidget
 from unfold.admin import ModelAdmin, StackedInline
 
+from .ai_news.publication import PublicationPolicyError, publish_ai_draft
 from .models import (
     AIRewriteAuditEvent,
     Advertisement,
@@ -138,6 +139,20 @@ class NewsAdminForm(forms.ModelForm):
         # New items start as drafts. Existing news retain their saved state.
         if not self.instance.pk:
             self.fields['editorial_status'].initial = News.EditorialStatus.DRAFT
+
+    def clean(self):
+        cleaned_data = super().clean()
+        requested_status = cleaned_data.get('editorial_status')
+        if (
+            self.instance.pk
+            and self.initial.get('editorial_status') == News.EditorialStatus.DRAFT
+            and requested_status != News.EditorialStatus.DRAFT
+            and ImportedNewsItem.objects.filter(created_news_id=self.instance.pk).exists()
+        ):
+            raise forms.ValidationError(
+                'AI-черновик публикуется только явным действием «Опубликовать» в админке.'
+            )
+        return cleaned_data
 
 
 class NewsGalleryInlineForm(forms.ModelForm):
@@ -344,12 +359,37 @@ class NewsAdmin(ModelAdmin):
 
     @admin.action(description='Опубликовать выбранные новости')
     def publish_selected(self, request, queryset):
-        queryset.update(
+        actor = request.user.get_username()
+        regular_ids = []
+        published_ai = 0
+        skipped_ai = 0
+        for news in queryset.select_related('ai_import'):
+            try:
+                item = news.ai_import
+            except ImportedNewsItem.DoesNotExist:
+                regular_ids.append(news.pk)
+                continue
+            try:
+                publish_ai_draft(item.pk, actor=actor)
+            except PublicationPolicyError:
+                skipped_ai += 1
+            else:
+                published_ai += 1
+        published_regular = News.objects.filter(pk__in=regular_ids).update(
             editorial_status=News.EditorialStatus.PUBLISHED,
             is_published=True,
             date_start=timezone.now(),
         )
-        self.message_user(request, 'Выбранные новости опубликованы.')
+        self.message_user(
+            request,
+            f'Опубликовано: {published_regular + published_ai}.',
+        )
+        if skipped_ai:
+            self.message_user(
+                request,
+                f'AI-черновиков пропущено политикой публикации: {skipped_ai}.',
+                level=messages.WARNING,
+            )
 
     @admin.action(description='Сделать выбранную новость главной')
     def make_selected_featured(self, request, queryset):
@@ -534,24 +574,13 @@ class ImportedNewsItemAdmin(ModelAdmin):
     def publish_created_draft(self, request, queryset):
         published = 0
         skipped = 0
-        for item in queryset.select_related('created_news'):
-            news = item.created_news
-            if not news or not item.source_url or not news.title.strip() or not news.content.strip():
+        for item in queryset:
+            try:
+                publish_ai_draft(item.pk, actor=request.user.get_username())
+            except PublicationPolicyError:
                 skipped += 1
-                continue
-            news.editorial_status = News.EditorialStatus.PUBLISHED
-            news.is_published = True
-            news.date_start = timezone.now()
-            news.save(update_fields=('editorial_status', 'is_published', 'date_start', 'updated_at'))
-            item.status = ImportedNewsItem.ProcessingStatus.PUBLISHED
-            item.save(update_fields=('status', 'updated_at'))
-            AIRewriteAuditEvent.objects.create(
-                item=item,
-                event_type='published_manually',
-                actor=request.user.get_username(),
-                message='Редактор вручную отправил AI-черновик в публикацию.',
-            )
-            published += 1
+            else:
+                published += 1
         if published:
             self.message_user(request, f'Опубликовано вручную: {published}.')
         if skipped:

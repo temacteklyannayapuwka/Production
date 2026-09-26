@@ -12,12 +12,13 @@ from urllib.error import HTTPError
 from urllib.request import Request
 
 from django.contrib import admin
+from django.core.exceptions import ValidationError
 from django.core.management import CommandError, call_command
 from django.db import connection
 from django.test import SimpleTestCase, TestCase, override_settings
 from django.utils import timezone
 
-from .admin import ImportedNewsItemAdmin
+from .admin import ImportedNewsItemAdmin, NewsAdmin
 from .ai_news.openrouter import (
     OpenRouterClient,
     OpenRouterError,
@@ -32,6 +33,7 @@ from .ai_news.pipeline import (
     recover_stale_rewrite_jobs,
     rewrite_item,
 )
+from .ai_news.publication import PublicationPolicyError, publish_ai_draft
 from .ai_news.sources import (
     SourceFetchError,
     _SourceRedirectHandler,
@@ -645,6 +647,56 @@ class AINewsPipelineTests(TestCase):
         self.assertEqual(item.status, ImportedNewsItem.ProcessingStatus.NEEDS_REVIEW)
         self.assertFalse(item.created_news.is_published)
 
+    def test_model_save_cannot_bypass_ai_publication_policy(self):
+        item = self.create_item(suffix='model-bypass')
+        client = Mock()
+        client.rewrite.return_value = self.result_for(item)
+        rewrite_item(item, client=client)
+        news = item.created_news
+        news.editorial_status = News.EditorialStatus.PUBLISHED
+
+        with self.assertRaisesRegex(ValidationError, 'manual publication policy'):
+            news.save()
+
+        news.refresh_from_db()
+        self.assertEqual(news.editorial_status, News.EditorialStatus.DRAFT)
+        self.assertFalse(news.is_published)
+
+    def test_queryset_update_cannot_bypass_ai_publication_policy(self):
+        item = self.create_item(suffix='queryset-bypass')
+        client = Mock()
+        client.rewrite.return_value = self.result_for(item)
+        rewrite_item(item, client=client)
+
+        with self.assertRaisesRegex(ValidationError, 'manual publication policy'):
+            News.objects.filter(pk=item.created_news_id).update(
+                editorial_status=News.EditorialStatus.PUBLISHED,
+                is_published=True,
+            )
+
+        item.created_news.refresh_from_db()
+        self.assertFalse(item.created_news.is_published)
+
+    def test_warning_draft_cannot_be_published_by_admin_action(self):
+        item = self.create_item(suffix='warning-publication')
+        client = Mock()
+        client.rewrite.return_value = self.result_for(item, warnings=['Проверьте факты.'])
+        rewrite_item(item, client=client)
+        model_admin = ImportedNewsItemAdmin(ImportedNewsItem, admin.site)
+        model_admin.message_user = Mock()
+        request = SimpleNamespace(user=SimpleNamespace(get_username=lambda: 'editor'))
+
+        model_admin.publish_created_draft(
+            request,
+            ImportedNewsItem.objects.filter(pk=item.pk),
+        )
+
+        item.refresh_from_db()
+        item.created_news.refresh_from_db()
+        self.assertEqual(item.status, ImportedNewsItem.ProcessingStatus.NEEDS_REVIEW)
+        self.assertFalse(item.created_news.is_published)
+        self.assertFalse(item.audit_events.filter(event_type='published_manually').exists())
+
     def test_manual_admin_action_is_required_to_publish(self):
         item = self.create_item(suffix='manual-publish')
         client = Mock()
@@ -667,10 +719,61 @@ class AINewsPipelineTests(TestCase):
         event = item.audit_events.get(event_type='published_manually')
         self.assertEqual(event.actor, 'editor')
 
+    def test_news_admin_bulk_action_uses_ai_publication_policy(self):
+        item = self.create_item(suffix='news-admin-publish')
+        client = Mock()
+        client.rewrite.return_value = self.result_for(item)
+        rewrite_item(item, client=client)
+        model_admin = NewsAdmin(News, admin.site)
+        model_admin.message_user = Mock()
+        request = SimpleNamespace(user=SimpleNamespace(get_username=lambda: 'news-editor'))
+
+        model_admin.publish_selected(request, News.objects.filter(pk=item.created_news_id))
+
+        item.refresh_from_db()
+        item.created_news.refresh_from_db()
+        self.assertEqual(item.status, ImportedNewsItem.ProcessingStatus.PUBLISHED)
+        self.assertTrue(item.created_news.is_published)
+        self.assertEqual(
+            item.audit_events.get(event_type='published_manually').actor,
+            'news-editor',
+        )
+
+    def test_regular_editorial_news_still_publishes_normally(self):
+        news = News.objects.create(
+            title='Редакционный материал',
+            content='<p>Обычный редакционный материал.</p>',
+            editorial_status=News.EditorialStatus.DRAFT,
+        )
+        model_admin = NewsAdmin(News, admin.site)
+        model_admin.message_user = Mock()
+        request = SimpleNamespace(user=SimpleNamespace(get_username=lambda: 'editor'))
+
+        model_admin.publish_selected(request, News.objects.filter(pk=news.pk))
+
+        news.refresh_from_db()
+        self.assertEqual(news.editorial_status, News.EditorialStatus.PUBLISHED)
+        self.assertTrue(news.is_published)
+
     @override_settings(AUTO_PUBLISH_AI_NEWS=True)
     def test_auto_publish_true_is_rejected_in_version_one(self):
         with self.assertRaisesRegex(OpenRouterError, 'not supported'):
             assert_pipeline_enabled()
+
+    @override_settings(AUTO_PUBLISH_AI_NEWS=True)
+    def test_auto_publish_setting_also_blocks_manual_publication_service(self):
+        item = self.create_item(suffix='auto-publish-setting')
+        client = Mock()
+        client.rewrite.return_value = self.result_for(item)
+        with override_settings(AUTO_PUBLISH_AI_NEWS=False):
+            rewrite_item(item, client=client)
+
+        with self.assertRaisesRegex(PublicationPolicyError, 'not supported'):
+            publish_ai_draft(item.pk, actor='editor')
+
+        item.refresh_from_db()
+        self.assertEqual(item.status, ImportedNewsItem.ProcessingStatus.DRAFT_READY)
+        self.assertFalse(item.created_news.is_published)
 
     @override_settings(OPENROUTER_API_KEY='')
     def test_rewrite_command_without_key_does_not_change_item(self):
