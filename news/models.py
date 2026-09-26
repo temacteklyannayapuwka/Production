@@ -1,5 +1,6 @@
 from datetime import timedelta
 
+from django.core.exceptions import ValidationError
 from django.db import models, transaction
 from django.utils import timezone
 from django.urls import reverse
@@ -8,6 +9,19 @@ from transliterate import translit
 from ckeditor_uploader.fields import RichTextUploadingField
 
 from .image_processing import convert_pending_upload_to_webp
+
+
+_AI_PUBLICATION_TOKEN = object()
+
+
+class NewsQuerySet(models.QuerySet):
+    def update(self, **kwargs):
+        publication_fields = {'editorial_status', 'is_published'} & kwargs.keys()
+        if publication_fields and self.filter(ai_import__isnull=False).exists():
+            raise ValidationError(
+                'AI-generated news publication state must change through the editorial policy.'
+            )
+        return super().update(**kwargs)
 
 
 class Category(models.Model):
@@ -80,6 +94,8 @@ class News(models.Model):
         DRAFT = 'draft', 'Черновик'
         SCHEDULED = 'scheduled', 'Запланирована'
         PUBLISHED = 'published', 'На сайте'
+
+    objects = NewsQuerySet.as_manager()
 
     legacy_k2_id = models.PositiveBigIntegerField(
         null=True,
@@ -155,6 +171,7 @@ class News(models.Model):
         return self.title
 
     def save(self, *args, **kwargs):
+        ai_publication_token = kwargs.pop('ai_publication_token', None)
         now = timezone.now()
         if self.editorial_status == self.EditorialStatus.DRAFT:
             self.is_published = False
@@ -166,6 +183,11 @@ class News(models.Model):
             self.is_published = True
             if self.date_start > now:
                 self.date_start = now
+
+        self._enforce_ai_publication_policy(
+            update_fields=kwargs.get('update_fields'),
+            publication_token=ai_publication_token,
+        )
 
         converted_image = convert_pending_upload_to_webp(self.main_photo)
         if converted_image:
@@ -200,6 +222,33 @@ class News(models.Model):
 
         super().save(*args, **kwargs)
 
+    def _enforce_ai_publication_policy(self, *, update_fields, publication_token):
+        if not self.pk or publication_token is _AI_PUBLICATION_TOKEN:
+            return
+        if update_fields is not None and not {
+            'editorial_status',
+            'is_published',
+        }.intersection(update_fields):
+            return
+        if not ImportedNewsItem.objects.filter(created_news_id=self.pk).exists():
+            return
+        previous = type(self).objects.filter(pk=self.pk).values(
+            'editorial_status',
+            'is_published',
+        ).first()
+        previous_public = previous and (
+            previous['editorial_status'] != self.EditorialStatus.DRAFT
+            or previous['is_published']
+        )
+        requested_public = (
+            self.editorial_status != self.EditorialStatus.DRAFT or self.is_published
+        )
+        if previous_public == requested_public:
+            return
+        raise ValidationError(
+            'AI-generated news publication state must change through the editorial policy.'
+        )
+
     def get_absolute_url(self):
         return reverse('news_detail', kwargs={'slug': self.slug})
 
@@ -213,6 +262,170 @@ class News(models.Model):
         if self.date_end and self.date_end < now:
             return False
         return True
+
+
+class NewsSource(models.Model):
+    class SourceType(models.TextChoices):
+        RSS = 'rss', 'RSS'
+        ATOM = 'atom', 'Atom'
+        API = 'api', 'API'
+
+    name = models.CharField('Название источника', max_length=160, unique=True)
+    website_url = models.URLField('Сайт источника')
+    feed_url = models.URLField('URL ленты или API', unique=True)
+    source_type = models.CharField(
+        'Тип источника',
+        max_length=8,
+        choices=SourceType.choices,
+        default=SourceType.RSS,
+    )
+    allowed_domains = models.TextField(
+        'Разрешённые домены',
+        help_text='Домены через запятую. Ссылки вне списка не загружаются.',
+    )
+    is_active = models.BooleanField(
+        'Источник включён',
+        default=False,
+        db_index=True,
+    )
+    editorial_approved = models.BooleanField(
+        'Одобрен редакцией',
+        default=False,
+    )
+    legal_approved = models.BooleanField(
+        'Одобрен юридически',
+        default=False,
+    )
+    terms_url = models.URLField('Условия использования', blank=True)
+    terms_reviewed_at = models.DateTimeField('Условия проверены', null=True, blank=True)
+    robots_reviewed_at = models.DateTimeField('robots.txt проверен', null=True, blank=True)
+    min_request_interval_minutes = models.PositiveIntegerField(
+        'Минимальный интервал запросов, минут',
+        default=60,
+    )
+    last_fetched_at = models.DateTimeField('Последняя загрузка', null=True, blank=True)
+    notes = models.TextField('Редакционные примечания', blank=True)
+    created_at = models.DateTimeField('Создано', auto_now_add=True)
+    updated_at = models.DateTimeField('Обновлено', auto_now=True)
+
+    class Meta:
+        verbose_name = 'Разрешённый источник новостей'
+        verbose_name_plural = 'Разрешённые источники новостей'
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name
+
+    @property
+    def is_approved_for_ingestion(self):
+        return (
+            self.is_active
+            and self.editorial_approved
+            and self.legal_approved
+            and self.terms_reviewed_at is not None
+            and self.robots_reviewed_at is not None
+        )
+
+    def allowed_domain_list(self):
+        return [domain.strip().lower() for domain in self.allowed_domains.split(',') if domain.strip()]
+
+
+class ImportedNewsItem(models.Model):
+    class ProcessingStatus(models.TextChoices):
+        PENDING = 'pending', 'Ожидает рерайта'
+        PROCESSING = 'processing', 'Обрабатывается'
+        DRAFT_READY = 'draft_ready', 'Черновик создан'
+        NEEDS_REVIEW = 'needs_review', 'Требует ручной проверки'
+        FAILED = 'failed', 'Ошибка'
+        PUBLISHED = 'published', 'Опубликовано редактором'
+        SKIPPED = 'skipped', 'Пропущено'
+
+    source = models.ForeignKey(
+        NewsSource,
+        on_delete=models.PROTECT,
+        related_name='imported_items',
+        verbose_name='Источник',
+    )
+    source_url = models.URLField('Оригинальный URL', max_length=1000, unique=True)
+    source_name = models.CharField('Название источника', max_length=160)
+    source_title = models.CharField('Оригинальный заголовок', max_length=500)
+    source_published_at = models.DateTimeField('Дата оригинала', null=True, blank=True)
+    fetched_at = models.DateTimeField('Загружено', default=timezone.now, db_index=True)
+    normalized_text = models.TextField('Нормализованный исходный текст')
+    content_hash = models.CharField(
+        'SHA-256 содержимого',
+        max_length=64,
+        unique=True,
+        editable=False,
+    )
+    extracted_facts = models.JSONField('Кандидаты проверяемых фактов', default=list)
+    status = models.CharField(
+        'Состояние обработки',
+        max_length=20,
+        choices=ProcessingStatus.choices,
+        default=ProcessingStatus.PENDING,
+        db_index=True,
+    )
+    rewrite_model = models.CharField('Модель рерайта', max_length=160, blank=True)
+    prompt_version = models.CharField('Версия промпта', max_length=40, blank=True)
+    provider_response_id = models.CharField('ID ответа провайдера', max_length=160, blank=True)
+    source_facts = models.JSONField('Факты из результата модели', default=list, blank=True)
+    warnings = models.JSONField('Предупреждения', default=list, blank=True)
+    error_message = models.TextField('Ошибка', blank=True)
+    retry_count = models.PositiveIntegerField('Количество попыток', default=0)
+    input_tokens = models.PositiveIntegerField('Входные токены', null=True, blank=True)
+    output_tokens = models.PositiveIntegerField('Выходные токены', null=True, blank=True)
+    provider_cost_usd = models.DecimalField(
+        'Стоимость провайдера, USD',
+        max_digits=12,
+        decimal_places=8,
+        null=True,
+        blank=True,
+    )
+    created_news = models.OneToOneField(
+        News,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='ai_import',
+        verbose_name='Созданный черновик',
+    )
+    last_attempted_at = models.DateTimeField('Последняя попытка', null=True, blank=True)
+    created_at = models.DateTimeField('Создано', auto_now_add=True)
+    updated_at = models.DateTimeField('Обновлено', auto_now=True)
+
+    class Meta:
+        verbose_name = 'Импортированный материал для AI-рерайта'
+        verbose_name_plural = 'Импортированные материалы для AI-рерайта'
+        ordering = ['-fetched_at', '-pk']
+        indexes = [
+            models.Index(fields=['status', 'fetched_at']),
+        ]
+
+    def __str__(self):
+        return self.source_title
+
+
+class AIRewriteAuditEvent(models.Model):
+    item = models.ForeignKey(
+        ImportedNewsItem,
+        on_delete=models.CASCADE,
+        related_name='audit_events',
+        verbose_name='Материал',
+    )
+    event_type = models.CharField('Тип события', max_length=40, db_index=True)
+    message = models.CharField('Описание', max_length=500)
+    actor = models.CharField('Инициатор', max_length=160, default='system')
+    details = models.JSONField('Безопасные детали', default=dict, blank=True)
+    created_at = models.DateTimeField('Время', auto_now_add=True, db_index=True)
+
+    class Meta:
+        verbose_name = 'Событие AI-конвейера'
+        verbose_name_plural = 'События AI-конвейера'
+        ordering = ['-created_at', '-pk']
+
+    def __str__(self):
+        return f'{self.event_type}: {self.item}'
 
 
 class NewsGallery(models.Model):

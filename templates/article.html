@@ -22,6 +22,7 @@
         <h1>{{ article.title }}</h1>
         {% if article.excerpt %}<p class="article-lead">{{ article.excerpt }}</p>{% endif %}
         <p class="article-meta"><time datetime="{{ article.date_start|date:'c' }}">{{ article.date_start|date:'j E Y, H:i' }}</time></p>
+        {% include 'components/ai_source_attribution.html' with news=article %}
       </header>
       {% include 'components/article_gallery.html' with news=article eager=True %}
       <div class="article-body" aria-label="Текст материала">{{ article.content|public_article_html }}</div>
@@ -42,6 +43,7 @@
               <h3>{{ item.news.title }}</h3>
               {% if item.news.excerpt %}<p class="article-lead">{{ item.news.excerpt }}</p>{% endif %}
               <p class="article-meta"><time datetime="{{ item.news.date_start|date:'c' }}">{{ item.news.date_start|date:'j E Y, H:i' }}</time></p>
+              {% include 'components/ai_source_attribution.html' with news=item.news %}
               {% include 'components/article_gallery.html' with news=item.news %}
               <div class="article-body" aria-label="Текст материала">{{ item.news.content|public_article_html }}</div>
               <div class="article-author"><b>Ставрополь+</b><span>{% if item.news.legacy_k2_id %}Архивный материал{% else %}Редакция · Новости региона{% endif %}</span></div>

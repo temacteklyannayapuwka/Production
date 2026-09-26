@@ -25,6 +25,26 @@ def load_environment_file(path: Path) -> None:
 
 load_environment_file(BASE_DIR / '.env')
 
+
+def environment_flag(name: str, default: bool = False) -> bool:
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {'1', 'true', 'yes', 'on'}
+
+
+def environment_integer(name: str, default: int, *, minimum: int = 0) -> int:
+    value = os.getenv(name)
+    if value is None:
+        return default
+    try:
+        parsed = int(value)
+    except ValueError as error:
+        raise RuntimeError(f'{name} must be an integer.') from error
+    if parsed < minimum:
+        raise RuntimeError(f'{name} must be at least {minimum}.')
+    return parsed
+
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
 if not SECRET_KEY:
     raise RuntimeError('DJANGO_SECRET_KEY must be configured in the environment.')
@@ -34,6 +54,29 @@ ALLOWED_HOSTS = [host.strip() for host in os.getenv(
     'DJANGO_ALLOWED_HOSTS',
     'localhost,127.0.0.1,new.stavplus.ru,stavplus.ru,www.stavplus.ru',
 ).split(',') if host.strip()]
+
+OPENROUTER_API_KEY = os.getenv('OPENROUTER_API_KEY', '')
+OPENROUTER_MODEL = os.getenv('OPENROUTER_MODEL', '')
+OPENROUTER_FALLBACK_MODEL = os.getenv('OPENROUTER_FALLBACK_MODEL', '')
+OPENROUTER_TIMEOUT_SECONDS = environment_integer(
+    'OPENROUTER_TIMEOUT_SECONDS',
+    30,
+    minimum=1,
+)
+OPENROUTER_MAX_RETRIES = environment_integer('OPENROUTER_MAX_RETRIES', 2, minimum=0)
+OPENROUTER_MAX_INPUT_CHARS = environment_integer(
+    'OPENROUTER_MAX_INPUT_CHARS',
+    12000,
+    minimum=1000,
+)
+AI_NEWS_PROCESSING_TIMEOUT_MINUTES = environment_integer(
+    'AI_NEWS_PROCESSING_TIMEOUT_MINUTES',
+    30,
+    minimum=1,
+)
+AI_NEWS_ENABLED = environment_flag('AI_NEWS_ENABLED', False)
+# Version 1 is intentionally manual-only. Commands refuse to run if this is true.
+AUTO_PUBLISH_AI_NEWS = environment_flag('AUTO_PUBLISH_AI_NEWS', False)
 
 INSTALLED_APPS = [
     'unfold',
