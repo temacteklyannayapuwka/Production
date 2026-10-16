@@ -7,12 +7,57 @@ from django.contrib.staticfiles import finders
 from django.core.management import call_command
 from django.urls import reverse
 from django.template.loader import get_template
-from django.test import SimpleTestCase, TestCase, override_settings
+from django.test import RequestFactory, SimpleTestCase, TestCase, override_settings
 from django.utils import timezone
 
 from .admin import CategoryAdmin, NewsAdmin, NewsAdminForm, TagAdmin
 from .models import Advertisement, Category, News, Tag
-from .views import published_news
+from .views import paginate, published_news
+
+
+class PaginationTests(SimpleTestCase):
+    def setUp(self):
+        self.factory = RequestFactory()
+        self.items = list(range(45))
+
+    def test_missing_page_uses_first_page_and_default_page_size(self):
+        page = paginate(self.factory.get('/search/'), self.items)
+
+        self.assertEqual(page.number, 1)
+        self.assertEqual(list(page), self.items[:20])
+        self.assertTrue(page.has_next())
+
+    def test_requested_page_respects_custom_page_size(self):
+        request = self.factory.get('/search/', {'page': '2'})
+        page = paginate(request, self.items, per_page=10)
+
+        self.assertEqual(page.number, 2)
+        self.assertEqual(list(page), self.items[10:20])
+
+    def test_non_numeric_page_uses_first_page(self):
+        request = self.factory.get('/search/', {'page': 'invalid'})
+        page = paginate(request, self.items)
+
+        self.assertEqual(page.number, 1)
+        self.assertEqual(list(page), self.items[:20])
+
+    def test_out_of_range_page_uses_last_page(self):
+        for number in ('0', '-1', '999'):
+            with self.subTest(page=number):
+                request = self.factory.get('/search/', {'page': number})
+                page = paginate(request, self.items)
+
+                self.assertEqual(page.number, 3)
+                self.assertEqual(list(page), self.items[40:])
+                self.assertFalse(page.has_next())
+
+    def test_empty_list_returns_an_empty_first_page(self):
+        page = paginate(self.factory.get('/search/'), [])
+
+        self.assertEqual(page.number, 1)
+        self.assertEqual(list(page), [])
+        self.assertFalse(page.has_previous())
+        self.assertFalse(page.has_next())
 
 
 class AdminJavascriptFallbackTests(SimpleTestCase):
